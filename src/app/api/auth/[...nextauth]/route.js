@@ -1,6 +1,10 @@
-import NextAuth from 'next-auth';
-import { authOptions } from '@/lib/auth';
+// NextAuth has been removed. This stub prevents 500 errors on old callback URLs.
+import { NextResponse } from 'next/server';
 
-const handler = NextAuth(authOptions);
+export async function GET() {
+  return NextResponse.redirect(new URL('/', process.env.NEXTAUTH_URL || 'https://go-cab-webpage-reportings.vercel.app'));
+}
 
-export { handler as GET, handler as POST };
+export async function POST() {
+  return NextResponse.json({ error: 'Not used' }, { status: 410 });
+}
