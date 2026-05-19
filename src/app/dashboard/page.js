@@ -33,4 +33,7 @@ export default async function Dashboard() {
         </div>
       </header>
 
-      <L
+      <LocalizedDashboard firstName={firstName} role={role} isManager={isManager} />
+    </div>
+  );
+}

@@ -46,19 +46,29 @@ export default function LangSwitcher({ iframeSelector }) {
     setLang(l);
     localStorage.setItem('gocab_lang', l);
     window.dispatchEvent(new CustomEvent('gocab_lang_change', { detail: l }));
-
-    // Sincronizar con el iframe si existe
     if (iframeSelector) {
       try {
         const iframe = document.querySelector(iframeSelector);
-        const win = iframe?.contentWindow;
-        if (win?.setLanguage) win.setLanguage(l);       // financial dashboard
-        else if (win?.setLang) win.setLang(l);           // fleet debt report
+        const win = iframe && iframe.contentWindow;
+        if (win && win.setLanguage) win.setLanguage(l);
+        else if (win && win.setLang) win.setLang(l);
       } catch (_) {}
     }
   }
 
   return (
     <div className="flex items-center gap-0.5 bg-gray-800/60 rounded-lg p-0.5 border border-gray-700/50">
-      {['es', 'en', 'ru'].map(l => (
-        <butto
+      {['es', 'en', 'ru'].map(function(l) {
+        return (
+          <button
+            key={l}
+            onClick={function() { switchLang(l); }}
+            className={'px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide transition ' + (lang === l ? 'bg-green-500 text-white shadow' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50')}
+          >
+            {l}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
