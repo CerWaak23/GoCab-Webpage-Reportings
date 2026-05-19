@@ -1,5 +1,5 @@
 import GoogleProvider from 'next-auth/providers/google';
-import { getUserByEmail } from './users';
+import { getUserByEmail, isRegisteredUser } from './users';
 
 export const authOptions = {
   providers: [
@@ -20,7 +20,8 @@ export const authOptions = {
      */
     async signIn({ account, profile }) {
       if (account?.provider === 'google') {
-        return profile?.email?.endsWith('@gocab.io') ?? false;
+        // Solo permite usuarios explícitamente registrados en la lista maestra
+        return isRegisteredUser(profile?.email) ?? false;
       }
       return false;
     },
