@@ -6,9 +6,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Reporte Deudas Flota</title>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css" integrity="sha384-jZvDSsmGB9oGGT/4l9bHXGoAv1OxvG/cFmSo0dZaSqmBgvQTKDBFAMftlXTmMbNW" crossorigin="anonymous">
-
+<script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js" integrity="sha384-/XXDzxe4FsGiAe50i/u9pY/Vy/uX654MHB1xoc1BJNnH1WXHhqHga9g3q5tF4gj7" crossorigin="anonymous"></script>
 <style>
 :root{color-scheme:light}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -129,7 +129,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @media(max-width:960px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.rbars{grid-template-columns:repeat(2,1fr)}.charts-row{grid-template-columns:1fr}.rec-grid{grid-template-columns:1fr}}
 </style>
 </head>
-<body><div style="background:#059669;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-family:sans-serif;font-weight:500">✔ Snapshot publicado el 19-05-2026, 12:15:36 p. m.</div>
+<body><div style="background:#059669;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-family:sans-serif;font-weight:500">✔ Snapshot publicado el 19-05-2026, 1:25:26 p. m.</div>
 <div class="topbar">
   <div class="topbar-brand">
     <h1 data-i18n="title">🚗 Reporte Semanal — Deudas Flota GoCab</h1>
@@ -138,20 +138,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="topbar-controls">
     <!-- Language switcher -->
     <div class="btn-group" title="Idioma / Language / Язык">
-      <button class="gbtn active" id="btn-lang-es" onclick="setLang('es')" disabled="disabled">ES</button>
-      <button class="gbtn" id="btn-lang-en" onclick="setLang('en')" disabled="disabled">EN</button>
-      <button class="gbtn" id="btn-lang-ru" onclick="setLang('ru')" disabled="disabled">RU</button>
+      <button class="gbtn active" id="btn-lang-es" onclick="setLang('es')">ES</button>
+      <button class="gbtn" id="btn-lang-en" onclick="setLang('en')">EN</button>
+      <button class="gbtn" id="btn-lang-ru" onclick="setLang('ru')">RU</button>
     </div>
     <!-- Currency toggle -->
     <div class="btn-group">
-      <button class="gbtn active-green" id="btn-cur-CLP" onclick="setCurrency('CLP')" disabled="disabled">CLP</button>
-      <button class="gbtn" id="btn-cur-USD" onclick="setCurrency('USD')" disabled="disabled">USD</button>
+      <button class="gbtn active-green" id="btn-cur-CLP" onclick="setCurrency('CLP')">CLP</button>
+      <button class="gbtn" id="btn-cur-USD" onclick="setCurrency('USD')">USD</button>
     </div>
     <span class="fx-badge" id="fx-rate">1 USD = 950 CLP</span>
     <!-- Refresh -->
     <button class="btn" id="refresh-btn" onclick="loadData()" disabled="disabled">↻ <span data-i18n="refresh">Actualizar datos</span></button>
     <!-- Publish -->
-    <button class="btn btn-publish" id="publish-btn" onclick="publishToPortal()" disabled="disabled">⏳ Capturando...</button>
+    <button class="btn btn-publish" id="publish-btn" onclick="publishToPortal()" disabled="disabled">✓ Publicado</button>
   </div>
 </div>
 
@@ -304,13 +304,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="scard-hdr">
       <h3 data-i18n="detail.title">📋 Detalle por Conductor</h3>
       <div class="filter-tabs">
-        <button class="ftab on" id="ftab-all" onclick="setFilter('all',this)" data-i18n="detail.tab.all" disabled="disabled">Todos</button>
-        <button class="ftab" id="ftab-active" onclick="setFilter('active',this)" data-i18n="detail.tab.active" disabled="disabled">Activos</button>
-        <button class="ftab" id="ftab-fired" onclick="setFilter('fired',this)" data-i18n="detail.tab.fired" disabled="disabled">Despedidos</button>
-        <button class="ftab" id="ftab-pending" onclick="setFilter('pending',this)" data-i18n="detail.tab.pending" disabled="disabled">Con Deuda</button>
+        <button class="ftab on" id="ftab-all" onclick="setFilter('all',this)" data-i18n="detail.tab.all">Todos</button>
+        <button class="ftab" id="ftab-active" onclick="setFilter('active',this)" data-i18n="detail.tab.active">Activos</button>
+        <button class="ftab" id="ftab-fired" onclick="setFilter('fired',this)" data-i18n="detail.tab.fired">Despedidos</button>
+        <button class="ftab" id="ftab-pending" onclick="setFilter('pending',this)" data-i18n="detail.tab.pending">Con Deuda</button>
       </div>
     </div>
-    <div id="tbl-wrap"><div role="complementary" class="gridjs gridjs-container" style="width: 100%;"><div class="gridjs-head"><div class="gridjs-search"><input type="search" placeholder="Type a keyword..." aria-label="Type a keyword..." class="gridjs-input gridjs-search-input" disabled="disabled"></div></div><div class="gridjs-wrapper" style="height: auto;"><table role="grid" class="gridjs-table" style="height: auto;"><thead class="gridjs-thead"><tr class="gridjs-tr"><th data-column-id="conductor" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 95px;"><div class="gridjs-th-content">Conductor</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="estado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 34px;"><div class="gridjs-th-content">Estado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="facturado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 52px;"><div class="gridjs-th-content">Facturado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="cobrado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 52px;"><div class="gridjs-th-content">Cobrado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="deuda" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 56px;"><div class="gridjs-th-content">Deuda</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="%Cobrado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 39px;"><div class="gridjs-th-content">% Cobrado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="tipoPrincipal" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 56px;"><div class="gridjs-th-content">Tipo Principal</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th></tr></thead><tbody class="gridjs-tbody"><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">RAIMUNDO BARRAZA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$638.361</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$118.875</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$519.486&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">19%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">MATIAS FLEN</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$648.777</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$240.218</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$408.559&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">37%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">FABIAN CONSTANZO</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$636.858</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$342.172</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$294.686&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">54%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">MATIAS GORMAZ</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$726.506</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$432.089</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$294.417&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">59%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">WILL JOSUE COCHE</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$513.697</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$226.083</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$287.614&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">44%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">FRANCISCO VILLALOBOS</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$544.610</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$327.718</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$216.892&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">60%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">RODRIGO ALEXIS FRIAS CASAS</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$210.748</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$210.748&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">0%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">HECTOR ARDIACA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$233.093</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$76.075</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$157.018&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">33%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">ABRAHAM BUKER</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$420.952</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$285.875</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$135.077&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">68%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">RODRIGO SALGADO</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$160.041</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$30.741</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$129.300&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">19%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">FABIAN ANDRES ROLDAN ORTIZ</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$168.841</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$70.108</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$98.733&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">42%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">ALEXANDER SANCHEZ HURTADO</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$85.001</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$85.001&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">0%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">PABLO CATALAN</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$81.404</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$893</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$80.511&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">1%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">WILL COCHE ROJAS</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$292.961</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$234.053</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$58.908&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">80%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">HUGO PARRA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$147.077</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$101.737</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$45.340&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">69%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">GABRIEL PINA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$245.894</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$221.426</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$24.468&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">90%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">HENRY SAUL HINOJOSA BOADA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$243.094</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$243.094</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">IVAN PANTALEON</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$71.353</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$71.353</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">LORENZO VIANI</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$374.013</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$374.013</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">LUISA MEZA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$125.668</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$125.668</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr></tbody></table></div><div id="gridjs-temp" class="gridjs-temp"></div></div></div>
+    <div id="tbl-wrap"><div role="complementary" class="gridjs gridjs-container" style="width: 100%;"><div class="gridjs-head"><div class="gridjs-search"><input type="search" placeholder="Type a keyword..." aria-label="Type a keyword..." class="gridjs-input gridjs-search-input"></div></div><div class="gridjs-wrapper" style="height: auto;"><table role="grid" class="gridjs-table" style="height: auto;"><thead class="gridjs-thead"><tr class="gridjs-tr"><th data-column-id="conductor" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 210px;"><div class="gridjs-th-content">Conductor</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="estado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 76px;"><div class="gridjs-th-content">Estado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="facturado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 114px;"><div class="gridjs-th-content">Facturado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="cobrado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 114px;"><div class="gridjs-th-content">Cobrado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="deuda" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 124px;"><div class="gridjs-th-content">Deuda</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="%Cobrado" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 86px;"><div class="gridjs-th-content">% Cobrado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="tipoPrincipal" class="gridjs-th gridjs-th-sort" tabindex="0" style="background: rgb(248, 250, 252); font-weight: 700; font-size: 11px; width: 124px;"><div class="gridjs-th-content">Tipo Principal</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th></tr></thead><tbody class="gridjs-tbody"><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">RAIMUNDO BARRAZA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$638.361</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$118.875</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$519.486&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">19%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">MATIAS FLEN</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$648.777</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$240.218</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$408.559&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">37%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">FABIAN CONSTANZO</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$636.858</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$342.172</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$294.686&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">54%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">MATIAS GORMAZ</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$726.506</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$432.089</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$294.417&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">59%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">WILL JOSUE COCHE</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$513.697</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$226.083</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$287.614&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">44%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">FRANCISCO VILLALOBOS</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$544.610</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$327.718</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$216.892&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">60%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">RODRIGO ALEXIS FRIAS CASAS</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$210.748</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$210.748&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">0%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">HECTOR ARDIACA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$233.093</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$76.075</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$157.018&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">33%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">ABRAHAM BUKER</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$420.952</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$285.875</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$135.077&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">68%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">RODRIGO SALGADO</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$160.041</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$30.741</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$129.300&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">19%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">FABIAN ANDRES ROLDAN ORTIZ</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$168.841</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$70.108</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$98.733&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">42%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">ALEXANDER SANCHEZ HURTADO</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$85.001</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$85.001&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">0%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">PABLO CATALAN</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$81.404</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$893</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$80.511&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">1%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">WILL COCHE ROJAS</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$292.961</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$234.053</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$58.908&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">80%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">HUGO PARRA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$147.077</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$101.737</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$45.340&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">69%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">GABRIEL PINA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$245.894</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$221.426</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">&lt;span style="color:#dc2626;font-weight:700"&gt;$24.468&lt;/span&gt;</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">90%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">Toll</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">HENRY SAUL HINOJOSA BOADA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$243.094</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$243.094</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">IVAN PANTALEON</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$71.353</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$71.353</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">LORENZO VIANI</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Despedido&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$374.013</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$374.013</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr><tr class="gridjs-tr"><td data-column-id="conductor" class="gridjs-td" style="font-size: 11px;">LUISA MEZA</td><td data-column-id="estado" class="gridjs-td" style="font-size: 11px;">&lt;span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700"&gt;Activo&lt;/span&gt;</td><td data-column-id="facturado" class="gridjs-td" style="font-size: 11px;">$125.668</td><td data-column-id="cobrado" class="gridjs-td" style="font-size: 11px;">$125.668</td><td data-column-id="deuda" class="gridjs-td" style="font-size: 11px;">$0</td><td data-column-id="%Cobrado" class="gridjs-td" style="font-size: 11px;">100%</td><td data-column-id="tipoPrincipal" class="gridjs-td" style="font-size: 11px;">—</td></tr></tbody></table></div><div id="gridjs-temp" class="gridjs-temp"></div></div></div>
   </div>
 
   <!-- RECOMMENDED KPIS -->
@@ -344,7 +344,862 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<script>var __SNAPSHOT__={allDriverData:[{"driver":"RAIMUNDO BARRAZA","total":638361,"paid":118875,"status":"Fired","pending":519486,"pct":19,"byType":{"Toll":{"total":383016.6,"paid":71325},"Energy":{"total":191508.3,"paid":35662.5},"Reparation":{"total":63836.100000000006,"paid":11887.5}}},{"driver":"MATIAS FLEN","total":648777,"paid":240218,"status":"Active","pending":408559,"pct":37,"byType":{"Toll":{"total":389266.2,"paid":144130.8},"Energy":{"total":194633.1,"paid":72065.4},"Reparation":{"total":64877.700000000004,"paid":24021.800000000003}}},{"driver":"FABIAN CONSTANZO","total":636858,"paid":342172,"status":"Active","pending":294686,"pct":54,"byType":{"Toll":{"total":382114.8,"paid":205303.19999999998},"Energy":{"total":191057.4,"paid":102651.59999999999},"Reparation":{"total":63685.8,"paid":34217.200000000004}}},{"driver":"MATIAS GORMAZ","total":726506,"paid":432089,"status":"Active","pending":294417,"pct":59,"byType":{"Toll":{"total":435903.6,"paid":259253.4},"Energy":{"total":217951.8,"paid":129626.7},"Reparation":{"total":72650.6,"paid":43208.9}}},{"driver":"WILL JOSUE COCHE","total":513697,"paid":226083,"status":"Fired","pending":287614,"pct":44,"byType":{"Toll":{"total":308218.2,"paid":135649.8},"Energy":{"total":154109.1,"paid":67824.9},"Reparation":{"total":51369.700000000004,"paid":22608.300000000003}}},{"driver":"FRANCISCO VILLALOBOS","total":544610,"paid":327718,"status":"Active","pending":216892,"pct":60,"byType":{"Toll":{"total":326766,"paid":196630.8},"Energy":{"total":163383,"paid":98315.4},"Reparation":{"total":54461,"paid":32771.8}}},{"driver":"RODRIGO ALEXIS FRIAS CASAS","total":210748,"paid":0,"status":"Fired","pending":210748,"pct":0,"byType":{"Toll":{"total":126448.79999999999,"paid":0},"Energy":{"total":63224.399999999994,"paid":0},"Reparation":{"total":21074.800000000003,"paid":0}}},{"driver":"HECTOR ARDIACA","total":233093,"paid":76075,"status":"Active","pending":157018,"pct":33,"byType":{"Toll":{"total":139855.8,"paid":45645},"Energy":{"total":69927.9,"paid":22822.5},"Reparation":{"total":23309.300000000003,"paid":7607.5}}},{"driver":"ABRAHAM BUKER","total":420952,"paid":285875,"status":"Active","pending":135077,"pct":68,"byType":{"Toll":{"total":252571.19999999998,"paid":171525},"Energy":{"total":126285.59999999999,"paid":85762.5},"Reparation":{"total":42095.200000000004,"paid":28587.5}}},{"driver":"RODRIGO SALGADO","total":160041,"paid":30741,"status":"Active","pending":129300,"pct":19,"byType":{"Toll":{"total":96024.59999999999,"paid":18444.6},"Energy":{"total":48012.299999999996,"paid":9222.3},"Reparation":{"total":16004.1,"paid":3074.1000000000004}}},{"driver":"FABIAN ANDRES ROLDAN ORTIZ","total":168841,"paid":70108,"status":"Active","pending":98733,"pct":42,"byType":{"Toll":{"total":101304.59999999999,"paid":42064.799999999996},"Energy":{"total":50652.299999999996,"paid":21032.399999999998},"Reparation":{"total":16884.100000000002,"paid":7010.8}}},{"driver":"ALEXANDER SANCHEZ HURTADO","total":85001,"paid":0,"status":"Active","pending":85001,"pct":0,"byType":{"Toll":{"total":51000.6,"paid":0},"Energy":{"total":25500.3,"paid":0},"Reparation":{"total":8500.1,"paid":0}}},{"driver":"PABLO CATALAN","total":81404,"paid":893,"status":"Fired","pending":80511,"pct":1,"byType":{"Toll":{"total":48842.4,"paid":535.8},"Energy":{"total":24421.2,"paid":267.9},"Reparation":{"total":8140.400000000001,"paid":89.30000000000001}}},{"driver":"WILL COCHE ROJAS","total":292961,"paid":234053,"status":"Fired","pending":58908,"pct":80,"byType":{"Toll":{"total":175776.6,"paid":140431.8},"Energy":{"total":87888.3,"paid":70215.9},"Reparation":{"total":29296.100000000002,"paid":23405.300000000003}}},{"driver":"HUGO PARRA","total":147077,"paid":101737,"status":"Fired","pending":45340,"pct":69,"byType":{"Toll":{"total":88246.2,"paid":61042.2},"Energy":{"total":44123.1,"paid":30521.1},"Reparation":{"total":14707.7,"paid":10173.7}}},{"driver":"GABRIEL PINA","total":245894,"paid":221426,"status":"Active","pending":24468,"pct":90,"byType":{"Toll":{"total":147536.4,"paid":132855.6},"Energy":{"total":73768.2,"paid":66427.8},"Reparation":{"total":24589.4,"paid":22142.600000000002}}},{"driver":"HENRY SAUL HINOJOSA BOADA","total":243094,"paid":243094,"status":"Active","pending":0,"pct":100,"byType":{"Toll":{"total":145856.4,"paid":145856.4},"Energy":{"total":72928.2,"paid":72928.2},"Reparation":{"total":24309.4,"paid":24309.4}}},{"driver":"IVAN PANTALEON","total":71353,"paid":71353,"status":"Active","pending":0,"pct":100,"byType":{"Toll":{"total":42811.799999999996,"paid":42811.799999999996},"Energy":{"total":21405.899999999998,"paid":21405.899999999998},"Reparation":{"total":7135.3,"paid":7135.3}}},{"driver":"LORENZO VIANI","total":374013,"paid":374013,"status":"Fired","pending":0,"pct":100,"byType":{"Toll":{"total":224407.8,"paid":224407.8},"Energy":{"total":112203.9,"paid":112203.9},"Reparation":{"total":37401.3,"paid":37401.3}}},{"driver":"LUISA MEZA","total":125668,"paid":125668,"status":"Active","pending":0,"pct":100,"byType":{"Toll":{"total":75400.8,"paid":75400.8},"Energy":{"total":37700.4,"paid":37700.4},"Reparation":{"total":12566.800000000001,"paid":12566.800000000001}}}],lastDrivers:[{"driver":"RAIMUNDO BARRAZA","total":638361,"paid":118875,"status":"Fired","pending":519486,"pct":19,"byType":{"Toll":{"total":383016.6,"paid":71325},"Energy":{"total":191508.3,"paid":35662.5},"Reparation":{"total":63836.100000000006,"paid":11887.5}}},{"driver":"MATIAS FLEN","total":648777,"paid":240218,"status":"Active","pending":408559,"pct":37,"byType":{"Toll":{"total":389266.2,"paid":144130.8},"Energy":{"total":194633.1,"paid":72065.4},"Reparation":{"total":64877.700000000004,"paid":24021.800000000003}}},{"driver":"FABIAN CONSTANZO","total":636858,"paid":342172,"status":"Active","pending":294686,"pct":54,"byType":{"Toll":{"total":382114.8,"paid":205303.19999999998},"Energy":{"total":191057.4,"paid":102651.59999999999},"Reparation":{"total":63685.8,"paid":34217.200000000004}}},{"driver":"MATIAS GORMAZ","total":726506,"paid":432089,"status":"Active","pending":294417,"pct":59,"byType":{"Toll":{"total":435903.6,"paid":259253.4},"Energy":{"total":217951.8,"paid":129626.7},"Reparation":{"total":72650.6,"paid":43208.9}}},{"driver":"WILL JOSUE COCHE","total":513697,"paid":226083,"status":"Fired","pending":287614,"pct":44,"byType":{"Toll":{"total":308218.2,"paid":135649.8},"Energy":{"total":154109.1,"paid":67824.9},"Reparation":{"total":51369.700000000004,"paid":22608.300000000003}}},{"driver":"FRANCISCO VILLALOBOS","total":544610,"paid":327718,"status":"Active","pending":216892,"pct":60,"byType":{"Toll":{"total":326766,"paid":196630.8},"Energy":{"total":163383,"paid":98315.4},"Reparation":{"total":54461,"paid":32771.8}}},{"driver":"RODRIGO ALEXIS FRIAS CASAS","total":210748,"paid":0,"status":"Fired","pending":210748,"pct":0,"byType":{"Toll":{"total":126448.79999999999,"paid":0},"Energy":{"total":63224.399999999994,"paid":0},"Reparation":{"total":21074.800000000003,"paid":0}}},{"driver":"HECTOR ARDIACA","total":233093,"paid":76075,"status":"Active","pending":157018,"pct":33,"byType":{"Toll":{"total":139855.8,"paid":45645},"Energy":{"total":69927.9,"paid":22822.5},"Reparation":{"total":23309.300000000003,"paid":7607.5}}},{"driver":"ABRAHAM BUKER","total":420952,"paid":285875,"status":"Active","pending":135077,"pct":68,"byType":{"Toll":{"total":252571.19999999998,"paid":171525},"Energy":{"total":126285.59999999999,"paid":85762.5},"Reparation":{"total":42095.200000000004,"paid":28587.5}}},{"driver":"RODRIGO SALGADO","total":160041,"paid":30741,"status":"Active","pending":129300,"pct":19,"byType":{"Toll":{"total":96024.59999999999,"paid":18444.6},"Energy":{"total":48012.299999999996,"paid":9222.3},"Reparation":{"total":16004.1,"paid":3074.1000000000004}}},{"driver":"FABIAN ANDRES ROLDAN ORTIZ","total":168841,"paid":70108,"status":"Active","pending":98733,"pct":42,"byType":{"Toll":{"total":101304.59999999999,"paid":42064.799999999996},"Energy":{"total":50652.299999999996,"paid":21032.399999999998},"Reparation":{"total":16884.100000000002,"paid":7010.8}}},{"driver":"ALEXANDER SANCHEZ HURTADO","total":85001,"paid":0,"status":"Active","pending":85001,"pct":0,"byType":{"Toll":{"total":51000.6,"paid":0},"Energy":{"total":25500.3,"paid":0},"Reparation":{"total":8500.1,"paid":0}}},{"driver":"PABLO CATALAN","total":81404,"paid":893,"status":"Fired","pending":80511,"pct":1,"byType":{"Toll":{"total":48842.4,"paid":535.8},"Energy":{"total":24421.2,"paid":267.9},"Reparation":{"total":8140.400000000001,"paid":89.30000000000001}}},{"driver":"WILL COCHE ROJAS","total":292961,"paid":234053,"status":"Fired","pending":58908,"pct":80,"byType":{"Toll":{"total":175776.6,"paid":140431.8},"Energy":{"total":87888.3,"paid":70215.9},"Reparation":{"total":29296.100000000002,"paid":23405.300000000003}}},{"driver":"HUGO PARRA","total":147077,"paid":101737,"status":"Fired","pending":45340,"pct":69,"byType":{"Toll":{"total":88246.2,"paid":61042.2},"Energy":{"total":44123.1,"paid":30521.1},"Reparation":{"total":14707.7,"paid":10173.7}}},{"driver":"GABRIEL PINA","total":245894,"paid":221426,"status":"Active","pending":24468,"pct":90,"byType":{"Toll":{"total":147536.4,"paid":132855.6},"Energy":{"total":73768.2,"paid":66427.8},"Reparation":{"total":24589.4,"paid":22142.600000000002}}},{"driver":"HENRY SAUL HINOJOSA BOADA","total":243094,"paid":243094,"status":"Active","pending":0,"pct":100,"byType":{"Toll":{"total":145856.4,"paid":145856.4},"Energy":{"total":72928.2,"paid":72928.2},"Reparation":{"total":24309.4,"paid":24309.4}}},{"driver":"IVAN PANTALEON","total":71353,"paid":71353,"status":"Active","pending":0,"pct":100,"byType":{"Toll":{"total":42811.799999999996,"paid":42811.799999999996},"Energy":{"total":21405.899999999998,"paid":21405.899999999998},"Reparation":{"total":7135.3,"paid":7135.3}}},{"driver":"LORENZO VIANI","total":374013,"paid":374013,"status":"Fired","pending":0,"pct":100,"byType":{"Toll":{"total":224407.8,"paid":224407.8},"Energy":{"total":112203.9,"paid":112203.9},"Reparation":{"total":37401.3,"paid":37401.3}}},{"driver":"LUISA MEZA","total":125668,"paid":125668,"status":"Active","pending":0,"pct":100,"byType":{"Toll":{"total":75400.8,"paid":75400.8},"Energy":{"total":37700.4,"paid":37700.4},"Reparation":{"total":12566.800000000001,"paid":12566.800000000001}}}],lastPrevDrivers:null,lastByType:{"Toll":{"total":3200000,"paid":1800000},"Energy":{"total":1800000,"paid":1100000},"Reparation":{"total":600000,"paid":200000},"Administrative":{"total":200000,"paid":150000}},lastLiveMap:{"RAIMUNDO BARRAZA":519486,"MATIAS FLEN":408559,"FABIAN CONSTANZO":294686,"MATIAS GORMAZ":294417,"WILL JOSUE COCHE":287614,"FRANCISCO VILLALOBOS":216892,"RODRIGO ALEXIS FRIAS CASAS":210748,"HECTOR ARDIACA":157018,"ABRAHAM BUKER":135077,"RODRIGO SALGADO":129300,"FABIAN ANDRES ROLDAN ORTIZ":98733,"ALEXANDER SANCHEZ HURTADO":85001,"PABLO CATALAN":80511,"WILL COCHE ROJAS":58908,"HUGO PARRA":45340,"GABRIEL PINA":24468,"HENRY SAUL HINOJOSA BOADA":0,"IVAN PANTALEON":0,"LORENZO VIANI":0,"LUISA MEZA":0},fx:950};</script><script>
+/* ───────── CONSTANTS ───────── */
+const FOLDER_ID = '1Fd3sia5XyN1tXuk2pvQfbrIbmV_o-sKh';
+const MASTER_ID = '15yNGkyE1kkk8E0yiLLMmahz-G048vwgy2NWN8xYmiFw';
 
+const STATUS_MAP = {
+  'HENRY HINOJOSA':1,'HENRY SAUL HINOJOSA BOADA':1,
+  'RODRIGO SALGADO':1,'IVAN PANTALEON':1,
+  'ALEXANDER SANCHEZ HURTADO':1,'ALEXANDER SANCHEZ':1,
+  'FABIAN CONSTANZO':1,
+  'MATIAS GORMAZ':1,'MATIAS FLEN':1,'LUISA MEZA':1,
+  'FABIAN ROLDAN':1,'FABIAN ANDRES ROLDAN ORTIZ':1,
+  'ABRAHAM BUKER':1,'HECTOR ARDIACA':1,'GABRIEL PINA':1,
+  'FRANCISCO VILLALOBOS':1,
+  'RAIMUNDO BARRAZA':0,'PABLO CATALAN':0,
+  'RODRIGO ALEXIS FRIAS CASAS':0,'RODRIGO FRIAS':0,
+  'HUGO PARRA':0,'WILL COCHE ROJAS':0,'WILL COCHE':0,
+  'WILL JOSUE COCHE':0,'LORENZO VIANI':0,
+};
+
+const H_DATES = ['16-Abr','17-Abr','07-May','08-May'];
+const DRIVER_HIST = [
+  {n:'MATIAS FLEN',         d:[392019,385648,408559,408559]},
+  {n:'FABIAN CONSTANZO',    d:[145858, 80419,330584,294686]},
+  {n:'FRANCISCO VILLALOBOS',d:[ 57484, 95303,216892,216892]},
+  {n:'RODRIGO SALGADO',     d:[ 52042, 70222,129300,129300]},
+  {n:'MATIAS GORMAZ',       d:[ 90661, 68163,398417,294686]},
+  {n:'HECTOR ARDIACA',      d:[     0, 16420,173438,157018]},
+  {n:'FABIAN ROLDAN',       d:[     0,     0, 98733, 98733]},
+  {n:'ALEXANDER SANCHEZ',   d:[     0,     0, 85001, 85001]},
+  {n:'ABRAHAM BUKER',       d:[163039, 12135,135077,135077]},
+  {n:'LUISA MEZA',          d:[ 81772, 25202,     0,     0]},
+  {n:'GABRIEL PINA',        d:[     0,     0, 24468, 24468]},
+  {n:'IVAN PANTALEON',      d:[     0,     0, 42377,     0]},
+  {n:'HENRY HINOJOSA',      d:[     0,     0, 17744,     0]},
+];
+
+const W_HIST = [
+  {label:'16-Abr',total:44.62,active:52.13},
+  {label:'17-Abr',total:60.70,active:71.51},
+  {label:'07-May',total:56.99,active:68.77},
+  {label:'08-May',total:58.24,active:72.43},
+];
+
+/* ───────── TRANSLATIONS ───────── */
+const TRANSLATIONS = {
+  es: {
+    title:'🚗 Reporte Semanal — Deudas Flota GoCab',
+    refresh:'Actualizar datos',
+    loading:'Buscando archivos en Google Drive...',
+    'kpi.charged':'Total Facturado','kpi.charged.sub':'Todos los cobros emitidos',
+    'kpi.paid':'Total Cobrado','kpi.paid.sub':'Pagos recibidos',
+    'kpi.pending_kpi':'Deuda Pendiente','kpi.pending_kpi.sub':'Saldo por cobrar',
+    'kpi.open':'Cobros Abiertos',
+    'kpi.active':'Deuda Conductores Activos',
+    'kpi.fired_kpi':'Deuda Conductores Despedidos',
+    'kpi.open.sub.fn':(n)=>`${n} conductores con saldo`,
+    'kpi.active.sub.fn':(n)=>`${n} activos con deuda`,
+    'kpi.fired.sub.fn':(n)=>`${n} despedidos con saldo`,
+    'bar.total':'Cobranza Total','bar.active':'Cobranza Solo Activos',
+    'bar.weekly':'Tasa Cobranza Semanal Neta',
+    'bar.weekly.sub':'Cobrado período actual / Facturado período actual',
+    'bar.fired':'Exposición Deuda Despedidos',
+    'bar.prev.fn':(p)=>`prev período: ${p}%`,
+    'bar.nochange':'→ Sin cambio',
+    'chart.recovery.title':'📈 Evolución Semanal de Cobranza',
+    'chart.recovery.note':'Datos históricos (16-Abr → 08-May) extraídos del maestro "Control de Flota" · Punto actual calculado desde el último export de bills',
+    'chart.type.title':'🗂 Deuda Pendiente por Tipo',
+    'chart.type.note':'Distribución del saldo sin cobrar según categoría',
+    'chart.line.total':'Cobranza Total (%)','chart.line.active':'Cobranza Activos (%)',
+    'chart.today':'Hoy',
+    'evol.title':'📊 Evolución de Deuda por Conductor Activo',
+    'evol.note':'Deuda pendiente en cada snapshot. Rojo = aumentó · Verde = disminuyó. Columna "Hoy" calculada del último export en Drive.',
+    'evol.col.driver':'Conductor','evol.col.today':'Hoy (Live)',
+    'evol.col.today.sub':'Último export','evol.col.varTotal':'Var. Total',
+    'evol.nochange':'Sin cambio',
+    'evol.source':'Control de Flota',
+    'fired.title':'⚠️ Deuda Irrecuperable — Conductores Despedidos',
+    'fcard.detail.fn':(tot,paid,pct)=>`Facturado ${tot} · Cobrado ${paid} · ${pct}%`,
+    'detail.title':'📋 Detalle por Conductor',
+    'detail.tab.all':'Todos','detail.tab.active':'Activos',
+    'detail.tab.fired':'Despedidos','detail.tab.pending':'Con Deuda',
+    'detail.col.driver':'Conductor','detail.col.status':'Estado',
+    'detail.col.charged':'Facturado','detail.col.paid':'Cobrado',
+    'detail.col.debt':'Deuda','detail.col.pct':'% Cobrado',
+    'detail.col.toptype':'Tipo Principal',
+    'status.active':'Activo','status.fired':'Despedido',
+    'pending_word':'pendiente',
+    'rec.title':'💡 KPIs Recomendados',
+    'rec.dso.title':'DSO — Days Sales Outstanding',
+    'rec.dso.p.fn':(dso)=>`Días promedio hasta el pago. Fórmula: (Deuda Pendiente / Facturación Total) × 30. Meta: &lt;21 días. Hoy se estima en <strong id="dso-val">${dso}</strong> días.`,
+    'rec.weekly.title':'🟡 Tasa Cobranza Semanal Neta',
+    'rec.weekly.p':'Cobrado en el período actual ÷ facturado en el mismo período. Mide si la cobranza mejora en tiempo real, independiente del histórico acumulado.',
+    'rec.aging.title':'% Deuda Vencida por Tramo',
+    'rec.aging.p':'Clasificar en 0–30 días, 31–60 días, +60 días. Prioriza cobranza urgente y detecta quién necesita plan de pago antes de llegar a incobrable.',
+    'rec.irrecov.title':'🔴 Incobrable Proyectado (Despedidos)',
+    'rec.irrecov.p.fn':(val)=>`Rastrear la deuda de despedidos como riesgo financiero. Meta: reducirla un 10% semanal vía plan de pago o recupero de garantía. Hoy: <strong id="inc-val">${val}</strong>`,
+    'rec.top3.title':'Concentración de Riesgo (Top 3)',
+    'rec.top3.p.fn':(val)=>`% de la deuda total concentrada en los 3 mayores deudores. Si supera 50%, hay riesgo de concentración. Hoy: <strong id="top3-val">${val}</strong>`,
+    'rec.eff.title':'🟡 Eficiencia por Tipo de Cobro',
+    'rec.eff.p':'Tasa de cobranza separada por Toll, Energía y Reparación. Los peajes tienen baja cobranza; la energía varía por consumo. Permite campañas focalizadas.',
+  },
+  en: {
+    title:'🚗 Weekly Report — GoCab Fleet Debts',
+    refresh:'Refresh data',
+    loading:'Searching files in Google Drive...',
+    'kpi.charged':'Total Billed','kpi.charged.sub':'All issued charges',
+    'kpi.paid':'Total Collected','kpi.paid.sub':'Payments received',
+    'kpi.pending_kpi':'Pending Debt','kpi.pending_kpi.sub':'Outstanding balance',
+    'kpi.open':'Open Charges',
+    'kpi.active':'Active Drivers Debt',
+    'kpi.fired_kpi':'Fired Drivers Debt',
+    'kpi.open.sub.fn':(n)=>`${n} drivers with balance`,
+    'kpi.active.sub.fn':(n)=>`${n} active with debt`,
+    'kpi.fired.sub.fn':(n)=>`${n} fired with balance`,
+    'bar.total':'Total Collection Rate','bar.active':'Active Drivers Rate',
+    'bar.weekly':'Net Weekly Collection Rate',
+    'bar.weekly.sub':'Collected current period / Billed current period',
+    'bar.fired':'Fired Drivers Exposure',
+    'bar.prev.fn':(p)=>`prev period: ${p}%`,
+    'bar.nochange':'→ No change',
+    'chart.recovery.title':'📈 Weekly Collection Evolution',
+    'chart.recovery.note':'Historical data (Apr-16 → May-8) from "Fleet Control" master · Current point from latest bill export',
+    'chart.type.title':'🗂 Pending Debt by Type',
+    'chart.type.note':'Distribution of outstanding balance by category',
+    'chart.line.total':'Total Collection (%)','chart.line.active':'Active Collection (%)',
+    'chart.today':'Today',
+    'evol.title':'📊 Debt Evolution by Active Driver',
+    'evol.note':'Pending debt at each snapshot. Red = increased · Green = decreased. "Today" column from latest Drive export.',
+    'evol.col.driver':'Driver','evol.col.today':'Today (Live)',
+    'evol.col.today.sub':'Latest export','evol.col.varTotal':'Total Var.',
+    'evol.nochange':'No change',
+    'evol.source':'Fleet Control',
+    'fired.title':'⚠️ Unrecoverable Debt — Fired Drivers',
+    'fcard.detail.fn':(tot,paid,pct)=>`Billed ${tot} · Paid ${paid} · ${pct}%`,
+    'detail.title':'📋 Driver Detail',
+    'detail.tab.all':'All','detail.tab.active':'Active',
+    'detail.tab.fired':'Fired','detail.tab.pending':'With Debt',
+    'detail.col.driver':'Driver','detail.col.status':'Status',
+    'detail.col.charged':'Billed','detail.col.paid':'Paid',
+    'detail.col.debt':'Debt','detail.col.pct':'% Collected',
+    'detail.col.toptype':'Main Type',
+    'status.active':'Active','status.fired':'Fired',
+    'pending_word':'pending',
+    'rec.title':'💡 Recommended KPIs',
+    'rec.dso.title':'DSO — Days Sales Outstanding',
+    'rec.dso.p.fn':(dso)=>`Average days to payment. Formula: (Pending / Total Billed) × 30. Target: &lt;21 days. Currently estimated at <strong id="dso-val">${dso}</strong> days.`,
+    'rec.weekly.title':'🟡 Net Weekly Collection Rate',
+    'rec.weekly.p':'Collected in current period ÷ billed in same period. Measures whether collection improves in real time, independent of accumulated history.',
+    'rec.aging.title':'% Overdue Debt by Aging',
+    'rec.aging.p':'Classify into 0–30 days, 31–60 days, +60 days. Prioritizes urgent collection and detects who needs a payment plan before becoming uncollectible.',
+    'rec.irrecov.title':'🔴 Projected Unrecoverable (Fired)',
+    'rec.irrecov.p.fn':(val)=>`Track fired driver debt as financial risk. Target: reduce by 10% weekly via payment plan or guarantee recovery. Today: <strong id="inc-val">${val}</strong>`,
+    'rec.top3.title':'Risk Concentration (Top 3)',
+    'rec.top3.p.fn':(val)=>`% of total debt in the 3 largest debtors. If over 50%, there is concentration risk. Today: <strong id="top3-val">${val}</strong>`,
+    'rec.eff.title':'🟡 Efficiency by Charge Type',
+    'rec.eff.p':'Collection rate separately for Toll, Energy and Repair. Tolls have low collection; energy varies by consumption. Enables targeted campaigns.',
+  },
+  ru: {
+    title:'🚗 Еженедельный отчёт — Долги автопарка GoCab',
+    refresh:'Обновить данные',
+    loading:'Поиск файлов в Google Drive...',
+    'kpi.charged':'Выставлено','kpi.charged.sub':'Все выставленные счета',
+    'kpi.paid':'Собрано','kpi.paid.sub':'Полученные платежи',
+    'kpi.pending_kpi':'Задолженность','kpi.pending_kpi.sub':'Остаток к оплате',
+    'kpi.open':'Открытые счета',
+    'kpi.active':'Долг активных водителей',
+    'kpi.fired_kpi':'Долг уволенных водителей',
+    'kpi.open.sub.fn':(n)=>`${n} водителей с остатком`,
+    'kpi.active.sub.fn':(n)=>`${n} активных с долгом`,
+    'kpi.fired.sub.fn':(n)=>`${n} уволенных с остатком`,
+    'bar.total':'Общий сбор','bar.active':'Сбор (активные)',
+    'bar.weekly':'Чистый недельный сбор',
+    'bar.weekly.sub':'Собрано тек. период / Выставлено тек. период',
+    'bar.fired':'Риск долга уволенных',
+    'bar.prev.fn':(p)=>`пред. период: ${p}%`,
+    'bar.nochange':'→ Без изменений',
+    'chart.recovery.title':'📈 Еженедельная динамика сбора',
+    'chart.recovery.note':'История (16 апр → 8 мая) из таблицы "Control de Flota" · Текущая точка из последнего экспорта',
+    'chart.type.title':'🗂 Задолженность по типу',
+    'chart.type.note':'Распределение остатка по категориям',
+    'chart.line.total':'Общий сбор (%)','chart.line.active':'Сбор активных (%)',
+    'chart.today':'Сегодня',
+    'evol.title':'📊 Динамика долга по активным водителям',
+    'evol.note':'Задолженность на каждом снимке. Красный = выросла · Зелёный = снизилась. Колонка "Сегодня" — последний экспорт.',
+    'evol.col.driver':'Водитель','evol.col.today':'Сегодня (Live)',
+    'evol.col.today.sub':'Последний экспорт','evol.col.varTotal':'Изм. итого',
+    'evol.nochange':'Без изменений',
+    'evol.source':'Control de Flota',
+    'fired.title':'⚠️ Безнадёжный долг — Уволенные водители',
+    'fcard.detail.fn':(tot,paid,pct)=>`Выставлено ${tot} · Оплачено ${paid} · ${pct}%`,
+    'detail.title':'📋 Детализация по водителю',
+    'detail.tab.all':'Все','detail.tab.active':'Активные',
+    'detail.tab.fired':'Уволенные','detail.tab.pending':'С долгом',
+    'detail.col.driver':'Водитель','detail.col.status':'Статус',
+    'detail.col.charged':'Выставлено','detail.col.paid':'Оплачено',
+    'detail.col.debt':'Долг','detail.col.pct':'% оплачено',
+    'detail.col.toptype':'Осн. тип',
+    'status.active':'Активный','status.fired':'Уволен',
+    'pending_word':'остаток',
+    'rec.title':'💡 Рекомендуемые KPI',
+    'rec.dso.title':'DSO — Дней непогашенной дебиторки',
+    'rec.dso.p.fn':(dso)=>`Среднее число дней до оплаты. Формула: (Долг / Выставлено) × 30. Цель: &lt;21 дня. Сейчас приблизительно <strong id="dso-val">${dso}</strong> дней.`,
+    'rec.weekly.title':'🟡 Чистый недельный коэффициент сбора',
+    'rec.weekly.p':'Собрано за текущий период ÷ выставлено за тот же период. Показывает улучшение сбора в реальном времени, независимо от накопленной истории.',
+    'rec.aging.title':'% Просроченного долга по срокам',
+    'rec.aging.p':'Делить на 0–30 дней, 31–60 дней, +60 дней. Приоритизирует срочный сбор и выявляет тех, кому нужен план платежей.',
+    'rec.irrecov.title':'🔴 Прогноз безнадёжного долга (уволенные)',
+    'rec.irrecov.p.fn':(val)=>`Отслеживать долг уволенных как финансовый риск. Цель: снижать на 10% еженедельно. Сейчас: <strong id="inc-val">${val}</strong>`,
+    'rec.top3.title':'Концентрация риска (Топ-3)',
+    'rec.top3.p.fn':(val)=>`% общего долга у 3 крупнейших должников. Если >50% — риск концентрации. Сейчас: <strong id="top3-val">${val}</strong>`,
+    'rec.eff.title':'🟡 Эффективность по типу счёта',
+    'rec.eff.p':'Ставка сбора отдельно по Toll, Энергии и Ремонту. Позволяет проводить целевые кампании по каждой категории.',
+  }
+};
+
+/* ───────── STATE ───────── */
+let currentLang = 'es';
+let currentCurrency = 'CLP';
+let fxRate = 950;
+let fxFetched = false;
+let lastDrivers = null, lastPrevDrivers = null, lastByType = null, lastLiveMap = null;
+let currentFilter = 'all', allDriverData = [], recovChart = null, typeChart = null, djsGrid = null;
+
+/* ───────── I18N ───────── */
+function T(key){ return TRANSLATIONS[currentLang][key] || TRANSLATIONS['es'][key] || key; }
+
+function setLang(lang){
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  ['es','en','ru'].forEach(l => {
+    document.getElementById('btn-lang-'+l).classList.toggle('active', l===lang);
+  });
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    const v = T(k);
+    if(typeof v === 'string') el.textContent = v;
+  });
+  if(lastDrivers) rerenderAll();
+}
+
+/* ───────── CURRENCY ───────── */
+function fmt(n){
+  if(currentCurrency === 'USD'){
+    return 'US$' + Math.round(Math.abs(n) / fxRate).toLocaleString('en-US');
+  }
+  return '$' + Math.abs(Math.round(n)).toLocaleString('es-CL');
+}
+const clp = n => '$' + Math.abs(Math.round(n)).toLocaleString('es-CL');
+
+async function fetchFX(){
+  try {
+    const res = await window.cowork.callMcpTool('mcp__workspace__web_fetch',
+      {url:'https://open.er-api.com/v6/latest/USD'});
+    if(res){
+      const text = typeof res === 'string' ? res : JSON.stringify(res);
+      const m = text.match(/"CLP"\s*:\s*([\d.]+)/);
+      if(m){
+        fxRate = parseFloat(m[1]);
+        fxFetched = true;
+      }
+    }
+    document.getElementById('fx-rate').textContent = '1 USD = ' + Math.round(fxRate) + ' CLP';
+  } catch(e) {
+    document.getElementById('fx-rate').textContent = '~' + fxRate + ' CLP/USD';
+  }
+}
+
+async function setCurrency(c){
+  currentCurrency = c;
+  ['CLP','USD'].forEach(x => {
+    const btn = document.getElementById('btn-cur-'+x);
+    btn.classList.toggle('active-green', x===c);
+    btn.classList.toggle('active', false);
+  });
+  document.getElementById('btn-cur-'+c).classList.add('active-green');
+  if(c==='USD' && !fxFetched){
+    document.getElementById('fx-rate').textContent = 'cargando FX...';
+    await fetchFX();
+  }
+  rerenderAll();
+}
+
+function rerenderAll(){
+  if(!lastDrivers) return;
+  const {totPct, actPct} = renderKPIs(lastDrivers, lastPrevDrivers);
+  renderRecovery(totPct, actPct);
+  if(lastByType) renderTypeChart(lastByType);
+  if(lastLiveMap) renderEvolTable(lastLiveMap);
+  renderFired(lastDrivers);
+  renderDetailTable();
+  renderRec();
+}
+
+/* ───────── UTILS ───────── */
+const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+
+function normName(s){
+  return s.trim().toUpperCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/\s+/g,' ');
+}
+
+function getStatus(raw){
+  const n = normName(raw);
+  for(const [k,v] of Object.entries(STATUS_MAP)){
+    if(normName(k)===n) return v?'Active':'Fired';
+  }
+  const words = n.split(' ');
+  for(const [k,v] of Object.entries(STATUS_MAP)){
+    const kn = normName(k);
+    if(words.every(w=>kn.includes(w))) return v?'Active':'Fired';
+    if(kn.split(' ').slice(-1)[0]===words.slice(-1)[0]) return v?'Active':'Fired';
+  }
+  return 'Unknown';
+}
+
+function parseBills(raw){
+  const txt = raw.replace(/^Sheet1\s+/,'').trim();
+  const records = [];
+  const parts = txt.split(/ (?=BILL-\d)/);
+  for(let i=1; i<parts.length; i++){
+    const line = parts[i].trim();
+    const m = line.match(/^(BILL-[^,]+),([^,]+),([^,]+),([^,]+),([^,]*),[^,]*,(\d+),(\d+),(.+),(\d{4}-\d{2}-\d{2})/);
+    if(m){
+      records.push({
+        ref:m[1],type:m[2].trim(),status:m[3].trim(),
+        vehicle:m[4].trim(),driver:m[5].trim(),
+        amount:+m[6]||0,paid:+m[7]||0,
+        desc:m[8].trim(),date:m[9]
+      });
+    }
+  }
+  return records;
+}
+
+function aggregateDrivers(bills){
+  const map = {};
+  for(const b of bills){
+    const k = b.driver||'Desconocido';
+    if(!map[k]) map[k]={driver:k,total:0,paid:0,status:getStatus(k),byType:{}};
+    map[k].total += b.amount;
+    map[k].paid  += b.paid;
+    if(!map[k].byType[b.type]) map[k].byType[b.type]={total:0,paid:0};
+    map[k].byType[b.type].total += b.amount;
+    map[k].byType[b.type].paid  += b.paid;
+  }
+  return Object.values(map).map(d=>({...d,pending:d.total-d.paid,pct:pct(d.paid,d.total)}))
+    .sort((a,b)=>b.pending-a.pending);
+}
+
+function buildLiveMap(drivers){
+  const m = {};
+  for(const d of drivers) m[normName(d.driver)] = d.pending;
+  return m;
+}
+
+function findLive(name, liveMap){
+  const n = normName(name);
+  if(liveMap[n]!==undefined) return liveMap[n];
+  const last = n.split(' ').slice(-1)[0];
+  for(const [k,v] of Object.entries(liveMap)){
+    if(k.includes(last)||k.split(' ')[0]===n.split(' ')[0]) return v;
+  }
+  return null;
+}
+
+/* ───────── RENDER KPIs ───────── */
+function renderKPIs(drivers, prevDrivers){
+  const tot  = drivers.reduce((s,d)=>s+d.total,0);
+  const paid = drivers.reduce((s,d)=>s+d.paid,0);
+  const pend = tot - paid;
+  const openCount = drivers.filter(d=>d.pending>0).length;
+  const active = drivers.filter(d=>d.status==='Active');
+  const fired  = drivers.filter(d=>d.status==='Fired');
+  const actDebt = active.reduce((s,d)=>s+d.pending,0);
+  const firDebt = fired.reduce((s,d)=>s+d.pending,0);
+
+  document.getElementById('k-charged').textContent = fmt(tot);
+  document.getElementById('k-paid').textContent    = fmt(paid);
+  document.getElementById('k-pending').textContent = fmt(pend);
+  document.getElementById('k-open').textContent    = openCount;
+  document.getElementById('k-open-sub').textContent = T('kpi.open.sub.fn')(openCount);
+  document.getElementById('k-active').textContent  = fmt(actDebt);
+  document.getElementById('k-active-sub').textContent = T('kpi.active.sub.fn')(active.filter(d=>d.pending>0).length);
+  document.getElementById('k-fired').textContent   = fmt(firDebt);
+  document.getElementById('k-fired-sub').textContent = T('kpi.fired.sub.fn')(fired.filter(d=>d.pending>0).length);
+
+  const totPct = pct(paid,tot);
+  const actPaid = active.reduce((s,d)=>s+d.paid,0);
+  const actTot  = active.reduce((s,d)=>s+d.total,0);
+  const actPct  = pct(actPaid,actTot);
+  const firExp  = pend>0 ? pct(firDebt,pend) : 0;
+  const weeklyPct = actPct;
+
+  let prevTot=null, prevAct=null, prevFir=null, prevWeekly=null;
+  if(prevDrivers && prevDrivers.length){
+    const pt = prevDrivers.reduce((s,d)=>s+d.total,0);
+    const pp2= prevDrivers.reduce((s,d)=>s+d.paid,0);
+    prevTot = pct(pp2,pt);
+    const pa  = prevDrivers.filter(d=>d.status==='Active');
+    const paP = pa.reduce((s,d)=>s+d.paid,0);
+    const paT = pa.reduce((s,d)=>s+d.total,0);
+    prevAct = pct(paP,paT);
+    const pf = prevDrivers.filter(d=>d.status==='Fired');
+    const pfPend = pf.reduce((s,d)=>s+d.pending,0);
+    const ptPend = pt-pp2;
+    prevFir = ptPend>0 ? pct(pfPend,ptPend) : 0;
+    prevWeekly = prevAct;
+  } else {
+    prevTot=58.24; prevAct=72.43; prevFir=39; prevWeekly=72;
+  }
+
+  setBar('b-total','p-total','d-total','prev-total',totPct,prevTot,'bar-blue',T('bar.prev.fn')(prevTot));
+  setBar('b-active','p-active','d-active','prev-active',actPct,prevAct,'bar-green',T('bar.prev.fn')(prevAct));
+  setBar('b-weekly','p-weekly','d-weekly','prev-weekly',weeklyPct,prevWeekly,'bar-orange',T('bar.weekly.sub'));
+  setBar('b-fired','p-fired','d-fired','prev-fired',firExp,prevFir,'bar-red',T('bar.prev.fn')(prevFir));
+
+  return {totPct, actPct, pend, firDebt, tot, drivers};
+}
+
+function setBar(bId,pId,dId,prevId,cur,prev,cls,prevLabel){
+  document.getElementById(bId).style.width = Math.min(cur,100)+'%';
+  document.getElementById(pId).textContent = cur+'%';
+  const delta = cur-(prev||0);
+  const del = document.getElementById(dId);
+  if(prev===null){del.textContent='—';del.className='rcard-delta delta-flat';}
+  else if(Math.abs(delta)<0.5){del.textContent=T('bar.nochange');del.className='rcard-delta delta-flat';}
+  else if(delta>0){del.textContent='↑ +'+delta.toFixed(1)+'pp';del.className='rcard-delta delta-up';}
+  else{del.textContent='↓ '+delta.toFixed(1)+'pp';del.className='rcard-delta delta-down';}
+  document.getElementById(prevId).textContent = prevLabel;
+}
+
+/* ───────── RECOMMENDED KPIs ───────── */
+function renderRec(){
+  const drivers = lastDrivers || [];
+  const tot  = drivers.reduce((s,d)=>s+d.total,0);
+  const paid = drivers.reduce((s,d)=>s+d.paid,0);
+  const pend = tot-paid;
+  const fired = drivers.filter(d=>d.status==='Fired');
+  const firDebt = fired.reduce((s,d)=>s+d.pending,0);
+  const dso = tot>0 ? Math.round((pend/tot)*30) : 0;
+  const sorted = [...drivers].sort((a,b)=>b.pending-a.pending);
+  const top3 = sorted.slice(0,3).reduce((s,d)=>s+d.pending,0);
+  const top3pct = pend>0 ? Math.round(top3/pend*100) : 0;
+
+  document.getElementById('rec-grid').innerHTML = `
+    <div class="reckpi">
+      <h4>${T('rec.dso.title')}</h4>
+      <p>${T('rec.dso.p.fn')(dso)}</p>
+    </div>
+    <div class="reckpi y">
+      <h4>${T('rec.weekly.title')}</h4>
+      <p>${T('rec.weekly.p')}</p>
+    </div>
+    <div class="reckpi">
+      <h4>${T('rec.aging.title')}</h4>
+      <p>${T('rec.aging.p')}</p>
+    </div>
+    <div class="reckpi r">
+      <h4>${T('rec.irrecov.title')}</h4>
+      <p>${T('rec.irrecov.p.fn')(fmt(firDebt))}</p>
+    </div>
+    <div class="reckpi">
+      <h4>${T('rec.top3.title')}</h4>
+      <p>${T('rec.top3.p.fn')(top3pct+'%')}</p>
+    </div>
+    <div class="reckpi y">
+      <h4>${T('rec.eff.title')}</h4>
+      <p>${T('rec.eff.p')}</p>
+    </div>`;
+}
+
+/* ───────── CHARTS ───────── */
+function renderRecovery(totPct, actPct){
+  const labels = [...W_HIST.map(w=>w.label), T('chart.today')];
+  const totData = [...W_HIST.map(w=>w.total), totPct];
+  const actData = [...W_HIST.map(w=>w.active), actPct];
+  if(recovChart) recovChart.destroy();
+  const ctx = document.getElementById('chart-recovery').getContext('2d');
+  recovChart = new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:T('chart.line.total'),data:totData,borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.1)',tension:.35,fill:true,pointRadius:5,pointBackgroundColor:'#4f46e5',borderWidth:2},
+      {label:T('chart.line.active'),data:actData,borderColor:'#059669',backgroundColor:'rgba(5,150,105,.08)',tension:.35,fill:true,pointRadius:5,pointBackgroundColor:'#059669',borderWidth:2,borderDash:[5,3]}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},
+    scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+const doughnutCenterPlugin = {
+  id:'doughCenter',
+  afterDraw(chart){
+    if(chart.config.type!=='doughnut') return;
+    const {ctx,chartArea:ca} = chart;
+    const cx = (ca.left+ca.right)/2, cy = (ca.top+ca.bottom)/2;
+    const tot = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+    ctx.save();
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='bold 12px -apple-system,sans-serif'; ctx.fillStyle='#1a1a2e';
+    ctx.fillText(fmt(tot),cx,cy-6);
+    ctx.font='10px -apple-system,sans-serif'; ctx.fillStyle='#94a3b8';
+    ctx.fillText(T('pending_word'),cx,cy+9);
+    ctx.restore();
+  }
+};
+const doughnutPctPlugin = {
+  id:'doughPct',
+  afterDatasetsDraw(chart){
+    if(chart.config.type!=='doughnut') return;
+    const {ctx} = chart;
+    const meta = chart.getDatasetMeta(0);
+    const tot = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+    meta.data.forEach((arc,j)=>{
+      const val = chart.data.datasets[0].data[j];
+      const p = Math.round(val/tot*100);
+      if(p<7) return;
+      const angle = (arc.startAngle+arc.endAngle)/2;
+      const r = (arc.innerRadius+arc.outerRadius)/2;
+      ctx.save();
+      ctx.font='bold 11px sans-serif'; ctx.fillStyle='#fff';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(p+'%', arc.x+r*Math.cos(angle), arc.y+r*Math.sin(angle));
+      ctx.restore();
+    });
+  }
+};
+Chart.register(doughnutCenterPlugin, doughnutPctPlugin);
+
+function renderTypeChart(byType){
+  const types = Object.keys(byType);
+  const pends = types.map(t=>Math.max(0,byType[t].total-byType[t].paid));
+  const cols = ['#4f46e5','#f59e0b','#ef4444','#10b981','#8b5cf6'];
+  const total = pends.reduce((a,b)=>a+b,0);
+  if(typeChart) typeChart.destroy();
+  const ctx = document.getElementById('chart-type').getContext('2d');
+  typeChart = new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:types,datasets:[{data:pends,backgroundColor:cols.slice(0,types.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{
+      legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},
+      tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt(c.raw)+' ('+pct(c.raw,total)+'%)'}}
+    }}
+  });
+}
+
+/* ───────── EVOLUTION TABLE ───────── */
+function renderEvolTable(liveMap){
+  const head = document.getElementById('evol-head');
+  const body = document.getElementById('evol-body');
+
+  head.innerHTML = '<tr>'
+    +`<th style="text-align:left">${T('evol.col.driver')}</th>`
+    +H_DATES.map(d=>`<th>${d}<span class="th-source">${T('evol.source')}</span></th>`).join('')
+    +`<th class="live-col">${T('evol.col.today')}<span class="th-source">${T('evol.col.today.sub')}</span></th>`
+    +`<th>${T('evol.col.varTotal')}</th>`
+    +'</tr>';
+
+  let rows = '';
+  for(const row of DRIVER_HIST){
+    const live = findLive(row.n, liveMap);
+    let cells = '<td>'+row.n+'</td>';
+    for(let i=0; i<row.d.length; i++){
+      cells += renderCell(row.d[i], i>0?row.d[i-1]:null, false);
+    }
+    cells += renderCell(live, row.d[row.d.length-1], true);
+
+    const last  = live!==null ? live : row.d[row.d.length-1];
+    const first = row.d.find(v=>v>0)||0;
+    const totalDelta = last-first;
+    const totalPctV  = first>0 ? Math.round((totalDelta/first)*100) : 0;
+    cells += `<td style="text-align:right">`
+      +(totalDelta>0 ? `<span style="color:#dc2626;font-size:11px;font-weight:700">↑ ${fmt(totalDelta)}</span>`
+        :totalDelta<0 ? `<span style="color:#059669;font-size:11px;font-weight:700">↓ ${fmt(Math.abs(totalDelta))}</span>`
+        :`<span style="color:#94a3b8;font-size:11px">${T('evol.nochange')}</span>`)
+      +`<div style="font-size:9px;color:#94a3b8">${totalDelta!==0?totalPctV+'%':''}</div></td>`;
+
+    rows += `<tr>${cells}</tr>`;
+  }
+  body.innerHTML = rows;
+}
+
+function renderCell(val, prev, isLive){
+  const cls = isLive?'live-col':'';
+  if(val===null) return `<td class="${cls}"><span class="cell-zero">—</span></td>`;
+  if(val===0)    return `<td class="${cls}"><span class="cell-zero">$0</span></td>`;
+
+  let badge = 'cell-neutral', deltaHtml = '';
+  if(prev!==null && prev!==undefined){
+    const diff = val-prev;
+    if(diff>500){
+      badge='cell-hi';
+      deltaHtml=`<div class="delta-cell delta-red">↑ +${fmt(diff)}</div>`;
+    } else if(diff<-500){
+      badge='cell-lo';
+      deltaHtml=`<div class="delta-cell delta-grn">↓ ${fmt(Math.abs(diff))}</div>`;
+    }
+  }
+  return `<td class="${cls}"><span class="${badge}">${fmt(val)}</span>${deltaHtml}</td>`;
+}
+
+/* ───────── FIRED SECTION ───────── */
+function renderFired(drivers){
+  const fired = drivers.filter(d=>d.status==='Fired'&&d.pending>0).sort((a,b)=>b.pending-a.pending);
+  const sec = document.getElementById('fired-section');
+  if(!fired.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('fired-grid').innerHTML = fired.map(d=>`
+    <div class="fcard">
+      <div class="fcard-name">${d.driver}</div>
+      <div class="fcard-debt">${fmt(d.pending)}</div>
+      <div class="fcard-detail">${T('fcard.detail.fn')(fmt(d.total),fmt(d.paid),d.pct)}</div>
+    </div>`).join('');
+}
+
+/* ───────── DETAIL TABLE ───────── */
+function setFilter(f, btn){
+  currentFilter = f;
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderDetailTable();
+}
+
+function renderDetailTable(){
+  let data = allDriverData;
+  if(currentFilter==='active')  data = data.filter(d=>d.status==='Active');
+  else if(currentFilter==='fired')   data = data.filter(d=>d.status==='Fired');
+  else if(currentFilter==='pending') data = data.filter(d=>d.pending>0);
+
+  const rows = data.map(d=>[
+    d.driver,
+    d.status==='Active'
+      ? `<span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700">${T('status.active')}</span>`
+      : `<span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700">${T('status.fired')}</span>`,
+    fmt(d.total), fmt(d.paid),
+    d.pending>0 ? `<span style="color:#dc2626;font-weight:700">${fmt(d.pending)}</span>` : '$0',
+    d.pct+'%',
+    topType(d)
+  ]);
+
+  const wrap = document.getElementById('tbl-wrap');
+  wrap.innerHTML = '';
+  if(djsGrid){try{djsGrid.destroy();}catch(e){}}
+  djsGrid = new gridjs.Grid({
+    columns:[
+      {name:T('detail.col.driver'),width:'22%'},
+      {name:T('detail.col.status'),width:'8%'},
+      {name:T('detail.col.charged'),width:'12%'},
+      {name:T('detail.col.paid'),width:'12%'},
+      {name:T('detail.col.debt'),width:'13%'},
+      {name:T('detail.col.pct'),width:'9%'},
+      {name:T('detail.col.toptype'),width:'13%'}
+    ],
+    data:rows, sort:true, search:true,
+    style:{th:{background:'#f8fafc',fontWeight:'700',fontSize:'11px'},td:{fontSize:'11px'}}
+  }).render(wrap);
+}
+
+function topType(d){
+  let mx=0,tp='—';
+  for(const [t,v] of Object.entries(d.byType)){
+    const p2 = v.total-v.paid;
+    if(p2>mx){mx=p2;tp=t;}
+  }
+  return tp;
+}
+
+/* ───────── LOAD DATA ───────── */
+function setStatus(msg, type){
+  const b = document.getElementById('sbar');
+  b.className = 'sbar '+type;
+  document.getElementById('spin').style.display = type==='loading'?'block':'none';
+  document.getElementById('sbar-txt').textContent = msg;
+}
+
+async function loadData(){
+  document.getElementById('refresh-btn').disabled = true;
+  setStatus(T('loading'), 'loading');
+  if(!fxFetched) fetchFX();
+  try{
+    const topRes = await window.cowork.callMcpTool(
+      'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__search_files',
+      {query:`parentId = '${FOLDER_ID}'`, pageSize:20});
+
+    let xlsFiles = [];
+    if(topRes && topRes.files){
+      xlsFiles = topRes.files.filter(f=>f.title&&f.title.endsWith('.xlsx'));
+      for(const item of topRes.files){
+        if(item.mimeType&&item.mimeType.includes('folder')){
+          const sub = await window.cowork.callMcpTool(
+            'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__search_files',
+            {query:`parentId = '${item.id}'`, pageSize:20});
+          if(sub&&sub.files) xlsFiles = [...xlsFiles,...sub.files.filter(f=>f.title&&f.title.endsWith('.xlsx'))];
+        }
+      }
+    }
+    if(!xlsFiles.length) throw new Error('No se encontraron archivos .xlsx en la carpeta');
+    xlsFiles.sort((a,b)=>new Date(b.modifiedTime||b.createdTime)-new Date(a.modifiedTime||a.createdTime));
+
+    setStatus(`Leyendo ${xlsFiles[0].title}...`, 'loading');
+    const curRes = await window.cowork.callMcpTool(
+      'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__read_file_content',
+      {fileId:xlsFiles[0].id});
+    if(!curRes||!curRes.fileContent) throw new Error('No se pudo leer el archivo actual');
+    const curBills = parseBills(curRes.fileContent);
+
+    let prevDrivers = null;
+    if(xlsFiles.length>1){
+      setStatus(`Leyendo período anterior (${xlsFiles[1].title})...`, 'loading');
+      const prevRes = await window.cowork.callMcpTool(
+        'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__read_file_content',
+        {fileId:xlsFiles[1].id});
+      if(prevRes&&prevRes.fileContent){
+        prevDrivers = aggregateDrivers(parseBills(prevRes.fileContent));
+      }
+    }
+
+    allDriverData = aggregateDrivers(curBills);
+    const liveMap = buildLiveMap(allDriverData);
+    const byType = {};
+    for(const b of curBills){
+      if(!byType[b.type]) byType[b.type]={total:0,paid:0};
+      byType[b.type].total += b.amount;
+      byType[b.type].paid  += b.paid;
+    }
+
+    lastDrivers = allDriverData;
+    lastPrevDrivers = prevDrivers;
+    lastByType = byType;
+    lastLiveMap = liveMap;
+
+    const {totPct, actPct} = renderKPIs(allDriverData, prevDrivers);
+    renderRecovery(totPct, actPct);
+    renderTypeChart(byType);
+    renderEvolTable(liveMap);
+    renderFired(allDriverData);
+    renderDetailTable();
+    renderRec();
+
+    const now = new Date().toLocaleString('es-CL');
+    document.getElementById('last-updated').textContent =
+      `Actualizado: ${now} · ${xlsFiles[0].title} · ${curBills.length} cobros`;
+    setStatus(`✓ ${curBills.length} cobros cargados · ${allDriverData.length} conductores · Comparando con ${xlsFiles[1]?.title||'histórico'}`, 'ok');
+  }catch(err){
+    setStatus('Error: '+err.message+' — mostrando datos históricos','error');
+    renderFallback();
+  }
+  document.getElementById('refresh-btn').disabled = false;
+}
+
+function renderFallback(){
+  const fb = [
+    {driver:'MATIAS FLEN',total:648777,paid:240218,status:'Active'},
+    {driver:'FABIAN CONSTANZO',total:636858,paid:342172,status:'Active'},
+    {driver:'RAIMUNDO BARRAZA',total:638361,paid:118875,status:'Fired'},
+    {driver:'WILL JOSUE COCHE',total:513697,paid:226083,status:'Fired'},
+    {driver:'FRANCISCO VILLALOBOS',total:544610,paid:327718,status:'Active'},
+    {driver:'RODRIGO ALEXIS FRIAS CASAS',total:210748,paid:0,status:'Fired'},
+    {driver:'HECTOR ARDIACA',total:233093,paid:76075,status:'Active'},
+    {driver:'ABRAHAM BUKER',total:420952,paid:285875,status:'Active'},
+    {driver:'RODRIGO SALGADO',total:160041,paid:30741,status:'Active'},
+    {driver:'FABIAN ANDRES ROLDAN ORTIZ',total:168841,paid:70108,status:'Active'},
+    {driver:'ALEXANDER SANCHEZ HURTADO',total:85001,paid:0,status:'Active'},
+    {driver:'PABLO CATALAN',total:81404,paid:893,status:'Fired'},
+    {driver:'WILL COCHE ROJAS',total:292961,paid:234053,status:'Fired'},
+    {driver:'HUGO PARRA',total:147077,paid:101737,status:'Fired'},
+    {driver:'GABRIEL PINA',total:245894,paid:221426,status:'Active'},
+    {driver:'HENRY SAUL HINOJOSA BOADA',total:243094,paid:243094,status:'Active'},
+    {driver:'IVAN PANTALEON',total:71353,paid:71353,status:'Active'},
+    {driver:'LORENZO VIANI',total:374013,paid:374013,status:'Fired'},
+    {driver:'LUISA MEZA',total:125668,paid:125668,status:'Active'},
+    {driver:'MATIAS GORMAZ',total:726506,paid:432089,status:'Active'},
+  ].map(d=>({...d,pending:d.total-d.paid,pct:pct(d.paid,d.total),byType:{Toll:{total:d.total*.6,paid:d.paid*.6},Energy:{total:d.total*.3,paid:d.paid*.3},Reparation:{total:d.total*.1,paid:d.paid*.1}}}))
+   .sort((a,b)=>b.pending-a.pending);
+
+  allDriverData = fb;
+  const liveMap = buildLiveMap(fb);
+  lastDrivers = fb; lastPrevDrivers = null;
+  lastByType = {Toll:{total:3200000,paid:1800000},Energy:{total:1800000,paid:1100000},Reparation:{total:600000,paid:200000},Administrative:{total:200000,paid:150000}};
+  lastLiveMap = liveMap;
+
+  const {totPct, actPct} = renderKPIs(fb, null);
+  renderRecovery(totPct, actPct);
+  renderTypeChart(lastByType);
+  renderEvolTable(liveMap);
+  renderFired(fb);
+  renderDetailTable();
+  renderRec();
+  document.getElementById('last-updated').textContent = 'Datos históricos (08-May-2026) · Presiona Actualizar para datos en vivo';
+}
+
+/* ───────── PUBLISH TO PORTAL ───────── */
+async function publishToPortal() {
+  const btn = document.getElementById('publish-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Capturando...';
+  try {
+    const canvases = Array.from(document.querySelectorAll('canvas'));
+    const canvasImages = canvases.map((c, i) => {
+      c.dataset.snapshotIdx = String(i);
+      try { return c.toDataURL('image/png'); } catch(e) { return ''; }
+    });
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('canvas').forEach(c => {
+      const idx = parseInt(c.dataset.snapshotIdx || '0');
+      const img = document.createElement('img');
+      img.src = canvasImages[idx] || '';
+      img.style.maxWidth = '100%';
+      const h = c.getAttribute('height');
+      if (h) img.style.height = h + 'px';
+      c.parentNode.replaceChild(img, c);
+    });
+    // Remove only the cowork meta script; keep CDN + inline dashboard scripts
+    clone.querySelectorAll('script[type="application/json"]').forEach(s => s.remove());
+    // Inject snapshot data and replace startup loadData() with a snapshot render
+    const mainScript = clone.querySelector('script:not([src]):not([type])');
+    if (mainScript) {
+      const dataScript = document.createElement('script');
+      dataScript.textContent = 'var __SNAPSHOT__={allDriverData:' + JSON.stringify(allDriverData) + ',lastDrivers:' + JSON.stringify(lastDrivers) + ',lastPrevDrivers:' + JSON.stringify(lastPrevDrivers) + ',lastByType:' + JSON.stringify(lastByType) + ',lastLiveMap:' + JSON.stringify(lastLiveMap) + ',fx:' + fxRate + '};';
+      mainScript.parentNode.insertBefore(dataScript, mainScript);
+      mainScript.textContent = mainScript.textContent.replace(
+        /\}loadData\(\);?\s*$/,
+        '}// SNAPSHOT MODE — render from embedded data\nif(window.__SNAPSHOT__){allDriverData=__SNAPSHOT__.allDriverData;lastDrivers=__SNAPSHOT__.lastDrivers;lastPrevDrivers=__SNAPSHOT__.lastPrevDrivers;lastByType=__SNAPSHOT__.lastByType;lastLiveMap=__SNAPSHOT__.lastLiveMap;fxRate=__SNAPSHOT__.fx;setLang(currentLang);rerenderAll();renderDetailTable();}\n'
+      );
+    }
+    // Only disable Refresh and Publish buttons — leave lang/curr/filters interactive
+    const rfBtnC = clone.querySelector('#refresh-btn');
+    const pbBtnC = clone.querySelector('#publish-btn');
+    if (rfBtnC) rfBtnC.setAttribute('disabled', 'disabled');
+    if (pbBtnC) { pbBtnC.setAttribute('disabled', 'disabled'); pbBtnC.textContent = '✓ Publicado'; }
+    const attrs = Array.from(clone.attributes).map(a => ' ' + a.name + '="' + a.value + '"').join('');
+    const ts = new Date().toLocaleString('es-CL');
+    const banner = '<div style="background:#059669;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-family:sans-serif;font-weight:500">✔ Snapshot publicado el ' + ts + '</div>';
+    const html = '<!DOCTYPE html>\n<html' + attrs + '>\n' + clone.innerHTML.replace(/(\<body[^>]*>)/, '$1' + banner) + '\n</html>';
+
+    btn.textContent = '⏳ Guardando en Drive...';
+    const driveResult = await window.cowork.callMcpTool(
+      'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__create_file',
+      { title: '__gocab_snapshot_fleet__.html', textContent: html, contentMimeType: 'text/html', disableConversionToGoogleType: true }
+    );
+    if (!driveResult || driveResult.error) throw new Error('Drive error: ' + JSON.stringify(driveResult).slice(0, 60));
+
+    btn.textContent = '⏳ Publicando...';
+    await window.cowork.runScheduledTask('gocab-publish-fleet');
+
+    btn.textContent = '✓ Publicado — deploy ~1 min';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '⬆ Publicar al portal'; }, 7000);
+  } catch(e) {
+    console.error('Publish error:', e);
+    btn.textContent = '✗ ' + String(e.message || e).slice(0, 50);
+    setTimeout(() => { btn.disabled = false; btn.textContent = '⬆ Publicar al portal'; }, 8000);
+  }
+}// SNAPSHOT MODE — render from embedded data
+if(window.__SNAPSHOT__){allDriverData=__SNAPSHOT__.allDriverData;lastDrivers=__SNAPSHOT__.lastDrivers;lastPrevDrivers=__SNAPSHOT__.lastPrevDrivers;lastByType=__SNAPSHOT__.lastByType;lastLiveMap=__SNAPSHOT__.lastLiveMap;fxRate=__SNAPSHOT__.fx;setLang(currentLang);rerenderAll();renderDetailTable();}
+</script>
 
 
 </body>
