@@ -135,13 +135,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   </div>
   <div class="actions">
     <div class="lang-switch" id="langSwitch">
-      <button data-lang="es" class="active">ES</button>
-      <button data-lang="en">EN</button>
-      <button data-lang="ru">RU</button>
+      <button data-lang="es" class="active" onclick="setLanguage('es')">ES</button>
+      <button data-lang="en" onclick="setLanguage('en')">EN</button>
+      <button data-lang="ru" onclick="setLanguage('ru')">RU</button>
     </div>
     <div class="curr-switch" id="currSwitch" title="Tipo de cambio: 1 USD = 893 CLP">
-      <button data-curr="CLP" class="active">CLP</button>
-      <button data-curr="USD">USD</button>
+      <button data-curr="CLP" class="active" onclick="setCurrency('CLP')">CLP</button>
+      <button data-curr="USD" onclick="setCurrency('USD')">USD</button>
     </div>
     <a class="btn secondary" data-i18n="openSheet" href="https://docs.google.com/spreadsheets/d/19DJ_O0CoNir8_ESgnct_fo-z_q0mbxzjejHvQ0A_ZtY/edit" target="_blank" rel="noopener">Abrir Sheet</a>
     <a class="btn secondary" data-i18n="sumupFolder" href="https://drive.google.com/drive/folders/1IR7ETMtvoi-LF4AXbfalbO2th_b_ImNi" target="_blank" rel="noopener">Carpeta SumUp</a>
