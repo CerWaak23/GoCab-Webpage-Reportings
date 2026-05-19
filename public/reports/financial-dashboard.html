@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head><meta name="viewport" content="width=device-width,initial-scale=1">
 
 
 <meta charset="utf-8">
 <title>Reporte Financiero — GoCab</title>
-
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js" integrity="sha384-/XXDzxe4FsGiAe50i/u9pY/Vy/uX654MHB1xoc1BJNnH1WXHhqHga9g3q5tF4gj7" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css" integrity="sha384-jZvDSsmGB9oGGT/4l9bHXGoAv1OxvG/cFmSo0dZaSqmBgvQTKDBFAMftlXTmMbNW" crossorigin="anonymous">
 <style>
 :root { color-scheme: light; }
@@ -125,7 +125,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .cov-note { margin-top: 12px; padding: 10px 14px; background: #f3f4f6; border-radius: 6px; font-size: 12px; color: #4b5563; line-height: 1.5; }
 </style>
 </head>
-<body><div style="background:#059669;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-family:sans-serif;font-weight:500">✔ Snapshot publicado el 19-05-2026, 12:15:52 p. m.</div>
+<body><div style="background:#059669;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-family:sans-serif;font-weight:500">✔ Snapshot publicado el 19-05-2026, 1:25:46 p. m.</div>
 
 <div class="header">
   <div>
@@ -134,26 +134,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   </div>
   <div class="actions">
     <div class="lang-switch" id="langSwitch">
-      <button data-lang="es" class="active" disabled="disabled">ES</button>
-      <button data-lang="en" disabled="disabled">EN</button>
-      <button data-lang="ru" disabled="disabled">RU</button>
+      <button data-lang="es" class="active">ES</button>
+      <button data-lang="en">EN</button>
+      <button data-lang="ru">RU</button>
     </div>
     <div class="curr-switch" id="currSwitch" title="Tipo de cambio: 1 USD = 893 CLP">
-      <button data-curr="CLP" class="active" disabled="disabled">CLP</button>
-      <button data-curr="USD" disabled="disabled">USD</button>
+      <button data-curr="CLP" class="active">CLP</button>
+      <button data-curr="USD">USD</button>
     </div>
     <a class="btn secondary" data-i18n="openSheet" href="https://docs.google.com/spreadsheets/d/19DJ_O0CoNir8_ESgnct_fo-z_q0mbxzjejHvQ0A_ZtY/edit" target="_blank" rel="noopener">Abrir Sheet</a>
     <a class="btn secondary" data-i18n="sumupFolder" href="https://drive.google.com/drive/folders/1IR7ETMtvoi-LF4AXbfalbO2th_b_ImNi" target="_blank" rel="noopener">Carpeta SumUp</a>
     <button id="refreshBtn" class="btn" onclick="loadAll()" data-i18n="refresh" disabled="disabled">Refrescar</button>
-    <button id="publishBtn" class="btn" style="background:#059669;" onclick="publishToPortal()" disabled="disabled">⏳ Capturando...</button>
-    <span class="last-update" id="lastUpdate">Actualizado: 19-05-2026, 12:15:50 p.&nbsp;m.</span>
+    <button id="publishBtn" class="btn" style="background:#059669;" onclick="publishToPortal()" disabled="disabled">✓ Publicado</button>
+    <span class="last-update" id="lastUpdate">Actualizado: 19-05-2026, 1:25:41 p.&nbsp;m.</span>
   </div>
 </div>
 
 <div class="scope-bar">
   <span class="scope-tag" id="scopeTag">Solo operación local</span>
   <label class="switch">
-    <input type="checkbox" id="includeIntl" onchange="onScopeChange()" disabled="disabled">
+    <input type="checkbox" id="includeIntl" onchange="onScopeChange()">
     <span data-i18n="includeIntl">Incluir pagos desde el exterior (Bank: International)</span>
   </label>
   <span class="scope-info" data-i18n="scopeInfo">Solo afecta KPIs de cash flow (Saldo Santander, Total Egresos). Las tablas de gastos siempre incluyen todo.</span>
@@ -254,22 +254,1121 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   <div class="card-sub" data-i18n="tableSub">Las transferencias internas SumUp→Banco se marcan en amarillo y no se suman a ingresos.</div>
   <div class="filters">
     <label data-i18n="filterMonth">Mes:</label>
-    <select id="filterMonth" disabled="disabled"><option value="">Todos</option><option value="December 2025">Diciembre 2025</option><option value="January 2026">Enero 2026</option><option value="February 2026">Febrero 2026</option><option value="March 2026">Marzo 2026</option><option value="April 2026">Abril 2026</option><option value="May 2026">Mayo 2026</option></select>
+    <select id="filterMonth"><option value="">Todos</option><option value="December 2025">Diciembre 2025</option><option value="January 2026">Enero 2026</option><option value="February 2026">Febrero 2026</option><option value="March 2026">Marzo 2026</option><option value="April 2026">Abril 2026</option><option value="May 2026">Mayo 2026</option></select>
     <label data-i18n="filterStatus">Estado:</label>
-    <select id="filterStatus" disabled="disabled"><option value="">Todos</option><option value="Paid">Paid</option><option value="Pending">Pending</option><option value="Transfer">Transfer</option></select>
+    <select id="filterStatus"><option value="">Todos</option><option value="Paid">Paid</option><option value="Pending">Pending</option><option value="Transfer">Transfer</option></select>
     <label data-i18n="filterEntity">Entidad:</label>
-    <select id="filterEntity" disabled="disabled"><option value="">Todas</option><option value="GoCab Holding">GoCab Holding</option><option value="GoCab SPA">GoCab SPA</option><option value="GoCab SPA	Santander">GoCab SPA	Santander</option><option value="—">—</option></select>
+    <select id="filterEntity"><option value="">Todas</option><option value="GoCab Holding">GoCab Holding</option><option value="GoCab SPA">GoCab SPA</option><option value="GoCab SPA	Santander">GoCab SPA	Santander</option><option value="—">—</option></select>
     <label data-i18n="filterBank">Banco:</label>
-    <select id="filterBank" disabled="disabled"><option value="">Todos</option><option value="International">International</option><option value="Reimbursement">Reimbursement</option><option value="Renta4">Renta4</option><option value="Santander">Santander</option><option value="SumUp">SumUp</option><option value="—">—</option></select>
+    <select id="filterBank"><option value="">Todos</option><option value="International">International</option><option value="Reimbursement">Reimbursement</option><option value="Renta4">Renta4</option><option value="Santander">Santander</option><option value="SumUp">SumUp</option><option value="—">—</option></select>
     <label data-i18n="filterSearch">Buscar:</label>
-    <input id="filterText" type="text" data-i18n-placeholder="filterSearchPlaceholder" placeholder="Proveedor, descripción..." disabled="disabled">
-    <button class="btn secondary" onclick="resetFilters()" data-i18n="filterClear" disabled="disabled">Limpiar</button>
+    <input id="filterText" type="text" data-i18n-placeholder="filterSearchPlaceholder" placeholder="Proveedor, descripción...">
+    <button class="btn secondary" onclick="resetFilters()" data-i18n="filterClear">Limpiar</button>
     <span class="expense-filter-chip" id="expenseFilterChip"></span>
   </div>
-  <div id="paymentsTable"><div role="complementary" class="gridjs gridjs-container" style="width: 100%;"><div class="gridjs-wrapper" style="height: auto;"><table role="grid" class="gridjs-table" style="white-space: normal; height: auto;"><thead class="gridjs-thead"><tr class="gridjs-tr"><th data-column-id="fecha" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 119px; width: 119px;"><div class="gridjs-th-content">Fecha</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="mes" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 111px; width: 111px;"><div class="gridjs-th-content">Mes</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="proveedor" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 140px; width: 140px;"><div class="gridjs-th-content">Proveedor</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="descripción" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 236px; width: 236px;"><div class="gridjs-th-content">Descripción</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="ingreso" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 130px; width: 130px;"><div class="gridjs-th-content">Ingreso</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="egreso" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 120px; width: 120px;"><div class="gridjs-th-content">Egreso</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="estado" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 104px; width: 104px;"><div class="gridjs-th-content">Estado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="entidad" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 98px; width: 98px;"><div class="gridjs-th-content">Entidad</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th><th data-column-id="banco" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 118px; width: 118px;"><div class="gridjs-th-content">Banco</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral" disabled="disabled"></button></th></tr></thead><tbody class="gridjs-tbody"><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/4/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>GoCab Hoding</span></td><td data-column-id="descripción" class="gridjs-td">Capital Investment</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in">$9.157.000</span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out"></span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-transfer">Transfer</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/16/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>GoCab Hoding</span></td><td data-column-id="descripción" class="gridjs-td">Capital Investment</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in">$136.875.000</span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out"></span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-transfer">Transfer</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Neuralis Cowork</span></td><td data-column-id="descripción" class="gridjs-td">Cowork</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$359.856</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069637</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069783</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A963TS069824</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A965TS069730</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069766</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A965TS069758</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069752</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069654</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069671</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A965TS069727</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/29/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>WiseTrack MiGPS</span></td><td data-column-id="descripción" class="gridjs-td">GPS Install Batch 1</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$141.717</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/9/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">Lawyer BackOffice / Legal Representation</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$318.913</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/9/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">HR Previred / Joy Salary</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$544.412</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/9/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>FINANCIALS LIMITADA</span></td><td data-column-id="descripción" class="gridjs-td">Accounting Services</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$182.236</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/21/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">Car Plates and other administrative relates</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$1.434.980</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/21/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>Neuralis Cowork</span></td><td data-column-id="descripción" class="gridjs-td">Cowork</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$395.556</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/21/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">Drivers contract elaboration</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$278.158</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">Lawyer BackOffice / Legal Representation</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$300.458</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>FINANCIALS LIMITADA</span></td><td data-column-id="descripción" class="gridjs-td">Accounting Services</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$171.690</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>WiseTrack MiGPS</span></td><td data-column-id="descripción" class="gridjs-td">Telematics Service</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$155.950</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>Previred</span></td><td data-column-id="descripción" class="gridjs-td">Joy Imposiciones</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$237.734</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/2/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>AZ Legal</span></td><td data-column-id="descripción" class="gridjs-td">UAF Inscription</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$829.355</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr></tbody></table></div><div class="gridjs-footer"><div class="gridjs-pagination"><div role="status" aria-live="polite" class="gridjs-summary" title="Page 1 of 6">Showing <b>1</b> to <b>25</b> of <b>129</b> results</div><div class="gridjs-pages"><button tabindex="0" role="button" disabled="disabled" title="Previous" aria-label="Previous" class="">Previous</button><button tabindex="0" role="button" class="gridjs-currentPage" title="Page 1" aria-label="Page 1" disabled="disabled">1</button><button tabindex="0" role="button" class="" title="Page 2" aria-label="Page 2" disabled="disabled">2</button><button tabindex="0" role="button" class="" title="Page 3" aria-label="Page 3" disabled="disabled">3</button><button tabindex="-1" class="gridjs-spread" disabled="disabled">...</button><button tabindex="0" role="button" title="Page 6" aria-label="Page 6" disabled="disabled">6</button><button tabindex="0" role="button" title="Next" aria-label="Next" class="" disabled="disabled">Next</button></div></div></div><div id="gridjs-temp" class="gridjs-temp"></div></div></div>
+  <div id="paymentsTable"><div role="complementary" class="gridjs gridjs-container" style="width: 100%;"><div class="gridjs-wrapper" style="height: auto;"><table role="grid" class="gridjs-table" style="white-space: normal; height: auto;"><thead class="gridjs-thead"><tr class="gridjs-tr"><th data-column-id="fecha" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 119px; width: 119px;"><div class="gridjs-th-content">Fecha</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="mes" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 111px; width: 111px;"><div class="gridjs-th-content">Mes</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="proveedor" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 140px; width: 140px;"><div class="gridjs-th-content">Proveedor</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="descripción" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 236px; width: 236px;"><div class="gridjs-th-content">Descripción</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="ingreso" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 130px; width: 130px;"><div class="gridjs-th-content">Ingreso</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="egreso" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 120px; width: 120px;"><div class="gridjs-th-content">Egreso</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="estado" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 104px; width: 104px;"><div class="gridjs-th-content">Estado</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="entidad" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 98px; width: 98px;"><div class="gridjs-th-content">Entidad</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th><th data-column-id="banco" class="gridjs-th gridjs-th-sort" tabindex="0" style="min-width: 118px; width: 118px;"><div class="gridjs-th-content">Banco</div><button tabindex="-1" aria-label="Sort column ascending" title="Sort column ascending" class="gridjs-sort gridjs-sort-neutral"></button></th></tr></thead><tbody class="gridjs-tbody"><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/4/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>GoCab Hoding</span></td><td data-column-id="descripción" class="gridjs-td">Capital Investment</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in">$9.157.000</span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out"></span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-transfer">Transfer</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/16/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>GoCab Hoding</span></td><td data-column-id="descripción" class="gridjs-td">Capital Investment</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in">$136.875.000</span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out"></span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-transfer">Transfer</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Neuralis Cowork</span></td><td data-column-id="descripción" class="gridjs-td">Cowork</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$359.856</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069637</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069783</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A963TS069824</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A965TS069730</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069766</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A965TS069758</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069752</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069654</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A964TS069671</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/22/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">CHASSIS:LDP43A965TS069727</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$13.581.600</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">12/29/2025</td><td data-column-id="mes" class="gridjs-td">Diciembre 2025</td><td data-column-id="proveedor" class="gridjs-td"><span>WiseTrack MiGPS</span></td><td data-column-id="descripción" class="gridjs-td">GPS Install Batch 1</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$141.717</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/9/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">Lawyer BackOffice / Legal Representation</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$318.913</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/9/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">HR Previred / Joy Salary</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$544.412</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/9/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>FINANCIALS LIMITADA</span></td><td data-column-id="descripción" class="gridjs-td">Accounting Services</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$182.236</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/21/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>Bruno Fritsch</span></td><td data-column-id="descripción" class="gridjs-td">Car Plates and other administrative relates</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$1.434.980</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/21/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>Neuralis Cowork</span></td><td data-column-id="descripción" class="gridjs-td">Cowork</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$395.556</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">1/21/2026</td><td data-column-id="mes" class="gridjs-td">Enero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">Drivers contract elaboration</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$278.158</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab SPA</td><td data-column-id="banco" class="gridjs-td"><span>Renta4</span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>IZQUIERDO CONSULTORES</span></td><td data-column-id="descripción" class="gridjs-td">Lawyer BackOffice / Legal Representation</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$300.458</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>FINANCIALS LIMITADA</span></td><td data-column-id="descripción" class="gridjs-td">Accounting Services</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$171.690</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>WiseTrack MiGPS</span></td><td data-column-id="descripción" class="gridjs-td">Telematics Service</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$155.950</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/6/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>Previred</span></td><td data-column-id="descripción" class="gridjs-td">Joy Imposiciones</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$237.734</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr><tr class="gridjs-tr"><td data-column-id="fecha" class="gridjs-td">2/2/2026</td><td data-column-id="mes" class="gridjs-td">Febrero 2026</td><td data-column-id="proveedor" class="gridjs-td"><span>AZ Legal</span></td><td data-column-id="descripción" class="gridjs-td">UAF Inscription</td><td data-column-id="ingreso" class="gridjs-td"><span><span class="cash-in"></span></span></td><td data-column-id="egreso" class="gridjs-td"><span><span class="cash-out">$829.355</span></span></td><td data-column-id="estado" class="gridjs-td"><span><span class="status-pill status-paid">Paid</span></span></td><td data-column-id="entidad" class="gridjs-td">GoCab Holding</td><td data-column-id="banco" class="gridjs-td"><span><span class="bank-international">International ✈</span></span></td></tr></tbody></table></div><div class="gridjs-footer"><div class="gridjs-pagination"><div role="status" aria-live="polite" class="gridjs-summary" title="Page 1 of 6">Showing <b>1</b> to <b>25</b> of <b>129</b> results</div><div class="gridjs-pages"><button tabindex="0" role="button" disabled="" title="Previous" aria-label="Previous" class="">Previous</button><button tabindex="0" role="button" class="gridjs-currentPage" title="Page 1" aria-label="Page 1">1</button><button tabindex="0" role="button" class="" title="Page 2" aria-label="Page 2">2</button><button tabindex="0" role="button" class="" title="Page 3" aria-label="Page 3">3</button><button tabindex="-1" class="gridjs-spread">...</button><button tabindex="0" role="button" title="Page 6" aria-label="Page 6">6</button><button tabindex="0" role="button" title="Next" aria-label="Next" class="">Next</button></div></div></div><div id="gridjs-temp" class="gridjs-temp"></div></div></div>
 </div>
 
+<script>var __SNAPSHOT__={rows:[{"date":"12/4/2025","month":"December 2025","supplier":"GoCab Hoding","description":"Capital Investment","docNumber":"1691878","cashIn":9157000,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/16/2025","month":"December 2025","supplier":"GoCab Hoding","description":"Capital Investment","docNumber":"1697067","cashIn":136875000,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Neuralis Cowork","description":"Cowork","docNumber":"000005190","cashIn":0,"cashOut":359856,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A964TS069637","docNumber":"785522","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A964TS069783","docNumber":"785524","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A963TS069824","docNumber":"785526","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A965TS069730","docNumber":"785529","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A964TS069766","docNumber":"785532","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A965TS069758","docNumber":"785534","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A964TS069752","docNumber":"785538","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A964TS069654","docNumber":"785542","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A964TS069671","docNumber":"785545","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/22/2025","month":"December 2025","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A965TS069727","docNumber":"785521","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"12/29/2025","month":"December 2025","supplier":"WiseTrack MiGPS","description":"GPS Install Batch 1","docNumber":"28408","cashIn":0,"cashOut":141717,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"1/9/2026","month":"January 2026","supplier":"IZQUIERDO CONSULTORES","description":"Lawyer BackOffice / Legal Representation","docNumber":"6807","cashIn":0,"cashOut":318913,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"1/9/2026","month":"January 2026","supplier":"IZQUIERDO CONSULTORES","description":"HR Previred / Joy Salary","docNumber":"6810","cashIn":0,"cashOut":544412,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"1/9/2026","month":"January 2026","supplier":"FINANCIALS LIMITADA","description":"Accounting Services","docNumber":"3973","cashIn":0,"cashOut":182236,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"1/21/2026","month":"January 2026","supplier":"Bruno Fritsch","description":"Car Plates and other administrative relates","docNumber":"789756 111052","cashIn":0,"cashOut":1434980,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"1/21/2026","month":"January 2026","supplier":"Neuralis Cowork","description":"Cowork","docNumber":"5248","cashIn":0,"cashOut":395556,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"1/21/2026","month":"January 2026","supplier":"IZQUIERDO CONSULTORES","description":"Drivers contract elaboration","docNumber":"6812","cashIn":0,"cashOut":278158,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/6/2026","month":"February 2026","supplier":"IZQUIERDO CONSULTORES","description":"Lawyer BackOffice / Legal Representation","docNumber":"6839","cashIn":0,"cashOut":300458,"status":"Paid","entity":"GoCab Holding","bank":"International"},{"date":"2/6/2026","month":"February 2026","supplier":"FINANCIALS LIMITADA","description":"Accounting Services","docNumber":"4099","cashIn":0,"cashOut":171690,"status":"Paid","entity":"GoCab Holding","bank":"International"},{"date":"2/6/2026","month":"February 2026","supplier":"WiseTrack MiGPS","description":"Telematics Service","docNumber":"28476","cashIn":0,"cashOut":155950,"status":"Paid","entity":"GoCab Holding","bank":"International"},{"date":"2/6/2026","month":"February 2026","supplier":"Previred","description":"Joy Imposiciones","docNumber":"PREVIRED01","cashIn":0,"cashOut":237734,"status":"Paid","entity":"GoCab Holding","bank":"International"},{"date":"2/2/2026","month":"February 2026","supplier":"AZ Legal","description":"UAF Inscription","docNumber":"68495","cashIn":0,"cashOut":829355,"status":"Paid","entity":"GoCab Holding","bank":"International"},{"date":"2/17/2026","month":"February 2026","supplier":"GoCab Hoding","description":"Capital Investment","docNumber":"1748114","cashIn":129922500,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A961TS069658","docNumber":"796279","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A961TS069742","docNumber":"796282","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A960TS069800","docNumber":"796284","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A960TS069781","docNumber":"796285","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A961TS069756","docNumber":"796286","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A960TS069859","docNumber":"796288","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A962TS069751","docNumber":"796290","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A961TS069840","docNumber":"796291","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A961TS070129","docNumber":"796295","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"2/24/2026","month":"February 2026","supplier":"Bruno Fritsch","description":"CHASSIS:LDP43A960TS069943","docNumber":"796315","cashIn":0,"cashOut":13581600,"status":"Paid","entity":"GoCab SPA","bank":"Renta4"},{"date":"3/5/2026","month":"March 2026","supplier":"WiseTrack MiGPS","description":"GPS Install - Batch2","docNumber":"28540","cashIn":0,"cashOut":141952,"status":"Paid","entity":"GoCab SPA","bank":"International"},{"date":"3/5/2026","month":"March 2026","supplier":"AVO","description":"Tolls VO - January","docNumber":"2949280","cashIn":0,"cashOut":44770,"status":"Paid","entity":"GoCab SPA","bank":"International"},{"date":"3/5/2026","month":"March 2026","supplier":"R78","description":"Tolls R78 - January","docNumber":"2620503","cashIn":0,"cashOut":7021,"status":"Paid","entity":"GoCab SPA","bank":"International"},{"date":"3/5/2026","month":"March 2026","supplier":"AVS","description":"Tolls VS - January","docNumber":"14486288","cashIn":0,"cashOut":13541,"status":"Paid","entity":"GoCab SPA","bank":"International"},{"date":"3/13/2026","month":"March 2026","supplier":"Indrive","description":"Subsidy Batch 1","docNumber":"1768354","cashIn":27000000,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"Renta4"},{"date":"3/17/2026","month":"March 2026","supplier":"Neuralis Cowork","description":"Cowork","docNumber":"5329","cashIn":0,"cashOut":395400,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/17/2026","month":"March 2026","supplier":"Bruno Fritsch","description":"Car Plates","docNumber":"797400","cashIn":0,"cashOut":416500,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/17/2026","month":"March 2026","supplier":"Bruno Fritsch","description":"Administrative relates","docNumber":"112516","cashIn":0,"cashOut":1500090,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/16/2026","month":"March 2026","supplier":"Enel","description":"Car energy","docNumber":"10018","cashIn":0,"cashOut":878441,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/16/2026","month":"March 2026","supplier":"Enel","description":"Car energy","docNumber":"10776","cashIn":0,"cashOut":1927053,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/16/2026","month":"March 2026","supplier":"FINANCIALS LIMITADA","description":"Accounting Services","docNumber":"4183","cashIn":0,"cashOut":172238,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/16/2026","month":"March 2026","supplier":"IZQUIERDO CONSULTORES","description":"Lawyer BackOffice / Legal Representation","docNumber":"6850","cashIn":0,"cashOut":301417,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/17/2026","month":"March 2026","supplier":"Sura","description":"Insurance for 20 cars","docNumber":"Insurance","cashIn":0,"cashOut":1698054,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/18/2026","month":"March 2026","supplier":"SABA","description":"Pacrking (10 cars) March","docNumber":"235496","cashIn":0,"cashOut":1016998,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/18/2026","month":"March 2026","supplier":"SABA","description":"Pacrking (10 cars) Jan-Feb","docNumber":"232217","cashIn":0,"cashOut":1812788,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/18/2026","month":"March 2026","supplier":"Previred","description":"Joy Imposiciones + interest due to delay","docNumber":"PREVIRED02","cashIn":0,"cashOut":269118,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/18/2026","month":"March 2026","supplier":"Commercial Plate","description":"Patente Comercial","docNumber":"FOLIO6588123/6588124","cashIn":0,"cashOut":292458,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/18/2026","month":"March 2026","supplier":"F29 VAT","description":"February","docNumber":"‭8876522476‬","cashIn":0,"cashOut":6218,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/20/2026","month":"March 2026","supplier":"Fine VSBH40","description":"Drive in the wrong position","docNumber":"2600385537","cashIn":0,"cashOut":34945,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"3/20/2026","month":"March 2026","supplier":"Fine VSBJ40","description":"Drive in the wrong position","docNumber":"2600385605","cashIn":0,"cashOut":69889,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"3/26/2026","month":"March 2026","supplier":"Neuralis Cowork","description":"Cowork (Only last days of march to align the payment with the month)","docNumber":"5432","cashIn":0,"cashOut":172645,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/26/2026","month":"March 2026","supplier":"WiseTrack MiGPS","description":"Telematics Service","docNumber":"28560","cashIn":0,"cashOut":156199,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/26/2026","month":"March 2026","supplier":"GrupoVP","description":"HR Recruitement Service","docNumber":"352","cashIn":0,"cashOut":3810000,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/31/2026","month":"March 2026","supplier":"SOAP Batch1","description":"Anual insurance","docNumber":"SOAP1","cashIn":0,"cashOut":79900,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"3/31/2026","month":"March 2026","supplier":"SOAP Batch2","description":"Anual insurance","docNumber":"SOAP2","cashIn":0,"cashOut":79900,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"3/31/2026","month":"March 2026","supplier":"Anual Car Permit","description":"Batch 1","docNumber":"CARP1","cashIn":0,"cashOut":653810,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/31/2026","month":"March 2026","supplier":"Joy Varela Salary","description":"March","docNumber":"269445173","cashIn":0,"cashOut":820000,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"3/31/2026","month":"March 2026","supplier":"Andres Cerda Salary","description":"March","docNumber":"Pending","cashIn":0,"cashOut":690000,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/7/2026","month":"April 2026","supplier":"WiseTrack MiGPS","description":"Telematics Service","docNumber":"28644","cashIn":0,"cashOut":312899,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/7/2026","month":"April 2026","supplier":"FINANCIALS LIMITADA","description":"Accounting Services","docNumber":"4183","cashIn":0,"cashOut":185492,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/7/2026","month":"April 2026","supplier":"Servipag","description":"Tolls","docNumber":"Servipag","cashIn":0,"cashOut":3969399,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/7/2026","month":"April 2026","supplier":"Puertas del Sol SPA","description":"Computadores","docNumber":"342","cashIn":0,"cashOut":2209954,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/7/2026","month":"April 2026","supplier":"IZQUIERDO CONSULTORES","description":"Lawyer BackOffice / Legal Representation","docNumber":"1139","cashIn":0,"cashOut":326050,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/7/2026","month":"April 2026","supplier":"Indumotora One","description":"15K Maintenance","docNumber":"96072","cashIn":0,"cashOut":181840,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/7/2026","month":"April 2026","supplier":"Indumotora One","description":"15K Maintenance","docNumber":"91958","cashIn":0,"cashOut":181840,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/10/2026","month":"April 2026","supplier":"Previred","description":"Imposiciones Joy/Andrés","docNumber":"PREVIRED02","cashIn":0,"cashOut":443799,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/15/2026","month":"April 2026","supplier":"Neuralis Cowork","description":"Chair +1 Cowork","docNumber":"5032","cashIn":0,"cashOut":149940,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/15/2026","month":"April 2026","supplier":"Enel","description":"March Energy Payment","docNumber":"426","cashIn":0,"cashOut":4512561,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/15/2026","month":"April 2026","supplier":"F29 VAT","description":"March","docNumber":"8949251276","cashIn":0,"cashOut":158481,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/17/2026","month":"April 2026","supplier":"Indumotora One","description":"Car Back Window Fix","docNumber":"20403668","cashIn":0,"cashOut":412974,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/12/2026","month":"April 2026","supplier":"Andres Cerda","description":"Rent Car","docNumber":"288818","cashIn":0,"cashOut":68996,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/12/2026","month":"April 2026","supplier":"Andres Cerda","description":"Alex Kerkis Parking","docNumber":"0000166046","cashIn":0,"cashOut":16000,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/14/2026","month":"April 2026","supplier":"Andres Cerda","description":"Uber to bring a driver to office","docNumber":"Uber","cashIn":0,"cashOut":3894,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/15/2026","month":"April 2026","supplier":"SABA","description":"Parking for 10 cars","docNumber":"238843","cashIn":0,"cashOut":1016998,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/15/2026","month":"April 2026","supplier":"Andres Cerda","description":"Saba Parking","docNumber":"76953237","cashIn":0,"cashOut":11900,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/15/2026","month":"April 2026","supplier":"Andres Cerda","description":"Car Wash","docNumber":"Copec App","cashIn":0,"cashOut":30999,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/15/2026","month":"April 2026","supplier":"Andres Cerda","description":"Stolen key and card delivery","docNumber":"Uber","cashIn":0,"cashOut":18421,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/16/2026","month":"April 2026","supplier":"Andres Cerda","description":"Uber to workshop","docNumber":"Uber","cashIn":0,"cashOut":7895,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/17/2026","month":"April 2026","supplier":"Andres Cerda","description":"Car Wash x2","docNumber":"10635 /10636","cashIn":0,"cashOut":55980,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/17/2026","month":"April 2026","supplier":"Sura","description":"Insurance for 20 cars","docNumber":"Insurance","cashIn":0,"cashOut":1768714,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/20/2026","month":"April 2026","supplier":"Andres Cerda","description":"Uber to workshop","docNumber":"Uber","cashIn":0,"cashOut":6495,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/20/2026","month":"April 2026","supplier":"Andres Cerda","description":"Shamil AirBnB","docNumber":"RCK3KQKBTA9","cashIn":0,"cashOut":352299,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/24/2026","month":"April 2026","supplier":"Indumotora One","description":"Car fixed","docNumber":"1605215005","cashIn":0,"cashOut":398076,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/28/2026","month":"April 2026","supplier":"Sumup","description":"Transfer Test","docNumber":"APIRESC2604281138304585784890","cashIn":1000,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"—"},{"date":"4/29/2026","month":"April 2026","supplier":"FINANCIALS LIMITADA","description":"Accounting Services","docNumber":"F4353","cashIn":0,"cashOut":745256,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/29/2026","month":"April 2026","supplier":"Salarys","description":"Salary Manager and Fleet coordinator","docNumber":"202143679 / 269445173","cashIn":0,"cashOut":2820001,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/29/2026","month":"April 2026","supplier":"Previred","description":"Imposiciones Manager and Fleet coordinator","docNumber":"202143679 / 269445173","cashIn":0,"cashOut":841344,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/29/2026","month":"April 2026","supplier":"Neuralis Cowork","description":"Cowork","docNumber":"","cashIn":0,"cashOut":575484,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/29/2026","month":"April 2026","supplier":"Indumotora One","description":"15K Maintenance","docNumber":"94162","cashIn":0,"cashOut":181840,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/29/2026","month":"April 2026","supplier":"Indumotora One","description":"15K Maintenance","docNumber":"93035","cashIn":0,"cashOut":181840,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/29/2026","month":"April 2026","supplier":"Indumotora One","description":"15K Maintenance","docNumber":"93755","cashIn":0,"cashOut":181840,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"4/29/2026","month":"April 2026","supplier":"Andres Cerda","description":"Parkings","docNumber":"0000166412 / 0000166413/0000166407","cashIn":0,"cashOut":7296,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/29/2026","month":"April 2026","supplier":"Andres Cerda","description":"Car Wash","docNumber":"10711 / 10710","cashIn":0,"cashOut":83970,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/30/2026","month":"April 2026","supplier":"Andres Cerda","description":"Car Wash","docNumber":"10712","cashIn":0,"cashOut":29990,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/30/2026","month":"April 2026","supplier":"Sumup","description":"Transfer to santander account","docNumber":"","cashIn":14230173,"cashOut":0,"status":"Transfer","entity":"—","bank":"—"},{"date":"5/4/2026","month":"May 2026","supplier":"Andres Cerda","description":"Cash for shamil","docNumber":"07527","cashIn":0,"cashOut":100000,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"5/4/2026","month":"May 2026","supplier":"Andres Cerda","description":"Shamil Hotel Nogales","docNumber":"31010","cashIn":0,"cashOut":1559162,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"5/4/2026","month":"May 2026","supplier":"IZQUIERDO CONSULTORES","description":"Lawyer BackOffice / Legal Representation","docNumber":"1154","cashIn":0,"cashOut":315616,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"5/5/2026","month":"May 2026","supplier":"WiseTrack MiGPS","description":"Telematics Service","docNumber":"","cashIn":0,"cashOut":265321,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"5/5/2026","month":"May 2026","supplier":"Andres Cerda","description":"Cash for shamil","docNumber":"07525","cashIn":0,"cashOut":100000,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"5/6/2026","month":"May 2026","supplier":"Indrive","description":"Subsidy Batch 2","docNumber":"","cashIn":26755000,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"Renta4"},{"date":"5/6/2026","month":"May 2026","supplier":"Cazenave Automotriz","description":"Tire fix VSBJ50","docNumber":"1702","cashIn":0,"cashOut":85001,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"5/4/2026","month":"May 2026","supplier":"Andres Cerda","description":"Uber with chargers","docNumber":"Uber","cashIn":0,"cashOut":10693,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"5/8/2026","month":"May 2026","supplier":"Enel","description":"Car energy","docNumber":"","cashIn":0,"cashOut":2596278,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"5/8/2026","month":"May 2026","supplier":"WiseTrack MiGPS","description":"Telematics Service (diferencia de pago por IVA)","docNumber":"","cashIn":0,"cashOut":47685,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"5/11/2026","month":"May 2026","supplier":"Indumotora One","description":"Deducible VVCG63","docNumber":"CHI407923","cashIn":0,"cashOut":398417,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"5/11/2026","month":"May 2026","supplier":"Sura","description":"Insurance for 20 cars","docNumber":"Insurance","cashIn":0,"cashOut":1768714,"status":"Paid","entity":"GoCab SPA","bank":"Santander"},{"date":"5/4/2026","month":"May 2026","supplier":"Andres Cerda","description":"Uber with chargers","docNumber":"Uber","cashIn":0,"cashOut":10693,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"5/14/2026","month":"May 2026","supplier":"Andres Cerda","description":"Uber for take a car","docNumber":"Uber","cashIn":0,"cashOut":17621,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"4/30/2026","month":"April 2026","supplier":"Andres Cerda","description":"Car Wash 1 Cars","docNumber":"12010","cashIn":0,"cashOut":29990,"status":"Paid","entity":"GoCab SPA","bank":"Reimbursement"},{"date":"5/18/2026","month":"May 2026","supplier":"Andres Cerda","description":"Driver Cash Payment","docNumber":"","cashIn":50000,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"Santander"},{"date":"5/19/2026","month":"May 2026","supplier":"Neuralis Cowork","description":"Cowork april","docNumber":"5569","cashIn":0,"cashOut":575484,"status":"Paid","entity":"GoCab SPA&#9;Santander","bank":"—"},{"date":"5/19/2026","month":"May 2026","supplier":"Neuralis Cowork","description":"Cowork april","docNumber":"5569","cashIn":0,"cashOut":179928,"status":"Pending","entity":"GoCab SPA&#9;Santander","bank":"—"},{"date":"","month":"January 2026","supplier":"SumUp Fee","description":"SumUp commission for the month","docNumber":"","cashIn":0,"cashOut":46264,"status":"Paid","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"January 2026","supplier":"SumUp Operations","description":"Net collected to SumUp wallet","docNumber":"","cashIn":1996378,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"February 2026","supplier":"SumUp Fee","description":"SumUp commission for the month","docNumber":"","cashIn":0,"cashOut":148745,"status":"Paid","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"February 2026","supplier":"SumUp Operations","description":"Net collected to SumUp wallet","docNumber":"","cashIn":6458664,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"March 2026","supplier":"SumUp Fee","description":"SumUp commission for the month","docNumber":"","cashIn":0,"cashOut":344536,"status":"Paid","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"March 2026","supplier":"SumUp Operations","description":"Net collected to SumUp wallet","docNumber":"","cashIn":14610744,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"April 2026","supplier":"SumUp Fee","description":"SumUp commission for the month","docNumber":"","cashIn":0,"cashOut":380079,"status":"Paid","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"April 2026","supplier":"SumUp Operations","description":"Net collected to SumUp wallet","docNumber":"","cashIn":15755462,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"May 2026","supplier":"SumUp Fee","description":"SumUp commission for the month","docNumber":"","cashIn":0,"cashOut":205729,"status":"Paid","entity":"GoCab SPA","bank":"SumUp","synthetic":true},{"date":"","month":"May 2026","supplier":"SumUp Operations","description":"Net collected to SumUp wallet","docNumber":"","cashIn":8256545,"cashOut":0,"status":"Transfer","entity":"GoCab SPA","bank":"SumUp","synthetic":true}],sumup:{"lastUpdate":"2026-05-19","totalGross":48203146,"totalFees":1125353,"totalNet":47077793,"successfulCount":441,"failedCount":108,"byMonth":{"January 2026":{"gross":2042642,"fees":46264,"net":1996378,"successful":25,"failed":0},"February 2026":{"gross":6607409,"fees":148745,"net":6458664,"successful":49,"failed":0},"March 2026":{"gross":14955280,"fees":344536,"net":14610744,"successful":140,"failed":0},"April 2026":{"gross":16135541,"fees":380079,"net":15755462,"successful":161,"failed":0},"May 2026":{"gross":8462274,"fees":205729,"net":8256545,"successful":66,"failed":23}}},fx:893};</script><script>
+const FILE_ID = '19DJ_O0CoNir8_ESgnct_fo-z_q0mbxzjejHvQ0A_ZtY';
+const SUMUP_FOLDER_ID = '1IR7ETMtvoi-LF4AXbfalbO2th_b_ImNi';
+const READ_TOOL = 'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__read_file_content';
+const SEARCH_TOOL = 'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__search_files';
 
+const FX_RATE = 893;
+
+const MONTH_ORDER = [
+  'December 2025', 'January 2026', 'February 2026',
+  'March 2026', 'April 2026', 'May 2026',
+  'June 2026', 'July 2026', 'August 2026',
+  'September 2026', 'October 2026', 'November 2026', 'December 2026'
+];
+const MONTH_NAMES_FROM_NUM = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const INTERNATIONAL_BANK = 'international';
+
+const RECURRING_CATEGORIES = [
+  'Cowork', 'Wisetrack', 'Salary', 'EZ Lawyers', 'Financials Limited',
+  'Enel', 'Saba (Parking)', 'Previred', 'Izquierdo Lawyers',
+  'IVA Monthly F29', 'Tolls', 'Energy', 'Sura (Insurance)'
+];
+
+const SUMUP_BAKED = {
+  byMonth: {
+    'January 2026':  { gross: 2042642,  fees: 46264,  net: 1996378,  successful: 25,  failed: 0 },
+    'February 2026': { gross: 6607409,  fees: 148745, net: 6458664,  successful: 49,  failed: 0 },
+    'March 2026':    { gross: 14955280, fees: 344536, net: 14610744, successful: 140, failed: 0 },
+    'April 2026':    { gross: 16135541, fees: 380079, net: 15755462, successful: 161, failed: 0 }
+  },
+  bakedFailed: 85, bakedDate: '2026-05-04'
+};
+
+let SUMUP_DATA = {
+  lastUpdate: '2026-05-07',
+  totalGross: 0, totalFees: 0, totalNet: 0,
+  successfulCount: 0, failedCount: 0, byMonth: {}
+};
+
+function recomputeSumupTotals() {
+  let g = 0, f = 0, n = 0, s = 0, fl = 0;
+  for (const m of Object.values(SUMUP_DATA.byMonth)) {
+    g += m.gross || 0; f += m.fees || 0; n += m.net || 0;
+    s += m.successful || 0; fl += m.failed || 0;
+  }
+  SUMUP_DATA.totalGross = g; SUMUP_DATA.totalFees = f; SUMUP_DATA.totalNet = n;
+  SUMUP_DATA.successfulCount = s; SUMUP_DATA.failedCount = fl;
+}
+
+function initSumupData() {
+  SUMUP_DATA.byMonth = { ...SUMUP_BAKED.byMonth };
+  SUMUP_DATA.byMonth['May 2026'] = { gross: 3785047, fees: 94293, net: 3690754, successful: 22, failed: 16 };
+  recomputeSumupTotals();
+  SUMUP_DATA.failedCount += SUMUP_BAKED.bakedFailed;
+  SUMUP_DATA.lastUpdate = '2026-05-07';
+}
+initSumupData();
+
+const I18N = {
+  es: {
+    title: 'Reporte Financiero — GoCab',
+    subtitle: 'Sheet de pagos + ingresos SumUp · Dic 2025 — Mayo 2026',
+    openSheet: 'Abrir Sheet', sumupFolder: 'Carpeta SumUp', refresh: 'Refrescar', refreshLoading: 'Cargando...',
+    fxTooltip: 'Tipo de cambio: 1 USD = ' + FX_RATE + ' CLP',
+    includeIntl: 'Incluir pagos desde el exterior (Bank: International)',
+    scopeInfo: 'Solo afecta KPIs de cash flow (Saldo Santander, Total Egresos). Las tablas de gastos siempre incluyen todo.',
+    scopeLocal: 'Solo operación local', scopeBoth: 'Operación local + exterior',
+    sectionGeneral: 'Resumen general', sectionSumup: 'SumUp — Cobros operativos',
+    sumupLastUpdateLabel: 'Datos al', sumupRefreshError: 'Error SumUp',
+    kpiSantander: 'Saldo Santander', kpiSantanderMeta: 'Cash-in − Cash-out (sin pendientes ni exterior)',
+    kpiTotalIn: 'Total Ingresos', kpiTotalInMeta: 'Capital + Indrive + SumUp neto',
+    kpiTotalOut: 'Total Egresos', kpiTotalOutLocal: 'Solo operación local', kpiTotalOutBoth: 'Incluye exterior',
+    kpiNetOp: 'Saldo neto operativo', kpiNetOpMeta: 'Ingresos − Egresos',
+    kpiPending: 'Pagos pendientes', kpiMonthOut: 'Total pagado en el mes',
+    kpiIntl: 'Pagos del exterior', kpiIntlMeta: 'pagos · GoCab Holding',
+    kpiCoverage: 'Cobertura', kpiCoverageMeta: 'SumUp / Egresos operativos',
+    kpiBurnEarn: 'Burn / Earn', kpiBurning: 'Quemando capital', kpiEarning: 'Generando caja',
+    kpiVs: 'vs', kpiPp: 'pp',
+    sumupGross: 'Cobros brutos', sumupGrossMeta: 'transacciones exitosas',
+    sumupFees: 'Comisión SumUp', sumupFeesMeta: 'del bruto',
+    sumupNet: 'Neto cobrado', sumupNetMeta: 'Acumulado en wallet SumUp',
+    sumupTransferred: 'Transferido a Santander', sumupTransferredMeta: 'Manual desde SumUp',
+    sumupAvailable: 'Disponible en SumUp', sumupAvailableMeta: 'Neto − transferido',
+    sumupFailed: 'Transacciones fallidas', sumupFailedMeta: 'No cuentan en cobros',
+    covTitle: '¿Cubrimos los gastos con SumUp?',
+    covSub: 'Cobertura operacional mes a mes · SumUp neto vs egresos operativos · Compras de autos (CapEx) excluidas porque son inversión, no gasto operativo',
+    covSeriesIncome: 'SumUp neto', covSeriesExpenses: 'Egresos operativos',
+    covStatLast: 'Cobertura', covStatAvg: 'Promedio últimos 3 meses',
+    covStatAvgSub: 'cobertura promedio',
+    covStatBurn: 'Burn / Earn promedio',
+    covStatBurnSubBurn: 'quemando capital por mes', covStatBurnSubEarn: 'generando caja por mes',
+    covCoverageOf: 'cubierto por SumUp',
+    covNoteCapex: 'Excluí compras de autos (Bruno Fritsch) por ser CapEx. CapEx total excluido del análisis: ',
+    opChartTitle: 'Ganancia operacional mensual',
+    opChartSub: 'Cobros netos de SumUp por mes · Las inyecciones de capital e Indrive aparecen abajo para no aplastar la curva.',
+    opSeriesLabel: 'SumUp neto', opEventsLabel: 'Inyecciones de terceros:',
+    opEventsEmpty: 'Sin inyecciones de capital ni Indrive en el período.',
+    incomeChartTitle: 'Ingresos por origen',
+    incomeChartSub: 'Capital del Holding · Indrive subsidio · SumUp neto',
+    incomeTotalLabel: 'Total ingresado',
+    incomeCapital: 'Capital del Holding', incomeIndrive: 'Indrive subsidio',
+    incomeSumup: 'Ganancias SumUp (neto)', incomeOther: 'Otros',
+    recurringTitle: 'Gastos mensuales recurrentes',
+    recurringSub: 'Costo operativo total por categoría · Ordenados por total descendente · Incluye pagos del exterior · Excluye pendientes',
+    variableTitle: 'Gastos mensuales variables',
+    variableSub: 'Pagos no recurrentes agrupados por proveedor · Incluye pagos del exterior · Ordenados por gasto descendente',
+    expenseCategory: 'Categoría', expenseSupplier: 'Proveedor', expenseTotal: 'Total',
+    tableTitle: 'Detalle de pagos',
+    tableSub: 'Las transferencias internas SumUp→Banco se marcan en amarillo y no se suman a ingresos.',
+    filterMonth: 'Mes:', filterStatus: 'Estado:', filterEntity: 'Entidad:', filterBank: 'Banco:',
+    filterSearch: 'Buscar:', filterSearchPlaceholder: 'Proveedor, descripción...',
+    filterClear: 'Limpiar', filterAllM: 'Todos', filterAllF: 'Todas',
+    colDate: 'Fecha', colMonth: 'Mes', colSupplier: 'Proveedor', colDescription: 'Descripción',
+    colCashIn: 'Ingreso', colCashOut: 'Egreso', colStatus: 'Estado', colEntity: 'Entidad', colBank: 'Banco',
+    tagInternal: 'transfer interno', tagSynthetic: 'calculado',
+    errLoad: 'No se pudieron extraer filas de la planilla.',
+    errCowork: 'Esta página debe abrirse dentro de Cowork para acceder a Google Drive.',
+    updatedAt: 'Actualizado:', currentMonth: 'Mes actual', locale: 'es-CL'
+  },
+  en: {
+    title: 'Financial Report — GoCab',
+    subtitle: 'Payments sheet + SumUp income · Dec 2025 — May 2026',
+    openSheet: 'Open Sheet', sumupFolder: 'SumUp Folder', refresh: 'Refresh', refreshLoading: 'Loading...',
+    fxTooltip: 'Exchange rate: 1 USD = ' + FX_RATE + ' CLP',
+    includeIntl: 'Include payments from abroad (Bank: International)',
+    scopeInfo: 'Only affects cash flow KPIs (Santander balance, Total expenses). Expense tables always include everything.',
+    scopeLocal: 'Local operations only', scopeBoth: 'Local + abroad',
+    sectionGeneral: 'General overview', sectionSumup: 'SumUp — Operational income',
+    sumupLastUpdateLabel: 'Data as of', sumupRefreshError: 'SumUp error',
+    kpiSantander: 'Santander balance', kpiSantanderMeta: 'Cash-in − Cash-out (excl. pending & abroad)',
+    kpiTotalIn: 'Total Income', kpiTotalInMeta: 'Capital + Indrive + SumUp net',
+    kpiTotalOut: 'Total Expenses', kpiTotalOutLocal: 'Local operations only', kpiTotalOutBoth: 'Includes abroad',
+    kpiNetOp: 'Net operating balance', kpiNetOpMeta: 'Income − Expenses',
+    kpiPending: 'Pending payments', kpiMonthOut: 'Total paid in the month',
+    kpiIntl: 'Foreign payments', kpiIntlMeta: 'payments · GoCab Holding',
+    kpiCoverage: 'Coverage', kpiCoverageMeta: 'SumUp / Operating expenses',
+    kpiBurnEarn: 'Burn / Earn', kpiBurning: 'Burning capital', kpiEarning: 'Generating cash',
+    kpiVs: 'vs', kpiPp: 'pp',
+    sumupGross: 'Gross collected', sumupGrossMeta: 'successful transactions',
+    sumupFees: 'SumUp fee', sumupFeesMeta: 'of gross',
+    sumupNet: 'Net collected', sumupNetMeta: 'Accumulated in SumUp wallet',
+    sumupTransferred: 'Transferred to Santander', sumupTransferredMeta: 'Manual from SumUp',
+    sumupAvailable: 'Available in SumUp', sumupAvailableMeta: 'Net − transferred',
+    sumupFailed: 'Failed transactions', sumupFailedMeta: 'Not counted in income',
+    covTitle: 'Are we covering expenses with SumUp?',
+    covSub: 'Operational coverage month over month · SumUp net vs operating expenses · Car purchases (CapEx) excluded because they are investment, not operating expense',
+    covSeriesIncome: 'SumUp net', covSeriesExpenses: 'Operating expenses',
+    covStatLast: 'Coverage', covStatAvg: 'Avg last 3 months',
+    covStatAvgSub: 'average coverage',
+    covStatBurn: 'Avg burn / earn',
+    covStatBurnSubBurn: 'burning capital per month', covStatBurnSubEarn: 'generating cash per month',
+    covCoverageOf: 'covered by SumUp',
+    covNoteCapex: 'Excluded car purchases (Bruno Fritsch) as CapEx. Total CapEx excluded from analysis: ',
+    opChartTitle: 'Monthly operational earnings',
+    opChartSub: 'SumUp net collected per month · Capital and Indrive injections shown below to keep the curve clean.',
+    opSeriesLabel: 'SumUp net', opEventsLabel: 'Third-party injections:',
+    opEventsEmpty: 'No capital or Indrive injections in this period.',
+    incomeChartTitle: 'Income by source',
+    incomeChartSub: 'Holding capital · Indrive subsidy · SumUp net',
+    incomeTotalLabel: 'Total income',
+    incomeCapital: 'Holding capital', incomeIndrive: 'Indrive subsidy',
+    incomeSumup: 'SumUp earnings (net)', incomeOther: 'Other',
+    recurringTitle: 'Recurring monthly expenses',
+    recurringSub: 'Total operational cost by category · Sorted by total descending · Includes foreign payments · Excludes pending',
+    variableTitle: 'Variable monthly expenses',
+    variableSub: 'Non-recurring payments grouped by supplier · Includes foreign payments · Sorted by spend descending',
+    expenseCategory: 'Category', expenseSupplier: 'Supplier', expenseTotal: 'Total',
+    tableTitle: 'Payment details',
+    tableSub: 'Internal SumUp→Bank transfers are highlighted in yellow and excluded from income totals.',
+    filterMonth: 'Month:', filterStatus: 'Status:', filterEntity: 'Entity:', filterBank: 'Bank:',
+    filterSearch: 'Search:', filterSearchPlaceholder: 'Supplier, description...',
+    filterClear: 'Clear', filterAllM: 'All', filterAllF: 'All',
+    colDate: 'Date', colMonth: 'Month', colSupplier: 'Supplier', colDescription: 'Description',
+    colCashIn: 'Income', colCashOut: 'Expense', colStatus: 'Status', colEntity: 'Entity', colBank: 'Bank',
+    tagInternal: 'internal transfer', tagSynthetic: 'computed',
+    errLoad: 'Could not extract rows from the spreadsheet.',
+    errCowork: 'This page must be opened inside Cowork to access Google Drive.',
+    updatedAt: 'Updated:', currentMonth: 'Current month', locale: 'en-US'
+  },
+  ru: {
+    title: 'Финансовый отчёт — GoCab',
+    subtitle: 'Таблица платежей + доходы SumUp · Дек 2025 — Май 2026',
+    openSheet: 'Открыть таблицу', sumupFolder: 'Папка SumUp', refresh: 'Обновить', refreshLoading: 'Загрузка...',
+    fxTooltip: 'Курс: 1 USD = ' + FX_RATE + ' CLP',
+    includeIntl: 'Включить платежи из-за рубежа (Bank: International)',
+    scopeInfo: 'Влияет только на KPI денежного потока. Таблицы расходов всегда включают всё.',
+    scopeLocal: 'Только местные операции', scopeBoth: 'Местные + зарубежные',
+    sectionGeneral: 'Общий обзор', sectionSumup: 'SumUp — Операционные поступления',
+    sumupLastUpdateLabel: 'Данные на', sumupRefreshError: 'Ошибка SumUp',
+    kpiSantander: 'Баланс Santander', kpiSantanderMeta: 'Доходы − Расходы (без ожид. и зарубеж.)',
+    kpiTotalIn: 'Итого доходы', kpiTotalInMeta: 'Капитал + Indrive + SumUp нетто',
+    kpiTotalOut: 'Итого расходы', kpiTotalOutLocal: 'Только местные', kpiTotalOutBoth: 'Включая зарубежные',
+    kpiNetOp: 'Чистый операционный остаток', kpiNetOpMeta: 'Доходы − Расходы',
+    kpiPending: 'Платежи в ожидании', kpiMonthOut: 'Всего за месяц',
+    kpiIntl: 'Зарубежные платежи', kpiIntlMeta: 'платежей · GoCab Holding',
+    kpiCoverage: 'Покрытие', kpiCoverageMeta: 'SumUp / Опер. расходы',
+    kpiBurnEarn: 'Расход / прибыль', kpiBurning: 'Расход капитала', kpiEarning: 'Генерация денег',
+    kpiVs: 'vs', kpiPp: 'пп',
+    sumupGross: 'Валовая выручка', sumupGrossMeta: 'успешных транзакций',
+    sumupFees: 'Комиссия SumUp', sumupFeesMeta: 'от валовой',
+    sumupNet: 'Чистая выручка', sumupNetMeta: 'Накоплено в кошельке SumUp',
+    sumupTransferred: 'Переведено в Santander', sumupTransferredMeta: 'Вручную из SumUp',
+    sumupAvailable: 'Доступно в SumUp', sumupAvailableMeta: 'Нетто − переведено',
+    sumupFailed: 'Неудачные транзакции', sumupFailedMeta: 'Не учитываются в доходах',
+    covTitle: 'Покрываем ли расходы выручкой SumUp?',
+    covSub: 'Операционное покрытие по месяцам · SumUp нетто vs операционные расходы · Покупки авто (CapEx) исключены',
+    covSeriesIncome: 'SumUp нетто', covSeriesExpenses: 'Операционные расходы',
+    covStatLast: 'Покрытие', covStatAvg: 'Среднее за 3 мес',
+    covStatAvgSub: 'среднее покрытие',
+    covStatBurn: 'Среднее расход/прибыль',
+    covStatBurnSubBurn: 'расход капитала в месяц', covStatBurnSubEarn: 'генерация денег в месяц',
+    covCoverageOf: 'покрыто SumUp',
+    covNoteCapex: 'Исключены покупки авто (Bruno Fritsch) как CapEx. Всего CapEx исключено: ',
+    opChartTitle: 'Ежемесячный операционный доход',
+    opChartSub: 'Чистая выручка SumUp по месяцам · Поступления капитала и Indrive показаны ниже, чтобы не искажать кривую.',
+    opSeriesLabel: 'SumUp нетто', opEventsLabel: 'Поступления от третьих сторон:',
+    opEventsEmpty: 'Нет поступлений капитала или Indrive за период.',
+    incomeChartTitle: 'Доходы по источнику',
+    incomeChartSub: 'Капитал холдинга · Субсидия Indrive · SumUp нетто',
+    incomeTotalLabel: 'Всего поступило',
+    incomeCapital: 'Капитал холдинга', incomeIndrive: 'Субсидия Indrive',
+    incomeSumup: 'Доходы SumUp (нетто)', incomeOther: 'Прочее',
+    recurringTitle: 'Регулярные ежемесячные расходы',
+    recurringSub: 'Общая операционная стоимость по категориям · По убыванию итога · Включая зарубежные · Без ожидающих',
+    variableTitle: 'Переменные ежемесячные расходы',
+    variableSub: 'Нерегулярные платежи по поставщикам · Включая зарубежные · По убыванию',
+    expenseCategory: 'Категория', expenseSupplier: 'Поставщик', expenseTotal: 'Итого',
+    tableTitle: 'Детали платежей',
+    tableSub: 'Внутренние переводы SumUp→Банк выделены жёлтым и не учитываются в доходах.',
+    filterMonth: 'Месяц:', filterStatus: 'Статус:', filterEntity: 'Организация:', filterBank: 'Банк:',
+    filterSearch: 'Поиск:', filterSearchPlaceholder: 'Поставщик, описание...',
+    filterClear: 'Очистить', filterAllM: 'Все', filterAllF: 'Все',
+    colDate: 'Дата', colMonth: 'Месяц', colSupplier: 'Поставщик', colDescription: 'Описание',
+    colCashIn: 'Доход', colCashOut: 'Расход', colStatus: 'Статус', colEntity: 'Организация', colBank: 'Банк',
+    tagInternal: 'внутр. перевод', tagSynthetic: 'расчётный',
+    errLoad: 'Не удалось извлечь строки из таблицы.',
+    errCowork: 'Эта страница должна быть открыта в Cowork для доступа к Google Drive.',
+    updatedAt: 'Обновлено:', currentMonth: 'Текущий месяц', locale: 'ru-RU'
+  }
+};
+
+let currentLang = 'es';
+let currentCurrency = 'CLP';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.es[key] || key; }
+
+let allRows = [];
+let scopedRows = [];
+let gridInstance = null;
+let incomeDonutChart = null;
+let operationalChart = null;
+let coverageChart = null;
+let sumupRefreshError = null;
+let expenseFilter = null;
+
+function setExpenseFilter(type, key, month) {
+  if (!key && !month) { expenseFilter = null; }
+  else { expenseFilter = { type, key, month }; }
+  updateExpenseFilterChip();
+  applyFiltersAndRenderTable();
+  const card = document.getElementById('paymentsTable').closest('.card');
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function clearExpenseFilter() {
+  expenseFilter = null;
+  updateExpenseFilterChip();
+  applyFiltersAndRenderTable();
+}
+
+function updateExpenseFilterChip() {
+  const chip = document.getElementById('expenseFilterChip');
+  if (!chip) return;
+  if (!expenseFilter) { chip.innerHTML = ''; chip.style.display = 'none'; return; }
+  const parts = [];
+  if (expenseFilter.key) parts.push(expenseFilter.key);
+  if (expenseFilter.month) parts.push(localizeMonth(expenseFilter.month));
+  chip.style.display = 'inline-flex';
+  chip.innerHTML = `<span>${parts.join(' · ')}</span> <button type="button" onclick="clearExpenseFilter()" aria-label="clear" title="Quitar filtro">×</button>`;
+}
+
+function convertAmount(n) {
+  if (n === null || n === undefined || isNaN(n)) return n;
+  return currentCurrency === 'USD' ? n / FX_RATE : n;
+}
+function currencySymbol() { return currentCurrency === 'USD' ? 'US$' : '$'; }
+
+function fmtCLP(n) {
+  if (n === 0) return currencySymbol() + '0';
+  if (!n || isNaN(n)) return '-';
+  const v = convertAmount(n);
+  return currencySymbol() + Math.round(v).toLocaleString(t('locale'));
+}
+function fmtShortM(n) {
+  if (n === 0) return currencySymbol() + '0';
+  if (!n || isNaN(n)) return '-';
+  const v = convertAmount(n);
+  const s = currencySymbol();
+  if (Math.abs(v) >= 1e9) return s + (v / 1e9).toFixed(2) + 'B';
+  if (Math.abs(v) >= 1e6) return s + (v / 1e6).toFixed(1) + 'M';
+  if (Math.abs(v) >= 1e3) return s + (v / 1e3).toFixed(0) + 'K';
+  return s + Math.round(v);
+}
+function parseAmount(s) {
+  if (!s) return 0;
+  const cleaned = String(s).replace(/[$,\s]/g, '').trim();
+  if (!cleaned) return 0;
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+function isInternational(r) { return (r.bank || '').toLowerCase() === INTERNATIONAL_BANK; }
+function isSumupTransfer(r) { return (r.supplier || '').toLowerCase() === 'sumup' && r.cashIn > 0; }
+function isPending(r) { return (r.status || '').toLowerCase() === 'pending'; }
+function isCapEx(r) {
+  const sup = (r.supplier || '').toLowerCase();
+  return sup.includes('bruno fritsch') && r.cashOut > 0;
+}
+function showError(msg) { document.getElementById('errorBox').innerHTML = msg ? `<div class="error">${msg}</div>` : ''; }
+
+const MONTH_LABEL = {
+  es: { December: 'Diciembre', January: 'Enero', February: 'Febrero', March: 'Marzo', April: 'Abril', May: 'Mayo', June: 'Junio', July: 'Julio', August: 'Agosto', September: 'Septiembre', October: 'Octubre', November: 'Noviembre' },
+  en: { December: 'December', January: 'January', February: 'February', March: 'March', April: 'April', May: 'May', June: 'June', July: 'July', August: 'August', September: 'September', October: 'October', November: 'November' },
+  ru: { December: 'Декабрь', January: 'Январь', February: 'Февраль', March: 'Март', April: 'Апрель', May: 'Май', June: 'Июнь', July: 'Июль', August: 'Август', September: 'Сентябрь', October: 'Октябрь', November: 'Ноябрь' }
+};
+const MONTH_SHORT = {
+  es: { December: 'Dic', January: 'Ene', February: 'Feb', March: 'Mar', April: 'Abr', May: 'May', June: 'Jun', July: 'Jul', August: 'Ago', September: 'Sep', October: 'Oct', November: 'Nov' },
+  en: { December: 'Dec', January: 'Jan', February: 'Feb', March: 'Mar', April: 'Apr', May: 'May', June: 'Jun', July: 'Jul', August: 'Aug', September: 'Sep', October: 'Oct', November: 'Nov' },
+  ru: { December: 'Дек', January: 'Янв', February: 'Фев', March: 'Мар', April: 'Апр', May: 'Май', June: 'Июн', July: 'Июл', August: 'Авг', September: 'Сен', October: 'Окт', November: 'Ноя' }
+};
+function localizeMonth(label) {
+  const parts = label.split(' ');
+  if (parts.length === 2 && MONTH_LABEL[currentLang][parts[0]]) return MONTH_LABEL[currentLang][parts[0]] + ' ' + parts[1];
+  return label;
+}
+function localizeMonthShort(label) {
+  const parts = label.split(' ');
+  if (parts.length === 2 && MONTH_SHORT[currentLang][parts[0]]) {
+    const yr = parts[1].slice(2);
+    return `${MONTH_SHORT[currentLang][parts[0]]} ${yr}`;
+  }
+  return label;
+}
+function monthShort(label) {
+  const parts = label.split(' ');
+  if (parts.length === 2 && MONTH_SHORT[currentLang][parts[0]]) return MONTH_SHORT[currentLang][parts[0]];
+  return label;
+}
+function monthKeyFromDate(dateStr) {
+  const m = dateStr && dateStr.match(/^(\d{4})-(\d{2})/);
+  if (!m) return null;
+  return `${MONTH_NAMES_FROM_NUM[parseInt(m[2])]} ${m[1]}`;
+}
+
+function parseCSVRow(line) {
+  const cells = [];
+  let cur = ''; let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQuote && line[i + 1] === '"') { cur += '"'; i++; } else inQuote = !inQuote; }
+    else if (c === ',' && !inQuote) { cells.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  cells.push(cur);
+  return cells;
+}
+
+function parseSumupCSV(text) {
+  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+  if (lines.length < 2) return null;
+  const header = parseCSVRow(lines[0]).map(h => h.trim());
+  const idx = (name) => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+  const iDate = idx('Fecha y hora');
+  const iType = idx('Tipo de transacción');
+  const iStatus = idx('Estado');
+  const iAmount = idx('Monto de la transacción');
+  const iFee = idx('Monto de la comisión');
+  if (iDate < 0 || iType < 0 || iStatus < 0 || iAmount < 0 || iFee < 0) return null;
+  const byMonth = {};
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCSVRow(lines[i]);
+    const date = (cells[iDate] || '').trim();
+    const type = (cells[iType] || '').trim();
+    const status = (cells[iStatus] || '').trim();
+    if (type !== 'Pago') continue;
+    const monthKey = monthKeyFromDate(date);
+    if (!monthKey) continue;
+    if (!byMonth[monthKey]) byMonth[monthKey] = { gross: 0, fees: 0, net: 0, successful: 0, failed: 0 };
+    if (status === 'Exitosa') {
+      byMonth[monthKey].gross += parseFloat(cells[iAmount]) || 0;
+      byMonth[monthKey].fees += parseFloat(cells[iFee]) || 0;
+      byMonth[monthKey].net += (parseFloat(cells[iAmount]) || 0) - (parseFloat(cells[iFee]) || 0);
+      byMonth[monthKey].successful++;
+    } else if (status === 'Fallida') {
+      byMonth[monthKey].failed++;
+    }
+  }
+  return byMonth;
+}
+
+async function refreshSumupFromCSVs() {
+  const listRes = await window.cowork.callMcpTool(SEARCH_TOOL, {
+    query: `parentId = '${SUMUP_FOLDER_ID}'`, excludeContentSnippets: true
+  });
+  let listData = listRes;
+  if (listRes && listRes.content && Array.isArray(listRes.content)) {
+    const txt = listRes.content.map(c => c.text || '').join('');
+    try { listData = JSON.parse(txt); } catch (_) {}
+  }
+  const files = (listData.files || []).filter(f =>
+    (f.fileExtension && f.fileExtension.toLowerCase() === 'csv') || (f.mimeType === 'text/csv')
+  );
+  const merged = { ...SUMUP_BAKED.byMonth };
+  for (const file of files) {
+    const contentRes = await window.cowork.callMcpTool(READ_TOOL, { fileId: file.id });
+    let csvText = '';
+    if (typeof contentRes === 'string') csvText = contentRes;
+    else if (contentRes && contentRes.fileContent) csvText = contentRes.fileContent;
+    else if (contentRes && contentRes.content && Array.isArray(contentRes.content)) {
+      const joined = contentRes.content.map(c => c.text || c.fileContent || '').join('\n');
+      try { const j = JSON.parse(joined); csvText = j.fileContent || joined; }
+      catch (_) { csvText = joined; }
+    }
+    const parsed = parseSumupCSV(csvText);
+    if (!parsed) continue;
+    for (const [m, d] of Object.entries(parsed)) merged[m] = d;
+  }
+  SUMUP_DATA.byMonth = merged;
+  recomputeSumupTotals();
+  SUMUP_DATA.failedCount += SUMUP_BAKED.bakedFailed;
+  SUMUP_DATA.lastUpdate = new Date().toISOString().split('T')[0];
+}
+
+function parseSheet(text) {
+  const lines = text.split('\n');
+  const rows = [];
+  let inTable = false; let headers = []; let yearHint = 2026;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.startsWith('|')) { inTable = false; headers = []; continue; }
+    const cells = line.split('|').slice(1, -1).map(c => c.trim());
+    if (cells.every(c => /^:?-+:?$/.test(c))) continue;
+    if (!inTable) {
+      const lower = cells.map(c => c.toLowerCase());
+      if (lower.includes('payment status') && lower.includes('month period')) { headers = lower; inTable = true; }
+      continue;
+    }
+    if (inTable && cells.length >= headers.length) {
+      const get = (name) => { const idx = headers.indexOf(name); return idx >= 0 ? cells[idx] : ''; };
+      const monthPeriod = get('month period');
+      if (!monthPeriod) continue;
+      const cashIn = parseAmount(get('cash-in'));
+      const cashOut = parseAmount(get('cash-out'));
+      if (cashIn === 0 && cashOut === 0) continue;
+      let monthLabel = monthPeriod;
+      if (monthPeriod === 'December' && rows.length === 0) { monthLabel = 'December 2025'; yearHint = 2025; }
+      else if (yearHint === 2025 && monthPeriod !== 'December') { yearHint = 2026; monthLabel = `${monthPeriod} 2026`; }
+      else { monthLabel = `${monthPeriod} ${yearHint}`; }
+      rows.push({
+        date: get('payment date'), month: monthLabel,
+        supplier: get('supplier'), description: get('description'),
+        docNumber: get('document number'),
+        cashIn, cashOut,
+        status: get('payment status') || '—',
+        entity: get('payment entity') || '—',
+        bank: get('payment bank') || '—'
+      });
+    }
+  }
+  for (const [month, m] of Object.entries(SUMUP_DATA.byMonth)) {
+    if (m.fees > 0) rows.push({ date: '', month, supplier: 'SumUp Fee', description: 'SumUp commission for the month', docNumber: '', cashIn: 0, cashOut: m.fees, status: 'Paid', entity: 'GoCab SPA', bank: 'SumUp', synthetic: true });
+    if (m.net > 0) rows.push({ date: '', month, supplier: 'SumUp Operations', description: 'Net collected to SumUp wallet', docNumber: '', cashIn: m.net, cashOut: 0, status: 'Transfer', entity: 'GoCab SPA', bank: 'SumUp', synthetic: true });
+  }
+  return rows;
+}
+
+function effectiveCashIn(r) { return isSumupTransfer(r) ? 0 : r.cashIn; }
+
+function classifyIncome(r) {
+  if (isSumupTransfer(r)) return null;
+  const desc = (r.description || '').toLowerCase();
+  const sup = (r.supplier || '').toLowerCase();
+  if (sup.startsWith('sumup oper')) return 'sumup';
+  if (desc.includes('capital investment') || sup.includes('gocab hod') || sup.includes('gocab hold')) return 'capital';
+  if (sup.includes('indrive') || desc.includes('subsidy')) return 'indrive';
+  return 'other';
+}
+
+function classifyRecurringExpense(supplier, description) {
+  const sup = (supplier || '').toLowerCase();
+  const desc = (description || '').toLowerCase();
+  if (sup.includes('cowork') || sup.includes('neuralis')) return 'Cowork';
+  if (sup.includes('wisetrack')) return 'Wisetrack';
+  if (sup === 'salarys' || sup.includes(' salary') || sup.endsWith(' salary')) return 'Salary';
+  if (sup.includes('ez lawyer')) return 'EZ Lawyers';
+  if (sup.includes('financials')) return 'Financials Limited';
+  if (sup === 'enel' || sup.startsWith('enel ')) return 'Enel';
+  if (sup.includes('saba')) return 'Saba (Parking)';
+  if (sup.includes('previred')) return 'Previred';
+  if (sup.includes('izquierdo')) return 'Izquierdo Lawyers';
+  if (sup.includes('f29') || sup === 'iva' || sup.startsWith('iva ')) return 'IVA Monthly F29';
+  if (sup === 'sura' || sup.startsWith('sura ') || sup.includes(' sura')) return 'Sura (Insurance)';
+  if (sup === 'avo' || sup === 'avs' || sup === 'r78' || sup.includes('servipag') || sup.startsWith('toll') || desc.startsWith('tolls')) return 'Tolls';
+  return null;
+}
+
+function computeIncomeBreakdown() {
+  const totals = { capital: 0, indrive: 0, sumup: 0, other: 0 };
+  allRows.forEach(r => {
+    const k = classifyIncome(r);
+    if (k && r.cashIn > 0) totals[k] += r.cashIn;
+  });
+  return totals;
+}
+
+function computeSantanderEstimate() {
+  const realRows = allRows.filter(r => !r.synthetic);
+  const totalIn = realRows.reduce((s, r) => s + r.cashIn, 0);
+  const totalOutPaidLocal = realRows.filter(r => !isInternational(r)).filter(r => !isPending(r)).reduce((s, r) => s + r.cashOut, 0);
+  return totalIn - totalOutPaidLocal;
+}
+
+function computeSumupAvailable() {
+  const transferredToBank = allRows.filter(isSumupTransfer).reduce((s, r) => s + r.cashIn, 0);
+  return { transferredToBank, available: SUMUP_DATA.totalNet - transferredToBank };
+}
+
+function computeCoverageData() {
+  const opRows = allRows.filter(r => !r.synthetic && !isPending(r) && r.cashOut > 0 && !isCapEx(r));
+  const monthSet = new Set();
+  Object.keys(SUMUP_DATA.byMonth).forEach(m => monthSet.add(m));
+  opRows.forEach(r => monthSet.add(r.month));
+  const months = [...monthSet].sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+  return months.map(m => {
+    const sumupNet = (SUMUP_DATA.byMonth[m] && SUMUP_DATA.byMonth[m].net) || 0;
+    const expenses = opRows.filter(r => r.month === m).reduce((s, r) => s + r.cashOut, 0);
+    return {
+      month: m, sumupNet, expenses,
+      coverage: expenses > 0 ? (sumupNet / expenses * 100) : (sumupNet > 0 ? null : 0),
+      delta: sumupNet - expenses
+    };
+  });
+}
+
+function computeKPIs(rows, intlRows) {
+  const totalIn = rows.reduce((s, r) => s + effectiveCashIn(r), 0);
+  const totalOut = rows.reduce((s, r) => s + r.cashOut, 0);
+  const net = totalIn - totalOut;
+  const pending = rows.filter(r => r.status.toLowerCase() === 'pending');
+  const pendingAmount = pending.reduce((s, r) => s + r.cashOut + r.cashIn, 0);
+  const months = [...new Set(rows.map(r => r.month))].sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+  const lastMonth = months[months.length - 1];
+  const lastMonthOut = rows.filter(r => r.month === lastMonth).reduce((s, r) => s + r.cashOut, 0);
+  const intlOut = (intlRows || []).reduce((s, r) => s + r.cashOut, 0);
+  const intlCount = (intlRows || []).length;
+  return { totalIn, totalOut, net, pending, pendingAmount, lastMonth, lastMonthOut, txCount: rows.length, intlOut, intlCount };
+}
+
+function coverageColor(pct) {
+  if (pct === null) return '';
+  if (pct >= 100) return 'green';
+  if (pct >= 50) return 'amber';
+  return 'red';
+}
+
+function deltaIndicator(value, prevMonthLabel, formatter, isPp) {
+  if (value === null || value === undefined || !prevMonthLabel) return '';
+  const cls = value > 0 ? 'delta-up' : (value < 0 ? 'delta-down' : 'delta-neutral');
+  const arrow = value > 0 ? '↑' : (value < 0 ? '↓' : '→');
+  const sign = value > 0 ? '+' : '';
+  const formatted = isPp ? `${sign}${value.toFixed(0)} ${t('kpiPp')}` : `${sign}${formatter(value)}`;
+  return `<span class="${cls}">${arrow} ${formatted}</span> ${t('kpiVs')} ${monthShort(prevMonthLabel)}`;
+}
+
+function renderKPIs(k, includingIntl) {
+  const santander = computeSantanderEstimate();
+  const cov = computeCoverageData();
+  const last = cov.length > 0 ? cov[cov.length - 1] : null;
+  const prev = cov.length > 1 ? cov[cov.length - 2] : null;
+
+  const covPct = last && last.coverage !== null ? last.coverage : null;
+  const covCls = coverageColor(covPct);
+  let covMeta = t('kpiCoverageMeta');
+  if (last && prev && last.coverage !== null && prev.coverage !== null) {
+    const dPp = last.coverage - prev.coverage;
+    covMeta = deltaIndicator(dPp, prev.month, fmtShortM, true);
+  } else if (last) {
+    covMeta = `${localizeMonthShort(last.month)} · ${t('kpiCoverageMeta')}`;
+  }
+
+  const burnVal = last ? last.delta : null;
+  const burnCls = (burnVal !== null && burnVal >= 0) ? 'green' : 'red';
+  let burnMeta = (burnVal !== null && burnVal >= 0) ? t('kpiEarning') : t('kpiBurning');
+  if (last && prev) {
+    const dDelta = last.delta - prev.delta;
+    burnMeta = deltaIndicator(dDelta, prev.month, fmtShortM, false);
+  } else if (last) {
+    burnMeta = `${localizeMonthShort(last.month)} · ${burnMeta}`;
+  }
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi green"><div class="label">${t('kpiTotalIn')}</div><div class="value">${fmtCLP(k.totalIn)}</div><div class="meta">${t('kpiTotalInMeta')}</div></div>
+    <div class="kpi red"><div class="label">${t('kpiTotalOut')}</div><div class="value">${fmtCLP(k.totalOut)}</div><div class="meta">${includingIntl ? t('kpiTotalOutBoth') : t('kpiTotalOutLocal')}</div></div>
+    <div class="kpi ${covCls}"><div class="label">${t('kpiCoverage')}${last ? ' ' + monthShort(last.month) : ''}</div><div class="value">${covPct !== null ? covPct.toFixed(0) + '%' : '—'}</div><div class="meta">${covMeta}</div></div>
+    <div class="kpi ${burnCls}"><div class="label">${t('kpiBurnEarn')}${last ? ' ' + monthShort(last.month) : ''}</div><div class="value">${burnVal !== null ? (burnVal >= 0 ? '+' : '') + fmtShortM(burnVal) : '—'}</div><div class="meta">${burnMeta}</div></div>
+    <div class="kpi featured ${santander >= 0 ? 'blue' : 'red'}"><div class="label">${t('kpiSantander')}</div><div class="value">${fmtCLP(santander)}</div><div class="meta">${t('kpiSantanderMeta')}</div></div>
+    <div class="kpi ${k.net >= 0 ? 'blue' : 'red'}"><div class="label">${t('kpiNetOp')}</div><div class="value">${fmtCLP(k.net)}</div><div class="meta">${t('kpiNetOpMeta')}</div></div>
+    <div class="kpi amber"><div class="label">${t('kpiPending')}</div><div class="value">${k.pending.length}</div><div class="meta">${fmtCLP(k.pendingAmount)}</div></div>
+    <div class="kpi"><div class="label">${k.lastMonth ? localizeMonth(k.lastMonth) : t('currentMonth')}</div><div class="value">${fmtCLP(k.lastMonthOut)}</div><div class="meta">${t('kpiMonthOut')}</div></div>
+    <div class="kpi purple"><div class="label">${t('kpiIntl')}</div><div class="value">${fmtCLP(k.intlOut)}</div><div class="meta">${k.intlCount} ${t('kpiIntlMeta')}</div></div>
+  `;
+}
+
+function renderCoverageCard() {
+  const data = computeCoverageData();
+  if (data.length === 0) { document.getElementById('coverageStats').innerHTML = ''; return; }
+  const last = data[data.length - 1];
+  const lastThree = data.slice(-3);
+  const validCov = lastThree.filter(d => d.coverage !== null);
+  const avgCoverage = validCov.length > 0 ? validCov.reduce((s, d) => s + d.coverage, 0) / validCov.length : 0;
+  const avgDelta = lastThree.reduce((s, d) => s + d.delta, 0) / lastThree.length;
+  const lastCovCls = coverageColor(last.coverage);
+  const avgCovCls = coverageColor(avgCoverage);
+  const burnCls = avgDelta >= 0 ? 'green' : 'red';
+
+  document.getElementById('coverageStats').innerHTML = `
+    <div class="cov-stat ${lastCovCls}">
+      <div class="cov-lbl">${t('covStatLast')} ${localizeMonth(last.month)}</div>
+      <div class="cov-val">${last.coverage !== null ? last.coverage.toFixed(0) + '%' : '—'}</div>
+      <div class="cov-sub">${fmtCLP(last.sumupNet)} ${t('covCoverageOf')} ${fmtCLP(last.expenses)}</div>
+    </div>
+    <div class="cov-stat ${avgCovCls}">
+      <div class="cov-lbl">${t('covStatAvg')}</div>
+      <div class="cov-val">${avgCoverage.toFixed(0)}%</div>
+      <div class="cov-sub">${t('covStatAvgSub')}</div>
+    </div>
+    <div class="cov-stat ${burnCls}">
+      <div class="cov-lbl">${t('covStatBurn')}</div>
+      <div class="cov-val">${avgDelta >= 0 ? '+' : ''}${fmtShortM(avgDelta)}</div>
+      <div class="cov-sub">${avgDelta >= 0 ? t('covStatBurnSubEarn') : t('covStatBurnSubBurn')}</div>
+    </div>
+  `;
+
+  if (coverageChart) { coverageChart.destroy(); coverageChart = null; }
+  const ctx = document.getElementById('coverageChart');
+  coverageChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => localizeMonth(d.month)),
+      datasets: [
+        { label: t('covSeriesIncome'), data: data.map(d => convertAmount(d.sumupNet)), backgroundColor: '#0d9488', borderRadius: 4, maxBarThickness: 50 },
+        { label: t('covSeriesExpenses'), data: data.map(d => convertAmount(d.expenses)), backgroundColor: '#ef4444', borderRadius: 4, maxBarThickness: 50 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => { const sym = currencySymbol(); const v = ctx.parsed.y; return `${ctx.dataset.label}: ${sym}${Math.round(v).toLocaleString(t('locale'))}`; },
+            footer: (items) => { if (!items.length) return ''; const idx = items[0].dataIndex; const d = data[idx]; if (d.coverage === null) return ''; return `${t('covStatLast')}: ${d.coverage.toFixed(1)}%`; }
+          }
+        }
+      },
+      scales: { y: { ticks: { callback: v => { const sym = currencySymbol(); if (Math.abs(v) >= 1e6) return sym + (v / 1e6).toFixed(1) + 'M'; if (Math.abs(v) >= 1e3) return sym + (v / 1e3).toFixed(0) + 'K'; return sym + Math.round(v); } }, beginAtZero: true }, x: { grid: { display: false } } }
+    }
+  });
+
+  const capexTotal = allRows.filter(r => isCapEx(r) && !isPending(r)).reduce((s, r) => s + r.cashOut, 0);
+  document.getElementById('coverageNote').textContent = `${t('covNoteCapex')}${fmtCLP(capexTotal)}`;
+}
+
+function renderSumupKPIs() {
+  const s = SUMUP_DATA;
+  const sa = computeSumupAvailable();
+  const pct = s.totalGross > 0 ? (s.totalFees / s.totalGross * 100).toFixed(2) : '0.00';
+  document.getElementById('sumupKpis').innerHTML = `
+    <div class="kpi teal"><div class="label">${t('sumupGross')}</div><div class="value">${fmtCLP(s.totalGross)}</div><div class="meta">${s.successfulCount} ${t('sumupGrossMeta')}</div></div>
+    <div class="kpi red"><div class="label">${t('sumupFees')}</div><div class="value">${fmtCLP(s.totalFees)}</div><div class="meta">${pct}% ${t('sumupFeesMeta')}</div></div>
+    <div class="kpi green"><div class="label">${t('sumupNet')}</div><div class="value">${fmtCLP(s.totalNet)}</div><div class="meta">${t('sumupNetMeta')}</div></div>
+    <div class="kpi blue"><div class="label">${t('sumupTransferred')}</div><div class="value">${fmtCLP(sa.transferredToBank)}</div><div class="meta">${t('sumupTransferredMeta')}</div></div>
+    <div class="kpi amber"><div class="label">${t('sumupAvailable')}</div><div class="value">${fmtCLP(sa.available)}</div><div class="meta">${t('sumupAvailableMeta')}</div></div>
+    <div class="kpi"><div class="label">${t('sumupFailed')}</div><div class="value">${s.failedCount}</div><div class="meta">${t('sumupFailedMeta')}</div></div>
+  `;
+}
+
+function renderSumupLastUpdate() {
+  const el = document.getElementById('sumupLastUpdate');
+  if (!el) return;
+  el.classList.remove('stale', 'error');
+  if (sumupRefreshError) { el.textContent = `${t('sumupRefreshError')}: ${sumupRefreshError}`; el.classList.add('error'); }
+  else { el.textContent = `${t('sumupLastUpdateLabel')} ${SUMUP_DATA.lastUpdate}`; }
+}
+
+function renderOperationalChart() {
+  const monthSet = new Set();
+  Object.keys(SUMUP_DATA.byMonth).forEach(m => monthSet.add(m));
+  allRows.forEach(r => { const k = classifyIncome(r); if ((k === 'capital' || k === 'indrive') && r.cashIn > 0) monthSet.add(r.month); });
+  const months = [...monthSet].sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+  const sumupNet = months.map(m => convertAmount((SUMUP_DATA.byMonth[m] && SUMUP_DATA.byMonth[m].net) || 0));
+  const events = [];
+  months.forEach(month => {
+    const capital = allRows.filter(r => r.month === month && classifyIncome(r) === 'capital').reduce((s, r) => s + r.cashIn, 0);
+    const indrive = allRows.filter(r => r.month === month && classifyIncome(r) === 'indrive').reduce((s, r) => s + r.cashIn, 0);
+    if (capital > 0) events.push({ month, type: 'capital', amount: capital });
+    if (indrive > 0) events.push({ month, type: 'indrive', amount: indrive });
+  });
+  if (operationalChart) { operationalChart.destroy(); operationalChart = null; }
+  const ctx = document.getElementById('operationalChart');
+  operationalChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: months.map(localizeMonth), datasets: [{ label: t('opSeriesLabel'), data: sumupNet, backgroundColor: '#0d9488', borderRadius: 4, maxBarThickness: 60 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => { const sym = currencySymbol(); return `${t('opSeriesLabel')}: ${sym}${Math.round(ctx.parsed.y).toLocaleString(t('locale'))}`; } } } },
+      scales: { y: { ticks: { callback: v => { const sym = currencySymbol(); if (Math.abs(v) >= 1e6) return sym + (v / 1e6).toFixed(1) + 'M'; if (Math.abs(v) >= 1e3) return sym + (v / 1e3).toFixed(0) + 'K'; return sym + Math.round(v); } }, beginAtZero: true }, x: { grid: { display: false } } }
+    }
+  });
+  const stripEl = document.getElementById('operationalEvents');
+  const labelMap = { capital: t('incomeCapital'), indrive: t('incomeIndrive') };
+  const colorMap = { capital: '#7c3aed', indrive: '#f59e0b' };
+  const bgMap = { capital: '#ede9fe', indrive: '#fef3c7' };
+  if (events.length > 0) {
+    stripEl.innerHTML = `<span class="op-events-label">${t('opEventsLabel')}</span>` + events.map(e => `<span class="event-chip" style="background:${bgMap[e.type]}; color:${colorMap[e.type]};"><span class="event-dot" style="background:${colorMap[e.type]}"></span>${localizeMonth(e.month)} · ${labelMap[e.type]} ${fmtCLP(e.amount)}</span>`).join('');
+  } else {
+    stripEl.innerHTML = `<span class="op-events-empty">${t('opEventsEmpty')}</span>`;
+  }
+}
+
+const donutPercentPlugin = {
+  id: 'donutPercentLabels',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    const meta = chart.getDatasetMeta(0);
+    if (!meta || !meta.data) return;
+    const data = chart.data.datasets[0].data;
+    const total = data.reduce((a, b) => a + b, 0);
+    if (total === 0) return;
+    meta.data.forEach((arc, i) => {
+      const value = data[i];
+      const pct = (value / total * 100);
+      if (pct < 4) return;
+      const pos = arc.tooltipPosition();
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 3;
+      ctx.fillText(pct.toFixed(1) + '%', pos.x, pos.y);
+      ctx.restore();
+    });
+  }
+};
+
+function renderIncomeDonut() {
+  const totals = computeIncomeBreakdown();
+  const order = ['capital', 'indrive', 'sumup'];
+  if (totals.other > 0) order.push('other');
+  const colors = { capital: '#7c3aed', indrive: '#f59e0b', sumup: '#0d9488', other: '#9ca3af' };
+  const labelMap = { capital: t('incomeCapital'), indrive: t('incomeIndrive'), sumup: t('incomeSumup'), other: t('incomeOther') };
+  const data = order.map(k => totals[k]);
+  const total = data.reduce((s, v) => s + v, 0);
+  document.getElementById('incomeTotalVal').textContent = fmtShortM(total);
+  const legendEl = document.getElementById('incomeLegend');
+  legendEl.innerHTML = order.map(k => {
+    const v = totals[k];
+    const pct = total > 0 ? (v / total * 100).toFixed(1) : '0.0';
+    return `<div class="income-row"><div class="income-swatch" style="background:${colors[k]}"></div><div class="income-meta"><div class="lbl">${labelMap[k]}</div><div class="val">${fmtCLP(v)}</div><div class="pct">${pct}% ${t('incomeTotalLabel').toLowerCase()}</div></div></div>`;
+  }).join('');
+  if (incomeDonutChart) { incomeDonutChart.destroy(); incomeDonutChart = null; }
+  const ctx = document.getElementById('incomeDonut');
+  incomeDonutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: order.map(k => labelMap[k]), datasets: [{ data: data, backgroundColor: order.map(k => colors[k]), borderColor: '#ffffff', borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => { const v = ctx.parsed; const pct = total > 0 ? (v / total * 100).toFixed(1) : '0'; return `${ctx.label}: ${fmtCLP(v)} (${pct}%)`; } } } } },
+    plugins: [donutPercentPlugin]
+  });
+}
+
+function renderExpenseTable(elementId, rowKeys, dataMap, months, firstColLabel, opts) {
+  const el = document.getElementById(elementId);
+  const tableType = (opts && opts.type) || 'recurring';
+  const escAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  let html = '<thead><tr>';
+  html += `<th>${firstColLabel}</th>`;
+  months.forEach(m => html += `<th>${localizeMonthShort(m)}</th>`);
+  html += `<th class="total-col">${t('expenseTotal')}</th></tr></thead>`;
+  const monthTotals = months.map(m => { let s = 0; for (const key of rowKeys) s += (dataMap[key] && dataMap[key][m]) || 0; return s; });
+  const grandTotal = monthTotals.reduce((s, v) => s + v, 0);
+  html += '<tbody>';
+  for (const key of rowKeys) {
+    const keyAttr = escAttr(key);
+    html += `<tr><td class="clickable-row" data-key="${keyAttr}" title="${escAttr(key)} — Click para filtrar">${key}</td>`;
+    let rowTotal = 0;
+    for (const m of months) {
+      const v = (dataMap[key] && dataMap[key][m]) || 0;
+      rowTotal += v;
+      if (v > 0) html += `<td class="clickable-cell" data-key="${keyAttr}" data-month="${m}" title="${fmtCLP(v)} — Click para filtrar">${fmtShortM(v)}</td>`;
+      else html += `<td><span class="empty-cell">—</span></td>`;
+    }
+    if (rowTotal > 0) html += `<td class="total-col clickable-row" data-key="${keyAttr}" title="${fmtCLP(rowTotal)} — Click para filtrar">${fmtShortM(rowTotal)}</td></tr>`;
+    else html += `<td class="total-col">—</td></tr>`;
+  }
+  html += '</tbody>';
+  html += '<tfoot><tr><td>' + t('expenseTotal') + '</td>';
+  for (let i = 0; i < months.length; i++) {
+    const v = monthTotals[i]; const m = months[i];
+    if (v > 0) html += `<td class="clickable-month" data-month="${m}" title="${fmtCLP(v)} — Click para filtrar">${fmtShortM(v)}</td>`;
+    else html += `<td>—</td>`;
+  }
+  html += `<td class="total-col" title="${fmtCLP(grandTotal)}">${fmtShortM(grandTotal)}</td></tr></tfoot>`;
+  el.innerHTML = html;
+  el.querySelectorAll('td.clickable-cell, td.clickable-row').forEach(td => {
+    td.addEventListener('click', () => { const k = td.getAttribute('data-key'); const m = td.getAttribute('data-month') || null; setExpenseFilter(tableType, k, m); });
+  });
+  el.querySelectorAll('td.clickable-month').forEach(td => {
+    td.addEventListener('click', () => { const m = td.getAttribute('data-month'); setExpenseFilter(tableType, null, m); });
+  });
+  if (expenseFilter && expenseFilter.type === tableType) {
+    if (expenseFilter.key && expenseFilter.month) {
+      el.querySelectorAll(`td.clickable-cell[data-key="${CSS.escape(expenseFilter.key)}"][data-month="${CSS.escape(expenseFilter.month)}"]`).forEach(td => td.classList.add('active-cell'));
+    } else if (expenseFilter.key) {
+      el.querySelectorAll(`td[data-key="${CSS.escape(expenseFilter.key)}"]`).forEach(td => td.classList.add('active-cell'));
+    } else if (expenseFilter.month) {
+      el.querySelectorAll(`td.clickable-month[data-month="${CSS.escape(expenseFilter.month)}"]`).forEach(td => td.classList.add('active-cell'));
+    }
+  }
+}
+
+function renderExpensesTables() {
+  const realRows = allRows.filter(r => !r.synthetic && r.cashOut > 0 && !isPending(r));
+  const recurringMap = {};
+  const variableMap = {};
+  for (const r of realRows) {
+    const cat = classifyRecurringExpense(r.supplier, r.description);
+    if (cat) {
+      if (!recurringMap[cat]) recurringMap[cat] = {};
+      recurringMap[cat][r.month] = (recurringMap[cat][r.month] || 0) + r.cashOut;
+    } else {
+      const supplier = r.supplier || '—';
+      if (!variableMap[supplier]) variableMap[supplier] = {};
+      variableMap[supplier][r.month] = (variableMap[supplier][r.month] || 0) + r.cashOut;
+    }
+  }
+  const allMonths = [...new Set(realRows.map(r => r.month))].sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+  const recurringOrdered = RECURRING_CATEGORIES
+    .filter(cat => { const m = recurringMap[cat]; if (!m) return false; return Object.values(m).reduce((s, v) => s + v, 0) > 0; })
+    .sort((a, b) => { const sumA = Object.values(recurringMap[a] || {}).reduce((s, v) => s + v, 0); const sumB = Object.values(recurringMap[b] || {}).reduce((s, v) => s + v, 0); return sumB - sumA; });
+  renderExpenseTable('recurringTable', recurringOrdered, recurringMap, allMonths, t('expenseCategory'), { type: 'recurring' });
+  const variableSuppliers = Object.keys(variableMap).sort((a, b) => { const sumA = Object.values(variableMap[a]).reduce((s, v) => s + v, 0); const sumB = Object.values(variableMap[b]).reduce((s, v) => s + v, 0); return sumB - sumA; });
+  renderExpenseTable('variableTable', variableSuppliers, variableMap, allMonths, t('expenseSupplier'), { type: 'variable' });
+}
+
+function statusPill(s) {
+  const k = (s || '').toLowerCase();
+  let cls = 'status-paid';
+  if (k.includes('pending')) cls = 'status-pending';
+  else if (k.includes('transfer')) cls = 'status-transfer';
+  return `<span class="status-pill ${cls}">${s}</span>`;
+}
+function bankCell(b) { if ((b || '').toLowerCase() === INTERNATIONAL_BANK) return `<span class="bank-international">${b} ✈</span>`; return b || ''; }
+function supplierCell(r) {
+  if (isSumupTransfer(r)) return `${r.supplier} <span class="tag-internal">${t('tagInternal')}</span>`;
+  if (r.synthetic) return `${r.supplier} <span class="tag-internal">${t('tagSynthetic')}</span>`;
+  return r.supplier || '';
+}
+
+function applyFiltersAndRenderTable() {
+  const month = document.getElementById('filterMonth').value;
+  const status = document.getElementById('filterStatus').value;
+  const entity = document.getElementById('filterEntity').value;
+  const bank = document.getElementById('filterBank').value;
+  const text = (document.getElementById('filterText').value || '').toLowerCase();
+  let filtered = allRows.filter(r => {
+    if (month && r.month !== month) return false;
+    if (status && r.status !== status) return false;
+    if (entity && r.entity !== entity) return false;
+    if (bank && r.bank !== bank) return false;
+    if (text) { const blob = `${r.supplier} ${r.description} ${r.docNumber}`.toLowerCase(); if (!blob.includes(text)) return false; }
+    return true;
+  });
+  if (expenseFilter) {
+    filtered = filtered.filter(r => {
+      if (r.synthetic) return false;
+      if (r.cashOut <= 0) return false;
+      if (isPending(r)) return false;
+      if (expenseFilter.month && r.month !== expenseFilter.month) return false;
+      const cat = classifyRecurringExpense(r.supplier, r.description);
+      if (expenseFilter.key) {
+        if (expenseFilter.type === 'recurring') { if (cat !== expenseFilter.key) return false; }
+        else { if (cat) return false; const sup = r.supplier || '—'; if (sup !== expenseFilter.key) return false; }
+      }
+      return true;
+    });
+  }
+  const tableData = filtered.map(r => [r.date, localizeMonth(r.month), r, r.description, r.cashIn ? fmtCLP(r.cashIn) : '', r.cashOut ? fmtCLP(r.cashOut) : '', r.status, r.entity, r.bank]);
+  const oldContainer = document.getElementById('paymentsTable');
+  const container = document.createElement('div');
+  container.id = 'paymentsTable';
+  oldContainer.parentNode.replaceChild(container, oldContainer);
+  gridInstance = new gridjs.Grid({
+    columns: [
+      t('colDate'), t('colMonth'),
+      { name: t('colSupplier'), formatter: c => gridjs.html(supplierCell(c)) },
+      t('colDescription'),
+      { name: t('colCashIn'), formatter: c => gridjs.html(`<span class="cash-in">${c}</span>`) },
+      { name: t('colCashOut'), formatter: c => gridjs.html(`<span class="cash-out">${c}</span>`) },
+      { name: t('colStatus'), formatter: c => gridjs.html(statusPill(c)) },
+      t('colEntity'),
+      { name: t('colBank'), formatter: c => gridjs.html(bankCell(c)) }
+    ],
+    data: tableData, sort: true, search: false,
+    pagination: { limit: 25 }, style: { table: { 'white-space': 'normal' } }
+  }).render(container);
+}
+
+function resetFilters() {
+  ['filterMonth', 'filterStatus', 'filterEntity', 'filterBank', 'filterText'].forEach(id => document.getElementById(id).value = '');
+  expenseFilter = null;
+  updateExpenseFilterChip();
+  applyFiltersAndRenderTable();
+}
+
+function populateFilters() {
+  const months = [...new Set(allRows.map(r => r.month))].sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+  const statuses = [...new Set(allRows.map(r => r.status))].sort();
+  const entities = [...new Set(allRows.map(r => r.entity))].sort();
+  const banks = [...new Set(allRows.map(r => r.bank))].sort();
+  const fillSel = (id, items, allLabel, localize) => {
+    const el = document.getElementById(id);
+    const cur = el.value;
+    el.innerHTML = `<option value="">${allLabel}</option>` + items.map(v => `<option value="${v}">${localize ? localize(v) : v}</option>`).join('');
+    el.value = cur;
+  };
+  fillSel('filterMonth', months, t('filterAllM'), localizeMonth);
+  fillSel('filterStatus', statuses, t('filterAllM'));
+  fillSel('filterEntity', entities, t('filterAllF'));
+  fillSel('filterBank', banks, t('filterAllM'));
+}
+
+function applyStaticI18n() {
+  document.documentElement.lang = currentLang;
+  document.title = t('title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
+  const cs = document.getElementById('currSwitch');
+  if (cs) cs.title = t('fxTooltip');
+}
+
+function renderAll() {
+  const includeIntl = document.getElementById('includeIntl').checked;
+  const intlRows = allRows.filter(isInternational);
+  scopedRows = includeIntl ? allRows.slice() : allRows.filter(r => !isInternational(r));
+  document.getElementById('scopeTag').textContent = includeIntl ? t('scopeBoth') : t('scopeLocal');
+  renderKPIs(computeKPIs(scopedRows, intlRows), includeIntl);
+  renderCoverageCard();
+  renderSumupKPIs();
+  renderSumupLastUpdate();
+  renderOperationalChart();
+  renderIncomeDonut();
+  renderExpensesTables();
+  populateFilters();
+  applyFiltersAndRenderTable();
+}
+
+function onScopeChange() { renderAll(); }
+
+function setLanguage(lang) {
+  if (!I18N[lang]) return;
+  currentLang = lang;
+  document.querySelectorAll('#langSwitch button').forEach(b => { b.classList.toggle('active', b.getAttribute('data-lang') === lang); });
+  applyStaticI18n();
+  renderSumupLastUpdate();
+  if (allRows.length > 0) renderAll();
+}
+
+function setCurrency(curr) {
+  if (curr !== 'CLP' && curr !== 'USD') return;
+  currentCurrency = curr;
+  document.querySelectorAll('#currSwitch button').forEach(b => { b.classList.toggle('active', b.getAttribute('data-curr') === curr); });
+  if (allRows.length > 0) renderAll();
+}
+
+async function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> ' + t('refreshLoading');
+  showError('');
+  sumupRefreshError = null;
+  if (!window.cowork || !window.cowork.callMcpTool) {
+    showError(t('errCowork'));
+    btn.disabled = false; btn.textContent = t('refresh');
+    return;
+  }
+  const sheetPromise = (async () => {
+    const result = await window.cowork.callMcpTool(READ_TOOL, { fileId: FILE_ID });
+    let text = '';
+    if (typeof result === 'string') text = result;
+    else if (result && result.fileContent) text = result.fileContent;
+    else if (result && result.content && Array.isArray(result.content)) {
+      text = result.content.map(c => (c.text || c.fileContent || '')).join('\n');
+      try { const j = JSON.parse(text); if (j.fileContent) text = j.fileContent; } catch (_) {}
+    } else if (result && result.text) text = result.text;
+    else text = JSON.stringify(result);
+    return text;
+  })();
+  const sumupPromise = refreshSumupFromCSVs().catch(e => {
+    sumupRefreshError = e.message || 'unknown';
+    console.error('SumUp refresh failed:', e);
+  });
+  try {
+    const [sheetText] = await Promise.all([sheetPromise, sumupPromise]);
+    allRows = parseSheet(sheetText);
+    if (allRows.length === 0) showError(t('errLoad'));
+    renderAll();
+    document.getElementById('lastUpdate').textContent = t('updatedAt') + ' ' + new Date().toLocaleString(t('locale'));
+  } catch (e) {
+    showError('Error: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('refresh');
+  }
+}
+
+/* ───────── PUBLISH TO PORTAL ───────── */
+async function publishToPortal() {
+  const btn = document.getElementById('publishBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Capturando...';
+  try {
+    const canvases = Array.from(document.querySelectorAll('canvas'));
+    const canvasImages = canvases.map((c, i) => {
+      c.dataset.snapshotIdx = String(i);
+      try { return c.toDataURL('image/png'); } catch(e) { return ''; }
+    });
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('canvas').forEach(c => {
+      const idx = parseInt(c.dataset.snapshotIdx || '0');
+      const img = document.createElement('img');
+      img.src = canvasImages[idx] || '';
+      img.style.maxWidth = '100%';
+      const h = c.getAttribute('height');
+      if (h) img.style.height = h + 'px';
+      c.parentNode.replaceChild(img, c);
+    });
+    // Remove only the cowork meta script; keep CDN + inline dashboard scripts
+    clone.querySelectorAll('script[type="application/json"]').forEach(s => s.remove());
+    // Inject snapshot data and replace startup loadAll() with a snapshot render
+    const mainScript = clone.querySelector('script:not([src]):not([type])');
+    if (mainScript) {
+      const dataScript = document.createElement('script');
+      dataScript.textContent = 'var __SNAPSHOT__={rows:' + JSON.stringify(allRows) + ',sumup:' + JSON.stringify(SUMUP_DATA) + ',fx:' + FX_RATE + '};';
+      mainScript.parentNode.insertBefore(dataScript, mainScript);
+      mainScript.textContent = mainScript.textContent.replace(
+        /\nloadAll\(\);?\s*$/,
+        '\n// SNAPSHOT MODE — render from embedded data\nif(window.__SNAPSHOT__){allRows=__SNAPSHOT__.rows;SUMUP_DATA=__SNAPSHOT__.sumup;applyStaticI18n();renderAll();}\n'
+      );
+    }
+    // Only disable Refresh and Publish buttons — leave lang/curr/filters interactive
+    const rfBtn = clone.querySelector('#refreshBtn');
+    const pbBtn = clone.querySelector('#publishBtn');
+    if (rfBtn) rfBtn.setAttribute('disabled', 'disabled');
+    if (pbBtn) { pbBtn.setAttribute('disabled', 'disabled'); pbBtn.textContent = '✓ Publicado'; }
+    // Ensure viewport meta exists (fixes layout compression on some screens)
+    if (!clone.querySelector('meta[name="viewport"]')) {
+      clone.querySelector('head').insertAdjacentHTML('afterbegin', '<meta name="viewport" content="width=device-width,initial-scale=1">');
+    }
+    const attrs = Array.from(clone.attributes).map(a => ' ' + a.name + '="' + a.value + '"').join('');
+    const ts = new Date().toLocaleString('es-CL');
+    const banner = '<div style="background:#059669;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-family:sans-serif;font-weight:500">✔ Snapshot publicado el ' + ts + '</div>';
+    const html = '<!DOCTYPE html>\n<html' + attrs + '>\n' + clone.innerHTML.replace(/(\<body[^>]*>)/, '$1' + banner) + '\n</html>';
+
+    btn.textContent = '⏳ Guardando en Drive...';
+    const driveResult = await window.cowork.callMcpTool(
+      'mcp__2df28200-8e68-4f27-bb55-8d3e95a62671__create_file',
+      { title: '__gocab_snapshot_financial__.html', textContent: html, contentMimeType: 'text/html', disableConversionToGoogleType: true }
+    );
+    if (!driveResult || driveResult.error) throw new Error('Drive error: ' + JSON.stringify(driveResult).slice(0, 60));
+
+    btn.textContent = '⏳ Publicando...';
+    await window.cowork.runScheduledTask('gocab-publish-financial');
+
+    btn.textContent = '✓ Publicado — deploy ~1 min';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '⬆ Publicar al portal'; }, 7000);
+  } catch(e) {
+    console.error('Publish error:', e);
+    btn.textContent = '✗ ' + String(e.message || e).slice(0, 50);
+    setTimeout(() => { btn.disabled = false; btn.textContent = '⬆ Publicar al portal'; }, 8000);
+  }
+}document.querySelectorAll('#langSwitch button').forEach(b => { b.addEventListener('click', () => setLanguage(b.getAttribute('data-lang'))); });
+document.querySelectorAll('#currSwitch button').forEach(b => { b.addEventListener('click', () => setCurrency(b.getAttribute('data-curr'))); });
+['filterMonth', 'filterStatus', 'filterEntity', 'filterBank'].forEach(id => document.getElementById(id).addEventListener('change', applyFiltersAndRenderTable));
+document.getElementById('filterText').addEventListener('input', applyFiltersAndRenderTable);
+
+applyStaticI18n();
+renderSumupLastUpdate();
+// SNAPSHOT MODE — render from embedded data
+if(window.__SNAPSHOT__){allRows=__SNAPSHOT__.rows;SUMUP_DATA=__SNAPSHOT__.sumup;applyStaticI18n();renderAll();}
+</script>
 
 
 </body>
