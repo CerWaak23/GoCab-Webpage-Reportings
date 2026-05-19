@@ -84,7 +84,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .income-meta .lbl { font-size: 13px; font-weight: 500; color: #1f2937; }
 .income-meta .val { font-size: 16px; font-weight: 600; color: #111827; margin-top: 2px; }
 .income-meta .pct { font-size: 12px; color: #6b7280; margin-top: 2px; }
-.op-chart-wrap { position: relative; height: 280px; margin-bottom: 12px; overflow: hidden; }
+.op-chart-wrap { position: relative; height: 280px; margin-bottom: 12px; }
 .op-events { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid #f3f4f6; }
 .op-events-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-right: 8px; }
 .event-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 14px; font-size: 12px; font-weight: 500; }
@@ -122,7 +122,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .cov-stat.amber .cov-val { color: #d97706; }
 .cov-stat.red .cov-val { color: #dc2626; }
 .cov-sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
-.cov-chart-wrap { position: relative; height: 300px; overflow: hidden; }
+.cov-chart-wrap { position: relative; height: 300px; }
 .cov-note { margin-top: 12px; padding: 10px 14px; background: #f3f4f6; border-radius: 6px; font-size: 12px; color: #4b5563; line-height: 1.5; }
 </style>
 </head>
@@ -195,7 +195,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       <div class="cov-sub">quemando capital por mes</div>
     </div>
   </div>
-  <div class="cov-chart-wrap"><canvas id="coverageChart" style="width:100%;height:100%;display:block;"></canvas></div>
+  <div class="cov-chart-wrap"><canvas id="coverageChart" style="display:block;"></canvas></div>
   <div class="cov-note" id="coverageNote">Excluí compras de autos (Bruno Fritsch) por ser CapEx. CapEx total excluido del análisis: $274.983.570</div>
 </div>
 
@@ -215,7 +215,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 <div class="card">
   <h3 data-i18n="opChartTitle">Ganancia operacional mensual</h3>
   <div class="card-sub" data-i18n="opChartSub">Cobros netos de SumUp por mes · Las inyecciones de capital e Indrive aparecen abajo para no aplastar la curva.</div>
-  <div class="op-chart-wrap"><canvas id="operationalChart" style="width:100%;height:100%;display:block;"></canvas></div>
+  <div class="op-chart-wrap"><canvas id="operationalChart" style="display:block;"></canvas></div>
   <div class="op-events" id="operationalEvents"><span class="op-events-label">Inyecciones de terceros:</span><span class="event-chip" style="background:#ede9fe; color:#7c3aed;"><span class="event-dot" style="background:#7c3aed"></span>Diciembre 2025 · Capital del Holding $146.032.000</span><span class="event-chip" style="background:#ede9fe; color:#7c3aed;"><span class="event-dot" style="background:#7c3aed"></span>Febrero 2026 · Capital del Holding $129.922.500</span><span class="event-chip" style="background:#fef3c7; color:#f59e0b;"><span class="event-dot" style="background:#f59e0b"></span>Marzo 2026 · Indrive subsidio $27.000.000</span><span class="event-chip" style="background:#fef3c7; color:#f59e0b;"><span class="event-dot" style="background:#f59e0b"></span>Mayo 2026 · Indrive subsidio $26.755.000</span></div>
 </div>
 
@@ -223,7 +223,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   <h3 data-i18n="incomeChartTitle">Ingresos por origen</h3>
   <div class="card-sub" data-i18n="incomeChartSub">Capital del Holding · Indrive subsidio · SumUp neto</div>
   <div class="income-chart-row">
-    <div class="donut-wrap"><canvas id="incomeDonut" style="width:100%;height:100%;display:block;"></canvas>
+    <div class="donut-wrap"><canvas id="incomeDonut" style="display:block;"></canvas>
       <div class="donut-center">
         <div class="lbl" data-i18n="incomeTotalLabel">Total ingresado</div>
         <div class="val" id="incomeTotalVal">$376.8M</div>

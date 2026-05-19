@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getAppSession } from '@/lib/session';
 import LogoutButton from '@/components/LogoutButton';
 import LangSwitcher from '@/components/LangSwitcher';
+import CurrencySwitcher from '@/components/CurrencySwitcher';
 import LocalizedDashboard from '@/components/LocalizedDashboard';
 
 export default async function Dashboard() {
@@ -26,12 +27,10 @@ export default async function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
             <LangSwitcher />
+            <CurrencySwitcher />
             <LogoutButton />
           </div>
         </div>
       </header>
 
-      <LocalizedDashboard firstName={firstName} role={role} isManager={isManager} />
-    </div>
-  );
-}
+      <L
