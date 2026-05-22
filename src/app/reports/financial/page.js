@@ -8,7 +8,7 @@ import CurrencySwitcher from '@/components/CurrencySwitcher';
 export default async function FinancialReport() {
   const session = await getAppSession();
   if (!session) redirect('/');
-  if (!session.user.isManager) redirect('/dashboard');
+  // Accessible to all authenticated users
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">

@@ -393,6 +393,59 @@ function publishToPortal() {
 }
 function onScopeChange() { /* no-op: KPIs estáticos en snapshot */ }
 
+// ── Expense table click-to-filter state ──────────────────────────────────────
+var _expKey = null;
+var _expMonth = null;
+
+function _clearActiveCell() {
+  document.querySelectorAll('.expense-table td.active-cell').forEach(function(el) {
+    el.classList.remove('active-cell');
+  });
+}
+
+function _showExpenseChip(label) {
+  var chip = document.getElementById('expenseFilterChip');
+  if (!chip) return;
+  chip.innerHTML = label + ' <button onclick="clearExpenseFilter()" title="Limpiar filtro" style="margin-left:6px">×</button>';
+  chip.style.display = 'inline-flex';
+}
+
+function clearExpenseFilter() {
+  _expKey = null; _expMonth = null;
+  _clearActiveCell();
+  var chip = document.getElementById('expenseFilterChip');
+  if (chip) { chip.innerHTML = ''; chip.style.display = 'none'; }
+  applyFilters();
+}
+
+// Called when user clicks a row-label cell (filters all months for that provider)
+function filterByProvider(key, cell) {
+  if (_expKey === key && _expMonth === null) { clearExpenseFilter(); return; }
+  _expKey = key; _expMonth = null;
+  _clearActiveCell();
+  cell.classList.add('active-cell');
+  _showExpenseChip(key);
+  applyFilters();
+}
+
+// Called when user clicks a month cell (filters by provider + month)
+function filterByCell(key, month, cell) {
+  if (_expKey === key && _expMonth === month) { clearExpenseFilter(); return; }
+  _expKey = key; _expMonth = month;
+  _clearActiveCell();
+  cell.classList.add('active-cell');
+  _showExpenseChip(key + ' · ' + month);
+  applyFilters();
+}
+
+// Wire up expense table clicks
+document.querySelectorAll('.expense-table td.clickable-row').forEach(function(td) {
+  td.addEventListener('click', function() { filterByProvider(td.dataset.key, td); });
+});
+document.querySelectorAll('.expense-table td.clickable-cell').forEach(function(td) {
+  td.addEventListener('click', function() { filterByCell(td.dataset.key, td.dataset.month, td); });
+});
+
 // ── Filter logic on gridjs rows ───────────────────────────────────────────────
 function applyFilters() {
   var month  = (document.getElementById('filterMonth')  || {}).value || '';
@@ -406,7 +459,18 @@ function applyFilters() {
   rows.forEach(function(row) {
     var cells = row.querySelectorAll('.gridjs-td');
     var get = function(i) { return cells[i] ? cells[i].textContent.trim() : ''; };
-    var show =
+
+    // Expense table click-filter takes precedence
+    var expPass = true;
+    if (_expKey) {
+      var rowText = (get(2) + ' ' + get(3)).toLowerCase();
+      expPass = rowText.indexOf(_expKey.toLowerCase()) !== -1;
+      if (expPass && _expMonth) {
+        expPass = get(1).indexOf(_expMonth) !== -1 || _expMonth.indexOf(get(1)) !== -1;
+      }
+    }
+
+    var show = expPass &&
       (!month  || get(1) === month)  &&
       (!status || get(6) === status) &&
       (!entity || get(7) === entity) &&
@@ -415,17 +479,17 @@ function applyFilters() {
     row.style.display = show ? '' : 'none';
     if (show) visible++;
   });
-  var chip = document.getElementById('expenseFilterChip');
-  var hasFilter = month || status || entity || bank || text;
-  if (chip) chip.textContent = hasFilter ? ('Mostrando ' + visible + ' de ' + rows.length + ' filas visibles') : '';
 }
 
 function resetFilters() {
+  _expKey = null; _expMonth = null;
+  _clearActiveCell();
+  var chip = document.getElementById('expenseFilterChip');
+  if (chip) { chip.innerHTML = ''; chip.style.display = 'none'; }
   ['filterMonth','filterStatus','filterEntity','filterBank'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
   var ft = document.getElementById('filterText'); if (ft) ft.value = '';
-  var chip = document.getElementById('expenseFilterChip'); if (chip) chip.textContent = '';
   document.querySelectorAll('.gridjs-tbody .gridjs-tr').forEach(function(r) { r.style.display = ''; });
 }
 
