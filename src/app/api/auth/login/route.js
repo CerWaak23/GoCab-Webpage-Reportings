@@ -1,0 +1,38 @@
+import { NextResponse } from 'next/server';
+import { getUserByEmail } from '@/lib/users';
+import { createSessionToken, COOKIE_NAME, SESSION_SECONDS } from '@/lib/session';
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const email = body?.email?.trim()?.toLowerCase();
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email requerido' }, { status: 400 });
+    }
+
+    const user = getUserByEmail(email);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Este email no tiene acceso al portal.' },
+        { status: 401 }
+      );
+    }
+
+    const token = await createSessionToken(user);
+
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_SECONDS,
+      path: '/',
+    });
+
+    return response;
+  } catch (err) {
+    console.error('[login]', err);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
