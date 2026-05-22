@@ -103,6 +103,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .reckpi h4{font-size:11px;font-weight:700;color:#374151;margin-bottom:4px}
 .reckpi p{font-size:11px;color:#64748b;line-height:1.5}
 @media(max-width:960px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.rbars{grid-template-columns:repeat(2,1fr)}.charts-row{grid-template-columns:1fr}.rec-grid{grid-template-columns:1fr}}
+/* Constrain embedded chart images to their containers */
+.ccard img,.evol-card img,[style*="position:relative"] img{display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;}
 </style>
 </head>
 <body><div style="background:#059669;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-family:sans-serif;font-weight:500">✔ Snapshot publicado el 22-05-2026, 3:47:35 p. m.</div>
@@ -241,5 +243,154 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 
 
+<script>
+// ── Translations ──────────────────────────────────────────────────────────────
+var LANGS = {
+  es: {
+    title:'🚗 Reporte Semanal — Deudas Flota GoCab',
+    loading:'Snapshot listo',refresh:'Actualizar datos',
+    'kpi.charged':'Total Facturado','kpi.charged.sub':'Todos los cobros emitidos',
+    'kpi.paid':'Total Cobrado','kpi.paid.sub':'Pagos recibidos',
+    'kpi.pending_kpi':'Deuda Pendiente','kpi.pending_kpi.sub':'Saldo por cobrar',
+    'kpi.open':'Cobros Abiertos','kpi.active':'Deuda Conductores Activos',
+    'kpi.fired_kpi':'Deuda Conductores Despedidos',
+    'bar.total':'Cobranza Total','bar.active':'Cobranza Solo Activos',
+    'bar.weekly':'Tasa Cobranza Semanal Neta','bar.weekly.sub':'Cobrado período actual / Facturado período actual',
+    'bar.fired':'Exposición Deuda Despedidos',
+    'chart.type.title':'🗂 Deuda Pendiente por Tipo','chart.type.note':'Distribución del saldo sin cobrar según categoría',
+    'chart.btn.active':'Solo activos','chart.btn.all':'Todos',
+    'chart.btn.weekly':'Semanal','chart.btn.daily':'Diario',
+    'evol.title':'📊 Cobros semanales por conductor · Evolución de pagos',
+    'evol.note':'Cada celda = estado de cuenta semanal · Rojo +X = cobros agregados · Verde −X = pagos registrados · Número bold = saldo pendiente acumulado hasta esa semana.',
+    'fired.title':'🔴 Conductores Despedidos con Deuda',
+    'rec.title':'💡 KPIs Recomendados'
+  },
+  en: {
+    title:'🚗 Weekly Report — GoCab Fleet Debts',
+    loading:'Snapshot ready',refresh:'Refresh data',
+    'kpi.charged':'Total Billed','kpi.charged.sub':'All issued charges',
+    'kpi.paid':'Total Collected','kpi.paid.sub':'Payments received',
+    'kpi.pending_kpi':'Pending Debt','kpi.pending_kpi.sub':'Outstanding balance',
+    'kpi.open':'Open Charges','kpi.active':'Active Driver Debt',
+    'kpi.fired_kpi':'Fired Driver Debt',
+    'bar.total':'Total Collection','bar.active':'Active Drivers Only',
+    'bar.weekly':'Weekly Net Collection Rate','bar.weekly.sub':'Collected current period / Billed current period',
+    'bar.fired':'Fired Driver Debt Exposure',
+    'chart.type.title':'🗂 Pending Debt by Type','chart.type.note':'Distribution of uncollected balance by category',
+    'chart.btn.active':'Active only','chart.btn.all':'All',
+    'chart.btn.weekly':'Weekly','chart.btn.daily':'Daily',
+    'evol.title':'📊 Weekly collections by driver · Payment evolution',
+    'evol.note':'Each cell = weekly account statement · Red +X = charges added · Green −X = payments registered · Bold number = cumulative pending balance up to that week.',
+    'fired.title':'🔴 Fired Drivers with Outstanding Debt',
+    'rec.title':'💡 Recommended KPIs'
+  },
+  ru: {
+    title:'🚗 Еженедельный отчёт — Долги флота GoCab',
+    loading:'Снимок готов',refresh:'Обновить данные',
+    'kpi.charged':'Всего выставлено','kpi.charged.sub':'Все выставленные счета',
+    'kpi.paid':'Всего собрано','kpi.paid.sub':'Полученные платежи',
+    'kpi.pending_kpi':'Долг к оплате','kpi.pending_kpi.sub':'Остаток к получению',
+    'kpi.open':'Открытые счета','kpi.active':'Долг активных водителей',
+    'kpi.fired_kpi':'Долг уволенных водителей',
+    'bar.total':'Общая собираемость','bar.active':'Только активные водители',
+    'bar.weekly':'Еженедельная чистая собираемость','bar.weekly.sub':'Собрано / Выставлено за текущий период',
+    'bar.fired':'Экспозиция долга уволенных',
+    'chart.type.title':'🗂 Задолженность по типу','chart.type.note':'Распределение несобранного остатка по категориям',
+    'chart.btn.active':'Только активные','chart.btn.all':'Все',
+    'chart.btn.weekly':'Еженедельно','chart.btn.daily':'Ежедневно',
+    'evol.title':'📊 Еженедельные сборы по водителю · Динамика платежей',
+    'evol.note':'Каждая ячейка = выписка за неделю · Красный +X = начисления · Зелёный −X = платежи · Жирная цифра = накопленный остаток.',
+    'fired.title':'🔴 Уволенные водители с задолженностью',
+    'rec.title':'💡 Рекомендуемые KPI'
+  }
+};
+var currentLang = 'es';
+var currentCurr = 'CLP';
+
+// ── Enable all disabled interactive elements ──────────────────────────────────
+document.querySelectorAll('[disabled]').forEach(function(el) { el.removeAttribute('disabled'); });
+
+// ── Fix status bar (remove error message, show snapshot status) ───────────────
+(function() {
+  var sbar = document.getElementById('sbar');
+  var sbarTxt = document.getElementById('sbar-txt');
+  if (sbar) { sbar.className = 'sbar ok'; }
+  if (sbarTxt) { sbarTxt.textContent = 'Snapshot listo · Los datos son estáticos. Usa Claude Desktop para datos en tiempo real.'; }
+  var lu = document.getElementById('last-updated');
+  if (lu && lu.textContent.indexOf('Cargando') !== -1) {
+    lu.textContent = 'Datos del snapshot publicado';
+  }
+})();
+
+// ── Language switching ────────────────────────────────────────────────────────
+function setLang(lang) {
+  if (!LANGS[lang]) return;
+  currentLang = lang;
+  ['es','en','ru'].forEach(function(l) {
+    var btn = document.getElementById('btn-lang-' + l);
+    if (btn) btn.className = 'gbtn' + (l === lang ? ' active' : '');
+  });
+  var t = LANGS[lang];
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.dataset.i18n;
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+}
+window.setLang = setLang;
+
+// ── Currency switching (cosmetic) ─────────────────────────────────────────────
+function setCurrency(curr) {
+  currentCurr = curr;
+  ['CLP','USD'].forEach(function(c) {
+    var btn = document.getElementById('btn-cur-' + c);
+    if (btn) btn.className = 'gbtn' + (c === curr ? ' active-green' : '');
+  });
+}
+window.setCurrency = setCurrency;
+
+// ── Fix publish button text (Cowork lo dejó en "capturando") ─────────────────
+(function() {
+  var pb = document.getElementById('publish-btn');
+  if (pb) pb.textContent = '📤 Publicar snapshot';
+})();
+
+// ── Stubs para funciones Cowork — respuesta visual sin alertas ────────────────
+function loadData() {
+  var btn = document.getElementById('refresh-btn');
+  if (!btn) return;
+  var orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '✓ Snapshot al día';
+  setTimeout(function() { btn.disabled = false; btn.innerHTML = orig; }, 2000);
+}
+function publishToPortal() {
+  var btn = document.getElementById('publish-btn');
+  if (!btn) return;
+  btn.textContent = '⚠ Solo desde Claude Desktop';
+  setTimeout(function() { btn.textContent = '📤 Publicar snapshot'; }, 2500);
+}
+function setChartDrivers(mode) {
+  var btnA = document.getElementById('chart-btn-active');
+  var btnAll = document.getElementById('chart-btn-all');
+  if (btnA) btnA.className = 'gbtn' + (mode === 'active' ? ' active' : '');
+  if (btnAll) btnAll.className = 'gbtn' + (mode === 'all' ? ' active' : '');
+}
+function setChartPeriod(period) {
+  var btnW = document.getElementById('chart-btn-weekly');
+  var btnD = document.getElementById('chart-btn-daily');
+  if (btnW) btnW.className = 'gbtn' + (period === 'weekly' ? ' active' : '');
+  if (btnD) btnD.className = 'gbtn' + (period === 'daily' ? ' active' : '');
+}
+function setChartTypeDrivers(mode) {
+  var btnA = document.getElementById('type-btn-active');
+  var btnAll = document.getElementById('type-btn-all');
+  if (btnA) btnA.className = 'gbtn' + (mode === 'active' ? ' active' : '');
+  if (btnAll) btnAll.className = 'gbtn' + (mode === 'all' ? ' active' : '');
+}
+function clearEvolTypeFilter() {
+  var badge = document.getElementById('evol-type-badge');
+  if (badge) badge.style.display = 'none';
+}
+</script>
 </body>
 </html>

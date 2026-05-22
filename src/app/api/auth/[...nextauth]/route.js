@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  return NextResponse.redirect('https://go-cab-webpage-reportings.vercel.app');
+  return NextResponse.redirect('https://gobillschile.lat');
 }
 
 export async function POST() {
