@@ -931,14 +931,8 @@ function renderMixedChart(){
     chargedArr.push(c);paidArr.push(p>0?-p:0);balanceArr.push(running);
   });
 
-  if(_mixedChart){
-    _mixedChart.data.labels=labels;
-    _mixedChart.data.datasets[0].data=balanceArr;
-    _mixedChart.data.datasets[1].data=chargedArr;
-    _mixedChart.data.datasets[2].data=paidArr;
-    _mixedChart.update();
-    return;
-  }
+  // Always destroy and recreate so label-count changes don't corrupt the chart
+  if(_mixedChart){_mixedChart.destroy();_mixedChart=null;}
   _mixedChart=new Chart(document.getElementById('mixedChart'),{
     type:'bar',
     data:{labels:labels,datasets:[
@@ -948,11 +942,14 @@ function renderMixedChart(){
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:'#9ca3af',font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},
+      plugins:{
+        datalabels:{display:false},
+        legend:{labels:{color:'#9ca3af',font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},
         tooltip:{callbacks:{label:function(ctx){
           var raw=CUR==='USD'?Math.abs(ctx.raw)*USD_RATE:Math.abs(ctx.raw);
           return ' '+ctx.dataset.label+': '+fmtShort(raw);
-        }}}},
+        }}}
+      },
       scales:{
         x:{ticks:{color:'#6b7280',maxRotation:45,font:{size:10}},grid:{color:'#1a2030'}},
         y:{ticks:{color:'#6b7280',font:{size:10},callback:function(v){
