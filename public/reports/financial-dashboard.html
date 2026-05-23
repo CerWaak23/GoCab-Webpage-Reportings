@@ -346,7 +346,8 @@ function dateToYYYYMM(dateStr) {
   } else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
     var parts = str.split('/');
     var a = parseInt(parts[0]), b = parseInt(parts[1]), y = parseInt(parts[2]);
-    d = a > 12 ? new Date(y, b - 1, a) : new Date(y, b - 1, a);
+    // a>12 → day first (D/M/YYYY); otherwise treat as M/D/YYYY (US format used in sheets)
+    d = a > 12 ? new Date(y, b - 1, a) : new Date(y, a - 1, b);
   } else {
     d = new Date(str);
   }
@@ -458,9 +459,9 @@ function parseRows(raw) {
 
   return raw.slice(headerIdx + 1).map(function(r) {
     var dateStr = iFecha >= 0 ? String(r[iFecha]||'') : '';
-    // Derive YYYY-MM from the actual payment date; fallback to English month name
-    var monthKey = dateStr ? dateToYYYYMM(dateStr) : null;
-    if (!monthKey && iMes >= 0) monthKey = englishMonthToYYYYMM(String(r[iMes]||''));
+    // Prefer Month Period column (human-set, unambiguous); fall back to date parsing
+    var monthKey = (iMes >= 0 && r[iMes]) ? englishMonthToYYYYMM(String(r[iMes])) : null;
+    if (!monthKey) monthKey = dateStr ? dateToYYYYMM(dateStr) : null;
     return {
       date:     dateStr,
       month:    monthKey || '',
@@ -489,7 +490,7 @@ async function loadData() {
   show('loadingWrap');
   try {
     var [sheetRes, sumupRes] = await Promise.all([
-      fetch('/api/sheets/'+SHEET_ID),
+      fetch('/api/sheets/'+SHEET_ID+'?range=Invoices'),
       fetch('/api/sumup').catch(function(){ return {ok:false}; })
     ]);
     var sheetJson = await sheetRes.json();
