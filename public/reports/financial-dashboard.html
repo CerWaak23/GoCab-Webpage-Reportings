@@ -253,7 +253,9 @@ a{color:inherit;text-decoration:none}
   <!-- SECCIÓN: Evolución mensual + Top egresos -->
   <div class="charts-row">
     <div class="card" style="margin-bottom:0">
-      <div class="section-title">Evolución mensual</div>
+      <div class="section-title">Evolución mensual operacional
+        <span class="meta-chip">SumUp neto vs egresos operativos · sin compra de autos ni capital</span>
+      </div>
       <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:0">
@@ -830,22 +832,27 @@ function renderIncomeDonut() {
 
 function renderLineChart() {
   if (_lineChart) { _lineChart.destroy(); _lineChart=null; }
-  var meses = getMesesOrdenados();
+
+  // Operational expenses per month (excluding car purchases / CapEx)
+  var outByMes = {};
+  RAW.filter(function(r){ return r.cashOut > 0 && r.status !== 'Pending' && !isCapEx(r); })
+    .forEach(function(r){ if(r.month) outByMes[r.month] = (outByMes[r.month]||0) + r.cashOut; });
+
+  // Union months from operational expenses and SumUp
+  var mesSet = {};
+  Object.keys(outByMes).forEach(function(m){ mesSet[m]=1; });
+  Object.keys(SUMUP).forEach(function(m){ mesSet[m]=1; });
+  var meses = sortMonths(Object.keys(mesSet));
   if (!meses.length) return;
-  var bm={};
-  RAW.forEach(function(r){
-    if(!r.month)return;
-    if(!bm[r.month])bm[r.month]={i:0,o:0};
-    bm[r.month].i+=r.cashIn; bm[r.month].o+=r.cashOut;
-  });
-  var incArr = meses.map(function(m){ return CUR==='USD'?(bm[m]||{i:0}).i/USD_RATE:(bm[m]||{i:0}).i; });
-  var outArr = meses.map(function(m){ return CUR==='USD'?(bm[m]||{o:0}).o/USD_RATE:(bm[m]||{o:0}).o; });
+
+  var suArr  = meses.map(function(m){ var v=(SUMUP[m]||{}).neto||0; return CUR==='USD'?v/USD_RATE:v; });
+  var outArr = meses.map(function(m){ var v=outByMes[m]||0; return CUR==='USD'?v/USD_RATE:v; });
 
   _lineChart = new Chart(document.getElementById('lineChart'),{
     type:'line',
     data:{labels:meses.map(yyyymmToLabel),datasets:[
-      {label:'Ingresos', data:incArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.08)',fill:true,tension:.4,pointRadius:3},
-      {label:'Egresos',  data:outArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.08)',fill:true,tension:.4,pointRadius:3},
+      {label:'SumUp neto', data:suArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.08)',fill:true,tension:.4,pointRadius:3},
+      {label:'Egresos Op.', data:outArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.08)',fill:true,tension:.4,pointRadius:3},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
