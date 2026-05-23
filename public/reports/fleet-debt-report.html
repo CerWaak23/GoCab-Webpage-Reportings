@@ -225,8 +225,8 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <div class="kpi-value" id="kpiActivePending">—</div>
         <div class="kpi-sub" id="kpiActivePendingSub">—</div>
       </div>
-      <div class="kpi-card kpi-gray">
-        <div class="kpi-label">Deuda Conductores Despedidos</div>
+      <div class="kpi-card kpi-teal">
+        <div class="kpi-label">% Recuperación Activos</div>
         <div class="kpi-value" id="kpiFiredDebt">—</div>
         <div class="kpi-sub" id="kpiFiredDebtSub">—</div>
       </div>
@@ -342,6 +342,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   <!-- Fired drivers cards -->
   <div class="section" id="firedSection">
     <div class="section-title" style="color:#f87171">Deuda Irrecuperable — Conductores Despedidos</div>
+    <div id="firedSummary" style="margin-bottom:18px"></div>
     <div class="fired-grid" id="firedGrid"></div>
   </div>
 
@@ -736,21 +737,21 @@ function renderKPIs(){
   var activeWithDebt=DRIVERS.filter(function(d){return d.isActive&&d.pending>0;});
   var firedWithDebt=DRIVERS.filter(function(d){return !d.isActive&&d.pending>0;});
 
-  // Row 1: financial totals
-  setText('kpiCharged',fmtAmt(totalCharged));
-  setText('kpiChargedSub',BILLS.length+' facturas emitidas');
-  setText('kpiPaid',fmtAmt(totalPaid));
-  setText('kpiPaidSub','Pagos recibidos');
-  setText('kpiPending',fmtAmt(totalCharged-totalPaid));
-  setText('kpiPendingSub','Saldo por cobrar');
+  // Row 1: active-only financial totals (fired excluded — see Despedidos section below)
+  setText('kpiCharged',fmtAmt(activeCharged));
+  setText('kpiChargedSub','Solo conductores activos');
+  setText('kpiPaid',fmtAmt(activePaid));
+  setText('kpiPaidSub','Cobrado a activos');
+  setText('kpiPending',fmtAmt(activePending));
+  setText('kpiPendingSub',activeWithDebt.length+' activos con saldo');
 
-  // Row 2: breakdown by status
-  setText('kpiOpenBills',driversWithDebt.length);
-  setText('kpiOpenBillsSub',driversWithDebt.length+' conductores con saldo');
+  // Row 2: active-only breakdown
+  setText('kpiOpenBills',activeDrv);
+  setText('kpiOpenBillsSub',activeWithDebt.length+' con deuda pendiente');
   setText('kpiActivePending',fmtAmt(activePending));
   setText('kpiActivePendingSub',activeWithDebt.length+' activos con deuda');
-  setText('kpiFiredDebt',fmtAmt(firedPending));
-  setText('kpiFiredDebtSub',firedWithDebt.length+' despedidos con saldo');
+  setText('kpiFiredDebt',activePct+'%');
+  setText('kpiFiredDebtSub',fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
 
   // Snapshot comparison: use second-to-last vs last file snapshot
   var prevSnap=SNAPSHOTS.length>=2?SNAPSHOTS[SNAPSHOTS.length-2]:null;
@@ -775,7 +776,7 @@ function renderKPIs(){
     }
   }
 
-  setBar('rbarTotal','rbarTotalFill','rbarTotalSub','rbarTotalDelta',totalPct,fmtAmt(totalPaid)+' / '+fmtAmt(totalCharged),prevTotalPct);
+  setBar('rbarTotal','rbarTotalFill','rbarTotalSub','rbarTotalDelta',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged),prevTotalPct);
   setBar('rbarActive','rbarActiveFill','rbarActiveSub','rbarActiveDelta',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged),prevTotalPct);
   // Weekly rate: bills from last 30 days
   var month30=new Date(new Date().getTime()-30*24*60*60*1000);
@@ -813,16 +814,44 @@ function renderKPIs(){
 
   setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
 
-  renderFiredCards(DRIVERS.filter(function(d){return !d.isActive&&d.pending>0;}));
+  renderFiredCards(DRIVERS.filter(function(d){return !d.isActive;}));
 }
 
 function renderFiredCards(fired){
   var grid=document.getElementById('firedGrid');if(!grid)return;
   var sec=document.getElementById('firedSection');
+  var sumDiv=document.getElementById('firedSummary');
   if(!fired.length){if(sec)sec.style.display='none';return;}
   if(sec)sec.style.display='';
+
+  // ── Fired summary KPI cards ───────────────────────────────────────────────
+  var totFacurado=fired.reduce(function(s,d){return s+d.amount;},0);
+  var totPagado  =fired.reduce(function(s,d){return s+d.paid;},0);
+  var totPendiente=fired.reduce(function(s,d){return s+d.pending;},0);
+  var totPct=totFacurado>0?Math.round(totPagado/totFacurado*100):0;
+  var conDeuda=fired.filter(function(d){return d.pending>0;}).length;
+
+  if(sumDiv){
+    var kpis=[
+      {color:'#7f1d1d',border:'#991b1b',label:'Total Pendiente Despedidos', value:fmtAmt(totPendiente), sub:conDeuda+' conductores con saldo'},
+      {color:'#1a1a2e',border:'#374151',label:'Total Facturado Despedidos',  value:fmtAmt(totFacurado),  sub:fired.length+' conductores en total'},
+      {color:'#052e16',border:'#065f46',label:'Total Recuperado Despedidos', value:fmtAmt(totPagado),    sub:totPct+'% del total facturado'},
+      {color:'#1c1917',border:'#57534e',label:'Conductores Despedidos',      value:fired.length,         sub:conDeuda+' con deuda · '+(fired.length-conDeuda)+' saldados'},
+      {color:'#172554',border:'#1e40af',label:'% Recuperación Despedidos',   value:totPct+'%',           sub:fmtAmt(totPagado)+' cobrado de '+fmtAmt(totFacurado)},
+    ];
+    sumDiv.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'
+      +kpis.map(function(k){
+        return '<div style="background:'+k.color+';border:1px solid '+k.border+';border-radius:12px;padding:14px 16px">'
+          +'<div style="font-size:10px;font-weight:600;color:#9ca3af;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">'+k.label+'</div>'
+          +'<div style="font-size:22px;font-weight:700;color:#f87171;margin-bottom:4px">'+k.value+'</div>'
+          +'<div style="font-size:11px;color:#6b7280">'+k.sub+'</div>'
+          +'</div>';
+      }).join('')+'</div>';
+  }
+
+  // ── Individual driver cards ───────────────────────────────────────────────
   var html='';
-  fired.sort(function(a,b){return b.pending-a.pending;}).slice(0,12).forEach(function(d){
+  fired.sort(function(a,b){return b.pending-a.pending;}).forEach(function(d){
     var lastStr=d.lastDate?d.lastDate.toLocaleDateString('es-CL'):'—';
     html+='<div class="fcard">';
     html+='<div class="fcard-name" title="'+esc(d.driver)+'">'+esc(d.driver)+'</div>';
