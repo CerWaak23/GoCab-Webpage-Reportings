@@ -555,6 +555,18 @@ function getWeekKey(d){
   return 'W'+weekStart.getDate()+'/'+mn[weekStart.getMonth()];
 }
 
+// Normalize a driver name for comparison: uppercase, no accents, single spaces
+function normalizeName(s){
+  // Decompose accented chars (e.g. Á → A + combining accent), then drop combining marks
+  var decomposed = String(s||'').trim().normalize('NFD');
+  var stripped = '';
+  for (var i=0;i<decomposed.length;i++){
+    var code=decomposed.charCodeAt(i);
+    if(code<0x0300||code>0x036F) stripped+=decomposed[i]; // skip combining diacritics
+  }
+  return stripped.toUpperCase().replace(/\s+/g,' ');
+}
+
 async function loadData(){
   show('loadingWrap');
   try{
@@ -566,7 +578,7 @@ async function loadData(){
     PAYMENT_EVENTS=billsJson.paymentEvents||[];
     SNAPSHOTS=billsJson.snapshots||[];
     var fleetDrivers=fleetJson.drivers||[];
-    ACTIVE_CONDUCTORS=new Set(fleetDrivers.map(function(d){return d.conductor.toUpperCase();}));
+    ACTIVE_CONDUCTORS=new Set(fleetDrivers.map(function(d){return normalizeName(d.conductor);}));
     aggregateDrivers();
     buildFilters();
     renderAll();
@@ -590,7 +602,7 @@ function showError(msg){
 function aggregateDrivers(){
   var map={};
   BILLS.forEach(function(b){
-    var key=(b.driver||'(sin conductor)').trim().toUpperCase();
+    var key=b.driver?normalizeName(b.driver):'(SIN CONDUCTOR)';
     if(!map[key])map[key]={driver:key,vehicle:b.vehicle||'',bills:0,amount:0,paid:0,types:{},statuses:{},lastDate:null};
     var d=map[key];
     d.bills++;d.amount+=parseAmt(b.amount);d.paid+=parseAmt(b.paidAmount);
