@@ -598,9 +598,11 @@ function aggregateDrivers(){
     var mainType='other';var maxV=0;
     Object.keys(d.types).forEach(function(k){if(d.types[k]>maxV){maxV=d.types[k];mainType=k;}});
     d.mainType=mainType;
-    // If fleet sheet has data, use it; if empty (all deleted), treat everyone as active
+    // Active = in fleet sheet  OR  has activity in last 90 days (sheet may be incomplete)
+    // Fired = NOT in fleet sheet AND last bill older than 90 days
+    var cutoff90=new Date(new Date().getTime()-90*24*60*60*1000);
     if(ACTIVE_CONDUCTORS.size>0){
-      d.isActive=ACTIVE_CONDUCTORS.has(d.driver);
+      d.isActive=ACTIVE_CONDUCTORS.has(d.driver)||(d.lastDate&&d.lastDate>=cutoff90);
     }else{
       d.isActive=true;
     }
@@ -661,7 +663,7 @@ function clearAllFilters(){
 
 function clearTypeFilter(){
   _typeFilter=null;
-  var c=document.getElementById('typeFilterChip');c.innerHTML='';c.style.display='none';
+  var c=document.getElementById('typeFilterChip');if(c){c.innerHTML='';c.style.display='none';}
   var ti=document.getElementById('evolTitle');if(ti)ti.textContent='Evolución semanal de pagos';
   _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);renderEvolTable();
 }
@@ -670,8 +672,10 @@ function setTypeFilter(tp){
   if(_typeFilter===tp){clearTypeFilter();return;}
   _typeFilter=tp;
   var c=document.getElementById('typeFilterChip');
-  c.innerHTML=typeLabel(tp)+' <button onclick="clearTypeFilter()" style="background:none;border:none;color:inherit;cursor:pointer;font-size:15px;padding:0 2px;line-height:1">×</button>';
-  c.style.display='inline-flex';
+  if(c){
+    c.innerHTML=typeLabel(tp)+' <button onclick="clearTypeFilter()" style="background:none;border:none;color:inherit;cursor:pointer;font-size:15px;padding:0 2px;line-height:1">×</button>';
+    c.style.display='inline-flex';
+  }
   var ti=document.getElementById('evolTitle');if(ti)ti.textContent='Distribución de pagos';
   _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);renderEvolTable();
 }
