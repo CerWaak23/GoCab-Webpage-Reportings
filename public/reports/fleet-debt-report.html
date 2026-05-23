@@ -1239,7 +1239,11 @@ window.addEventListener('load',function(){
     var pc=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_currency');
     if(pc)CUR=pc;
   }catch(e){}
-  loadData();
+  // Fetch live USD/CLP rate then load data
+  fetch('/api/fx').then(function(r){return r.ok?r.json():null;}).then(function(fx){
+    if(fx&&fx.rate>0){USD_RATE=fx.rate;}
+    setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
+  }).catch(function(){}).finally(function(){loadData();});
 });
 </script>
 </body>
