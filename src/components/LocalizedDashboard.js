@@ -50,7 +50,7 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
           </svg>
         </Link>
 
-        <Link
+        {isManager && <Link
           href="/reports/financial"
           className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-green-500/40 hover:bg-gray-900/80 transition"
         >
@@ -70,7 +70,7 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
             fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </Link>
+        </Link>}
       </div>
     </main>
   );

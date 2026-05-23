@@ -8,147 +8,289 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.section{margin-bottom:22px}
+.card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:18px 20px}
+.section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:12px}
 
-.container{max-width:1400px;margin:0 auto;padding:24px 20px}
-.section{margin-bottom:28px}
-.section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:14px}
-.card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:20px}
+/* Topbar */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;padding-bottom:16px;border-bottom:1px solid #1f2937;margin-bottom:16px}
+.topbar-title{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.topbar-sub{font-size:12px;color:#6b7280;margin-top:2px}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sw-group{display:inline-flex;background:#0f1117;border:1px solid #374151;border-radius:8px;overflow:hidden}
+.sw-group button{background:none;border:none;color:#6b7280;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;border-right:1px solid #1f2937}
+.sw-group button:last-child{border-right:none}
+.sw-group button.active{background:#1e3a5f;color:#93c5fd}
+.sw-group button:hover:not(.active){background:#1f2937;color:#e2e8f0}
+.btn-act{background:#1f2937;border:1px solid #374151;color:#9ca3af;border-radius:8px;padding:5px 13px;font-size:12px;font-weight:500;cursor:pointer;transition:all .12s}
+.btn-act:hover{border-color:#4b5563;color:#e2e8f0}
+.btn-act:disabled{opacity:.4;cursor:not-allowed}
+.fx-badge{background:#130d02;border:1px solid #78350f44;color:#fbbf24;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600}
 
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:500px){.kpi-grid{grid-template-columns:1fr}}
-.kpi-card{border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
-.kpi-debt{background:#150505;border:1px solid #7f1d1d33}
-.kpi-recovered{background:#05150d;border:1px solid #064e3b33}
-.kpi-drivers{background:#050b1a;border:1px solid #1e3a5f33}
-.kpi-total{background:#130d02;border:1px solid #78350f33}
-.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#6b7280}
-.kpi-value{font-size:22px;font-weight:700;letter-spacing:-.02em}
+/* KPI grid — 6 cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px}
+.kpi-card{border-radius:12px;padding:15px 17px;display:flex;flex-direction:column;gap:5px}
+.kpi-amber{background:#130d02;border:1px solid #78350f44}
+.kpi-green{background:#05150d;border:1px solid #064e3b44}
+.kpi-red{background:#150505;border:1px solid #7f1d1d44}
+.kpi-blue{background:#050b1a;border:1px solid #1e3a5f44}
+.kpi-teal{background:#031210;border:1px solid #0d948844}
+.kpi-gray{background:#0f1117;border:1px solid #37415144}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#6b7280}
+.kpi-value{font-size:19px;font-weight:700;letter-spacing:-.02em}
 .kpi-sub{font-size:11px;color:#4b5563}
-.kpi-debt .kpi-value{color:#f87171}
-.kpi-recovered .kpi-value{color:#34d399}
-.kpi-drivers .kpi-value{color:#60a5fa}
-.kpi-total .kpi-value{color:#fbbf24}
+.kpi-amber .kpi-value{color:#fbbf24}
+.kpi-green .kpi-value{color:#34d399}
+.kpi-red .kpi-value{color:#f87171}
+.kpi-blue .kpi-value{color:#60a5fa}
+.kpi-teal .kpi-value{color:#2dd4bf}
+.kpi-gray .kpi-value{color:#9ca3af}
 
-.charts-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
-@media(max-width:800px){.charts-grid{grid-template-columns:1fr}}
-.chart-wrap{position:relative;height:260px;width:100%}
+/* Rate bars */
+.rbar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:11px}
+.rbar{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:15px 17px}
+.rbar-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#6b7280;margin-bottom:5px}
+.rbar-val{font-size:22px;font-weight:700;color:#e2e8f0;margin-bottom:7px}
+.rbar-track{height:5px;border-radius:3px;background:#1f2937;overflow:hidden}
+.rbar-fill{height:100%;border-radius:3px;transition:width .4s}
+.rbar-sub{font-size:11px;color:#4b5563;margin-top:6px}
 
-.filter-chip{display:inline-flex;align-items:center;gap:6px;background:#1e3a5f;border:1px solid #2563eb44;color:#93c5fd;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;margin-bottom:12px}
-.filter-chip button{background:none;border:none;color:#93c5fd;cursor:pointer;font-size:16px;line-height:1;padding:0 2px}
-.filter-chip button:hover{color:#fff}
+/* Charts row */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+@media(max-width:800px){.charts-row{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:230px;width:100%}
+.chart-toggle{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.toggle-btn{background:#1f2937;border:1px solid #374151;color:#6b7280;border-radius:7px;padding:4px 11px;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s}
+.toggle-btn.active{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd}
+.toggle-btn:hover:not(.active){border-color:#4b5563;color:#e2e8f0}
 
-.filters-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
-.filter-select,.filter-input{background:#111827;border:1px solid #374151;color:#e2e8f0;border-radius:8px;padding:7px 11px;font-size:12px;outline:none;transition:border-color .15s}
-.filter-select:focus,.filter-input:focus{border-color:#3b82f6}
-.filter-input{flex:1;min-width:160px;max-width:260px}
-.filter-clear{background:none;border:1px solid #374151;color:#9ca3af;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;transition:all .15s}
-.filter-clear:hover{border-color:#6b7280;color:#e2e8f0}
+/* Evolution heat-map */
+.evol-scroll{overflow-x:auto;margin-top:4px}
+.evol-table{border-collapse:collapse;font-size:11px;min-width:600px;white-space:nowrap}
+.evol-table th{background:#0f1623;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border:1px solid #1a2030;text-align:right;white-space:nowrap}
+.evol-table th:first-child{text-align:left;position:sticky;left:0;z-index:1;background:#0f1623}
+.evol-table td{padding:6px 10px;border:1px solid #1a2030;text-align:right;white-space:nowrap}
+.evol-table td:first-child{text-align:left;font-weight:500;color:#d1d5db;position:sticky;left:0;background:#111827;z-index:1}
+.evol-table tfoot td{background:#0f1a2a!important;font-weight:700;color:#f9fafb;border:1px solid #1a2030}
+.evol-table tfoot td:first-child{background:#0f1a2a!important;position:sticky;left:0;z-index:1}
+.cell-hi{background:#0d2218!important;color:#34d399}
+.cell-mid{background:#0d1c12!important;color:#6ee7b7}
+.cell-lo{background:#0a1510!important;color:#4b9062}
+.cell-zero{color:#1f2937!important}
 
-.drivers-scroll{overflow-x:auto}
-.drivers-table{border-collapse:collapse;width:100%;font-size:12px;min-width:700px}
-.drivers-table th{background:#1a2030;color:#9ca3af;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:9px 12px;text-align:left;border-bottom:1px solid #374151;white-space:nowrap;cursor:pointer;user-select:none}
-.drivers-table th:hover{color:#e2e8f0}
-.drivers-table th.sort-asc::after{content:' ↑';color:#60a5fa}
-.drivers-table th.sort-desc::after{content:' ↓';color:#60a5fa}
-.drivers-table td{padding:9px 12px;border-bottom:1px solid #1a2030;color:#d1d5db}
-.drivers-table tr:hover td{background:#0f1623}
-.drivers-table td.amount{text-align:right;font-weight:600}
-.drivers-table td.debt{color:#f87171}
-.drivers-table td.paid{color:#34d399}
-.drivers-table td.total-amt{color:#9ca3af}
-.status-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.s-completed{background:#064e3b33;color:#34d399}
-.s-pending{background:#78350f33;color:#fbbf24}
-.s-partial{background:#1e3a5f33;color:#60a5fa}
+/* Fired drivers cards */
+.fired-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:11px}
+.fcard{background:#0f1117;border:1px solid #1f2937;border-radius:12px;padding:15px 17px}
+.fcard-name{font-weight:600;font-size:13px;color:#d1d5db;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fcard-vehicle{font-size:11px;color:#4b5563;margin-bottom:10px}
+.fcard-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fcard-stat .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.fcard-stat .val{font-size:14px;font-weight:700;margin-top:1px}
+.fcard-stat .val.red{color:#f87171}
+.fcard-stat .val.green{color:#34d399}
+.fcard-stat .val.gray{color:#9ca3af}
+.fcard-bar{height:3px;border-radius:2px;background:#1f2937;margin-top:10px;overflow:hidden}
+.fcard-fill{height:100%;border-radius:2px;background:#34d399}
 
+/* Recommended KPIs */
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px}
+.scard{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:15px 17px}
+.scard-icon{font-size:18px;margin-bottom:6px}
+.scard-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#6b7280}
+.scard-val{font-size:18px;font-weight:700;color:#e2e8f0;margin-top:4px}
+.scard-sub{font-size:11px;color:#4b5563;margin-top:2px}
+
+/* Drivers table */
+.drv-scroll{overflow-x:auto}
+.drv-table{border-collapse:collapse;width:100%;font-size:12px;min-width:700px}
+.drv-table th{background:#0f1623;color:#6b7280;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;text-align:left;border-bottom:1px solid #1f2937;white-space:nowrap;cursor:pointer;user-select:none}
+.drv-table th:hover{color:#e2e8f0}
+.drv-table th.sort-asc::after{content:' ↑';color:#60a5fa}
+.drv-table th.sort-desc::after{content:' ↓';color:#60a5fa}
+.drv-table td{padding:8px 12px;border-bottom:1px solid #1a2030;color:#d1d5db}
+.drv-table tr:hover td{background:#0d1420}
+.drv-table td.amount{text-align:right;font-weight:600}
+.drv-table td.debt{color:#f87171}
+.drv-table td.paid{color:#34d399}
+.drv-table td.total-amt{color:#9ca3af}
 .bar-mini{height:4px;border-radius:2px;background:#1f2937;margin-top:4px;overflow:hidden}
 .bar-fill{height:100%;border-radius:2px;background:#34d399;transition:width .3s}
+.type-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.dot-energy{background:#60a5fa}.dot-toll{background:#34d399}.dot-repair{background:#fbbf24}
+.dot-admin{background:#f87171}.dot-other{background:#9ca3af}
 
-.pagination{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:flex-end}
-.page-btn{background:#111827;border:1px solid #374151;color:#9ca3af;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;transition:all .15s}
+/* Filter chip */
+.filter-chip{display:inline-flex;align-items:center;gap:6px;background:#1e3a5f;border:1px solid #2563eb44;color:#93c5fd;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;margin-bottom:10px}
+.filter-chip button{background:none;border:none;color:#93c5fd;cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+.filter-chip button:hover{color:#fff}
+
+/* Filters bar */
+.filters-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filter-select,.filter-input{background:#0f1117;border:1px solid #374151;color:#e2e8f0;border-radius:8px;padding:6px 10px;font-size:12px;outline:none}
+.filter-select:focus,.filter-input:focus{border-color:#3b82f6}
+.filter-input{flex:1;min-width:140px;max-width:230px}
+.filter-clear{background:none;border:1px solid #374151;color:#6b7280;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+.filter-clear:hover{border-color:#6b7280;color:#e2e8f0}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:flex-end}
+.page-btn{background:#111827;border:1px solid #374151;color:#6b7280;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer}
 .page-btn:hover:not(:disabled){border-color:#4b5563;color:#e2e8f0}
 .page-btn:disabled{opacity:.3;cursor:default}
-.page-info{font-size:12px;color:#6b7280}
+.page-info{font-size:12px;color:#4b5563}
 
+/* Loading & Error */
 .loading-wrap{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#6b7280}
 .spinner{width:36px;height:36px;border:3px solid #1f2937;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 .error-wrap{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:40px}
-.error-title{font-size:17px;font-weight:700;color:#f87171}
-.error-msg{color:#9ca3af;max-width:500px;line-height:1.6;font-size:13px}
-.error-hint{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:11px;color:#fbbf24;text-align:left;max-width:500px;white-space:pre-wrap}
-
-.type-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
-.dot-energy{background:#60a5fa}
-.dot-toll{background:#34d399}
-.dot-repair{background:#fbbf24}
-.dot-admin{background:#f87171}
-.dot-other{background:#9ca3af}
+.err-title{font-size:17px;font-weight:700;color:#f87171}
+.err-msg{color:#9ca3af;max-width:500px;line-height:1.6;font-size:13px}
+.err-hint{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:11px;color:#fbbf24;text-align:left;max-width:500px;white-space:pre-wrap;word-break:break-all}
 </style>
 </head>
 <body>
 
 <div id="loadingWrap" class="loading-wrap">
   <div class="spinner"></div>
-  <span>Cargando datos...</span>
+  <span id="loadingText">Cargando datos...</span>
 </div>
-
 <div id="errorWrap" class="error-wrap" style="display:none">
   <div style="font-size:36px">⚠️</div>
-  <div class="error-title" id="errTitle">Error al cargar datos</div>
-  <div class="error-msg" id="errMsg"></div>
-  <div class="error-hint" id="errHint" style="display:none"></div>
+  <div class="err-title" id="errTitle">Error al cargar datos</div>
+  <div class="err-msg" id="errMsg"></div>
+  <div class="err-hint" id="errHint" style="display:none"></div>
 </div>
 
 <div id="mainWrap" style="display:none">
 <div class="container">
 
-  <!-- KPIs -->
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <h1 class="topbar-title" data-i18n="title">Reporte de Deudas de Flota</h1>
+      <div class="topbar-sub">GoCab Chile · <span data-i18n="sub">conductores activos y cesados</span></div>
+    </div>
+    <div class="topbar-actions">
+      <div class="sw-group" id="langSwitch">
+        <button onclick="setLang('es')">ES</button>
+        <button onclick="setLang('en')">EN</button>
+        <button onclick="setLang('ru')">RU</button>
+      </div>
+      <div class="sw-group" id="currSwitch">
+        <button onclick="setCurrency('CLP')">CLP</button>
+        <button onclick="setCurrency('USD')">USD</button>
+      </div>
+      <div class="fx-badge" id="fxBadge">1 USD = $950 CLP</div>
+      <button class="btn-act" id="btnRefresh" onclick="loadData()">↺ <span data-i18n="refresh">Actualizar</span></button>
+    </div>
+  </div>
+
+  <!-- 6 KPI cards -->
   <div class="section">
     <div class="kpi-grid">
-      <div class="kpi-card kpi-debt">
-        <div class="kpi-label" data-i18n="total_debt">Deuda Total</div>
-        <div class="kpi-value" id="kpiDebt">—</div>
-        <div class="kpi-sub" id="kpiDebtSub">—</div>
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-label" data-i18n="charged">Facturado</div>
+        <div class="kpi-value" id="kpiCharged">—</div>
+        <div class="kpi-sub" id="kpiChargedSub">—</div>
       </div>
-      <div class="kpi-card kpi-recovered">
-        <div class="kpi-label" data-i18n="recovered">% Recuperado</div>
-        <div class="kpi-value" id="kpiRecovered">—</div>
-        <div class="kpi-sub" id="kpiRecoveredAmt">—</div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label" data-i18n="paid">Pagado</div>
+        <div class="kpi-value" id="kpiPaid">—</div>
+        <div class="kpi-sub" id="kpiPaidSub">—</div>
       </div>
-      <div class="kpi-card kpi-drivers">
-        <div class="kpi-label" data-i18n="drivers_debt">Conductores con Deuda</div>
-        <div class="kpi-value" id="kpiDrivers">—</div>
-        <div class="kpi-sub" id="kpiDriversSub">—</div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label" data-i18n="pending">Pendiente</div>
+        <div class="kpi-value" id="kpiPending">—</div>
+        <div class="kpi-sub" id="kpiPendingSub">—</div>
       </div>
-      <div class="kpi-card kpi-total">
-        <div class="kpi-label" data-i18n="total_bills">Total Facturas</div>
-        <div class="kpi-value" id="kpiBills">—</div>
-        <div class="kpi-sub" id="kpiBillsSub">—</div>
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-label" data-i18n="open_bills">Facturas Abiertas</div>
+        <div class="kpi-value" id="kpiOpenBills">—</div>
+        <div class="kpi-sub" id="kpiOpenBillsSub">—</div>
+      </div>
+      <div class="kpi-card kpi-teal">
+        <div class="kpi-label" data-i18n="active_drivers">Conductores Activos</div>
+        <div class="kpi-value" id="kpiActive">—</div>
+        <div class="kpi-sub" data-i18n="last_90_days">últimos 90 días</div>
+      </div>
+      <div class="kpi-card kpi-gray">
+        <div class="kpi-label" data-i18n="fired_drivers">Conductores Cesados</div>
+        <div class="kpi-value" id="kpiFired">—</div>
+        <div class="kpi-sub" data-i18n="no_recent_activity">sin actividad reciente</div>
       </div>
     </div>
   </div>
 
-  <!-- Charts -->
+  <!-- 4 Rate bars -->
   <div class="section">
-    <div class="charts-grid">
+    <div class="rbar-grid">
+      <div class="rbar">
+        <div class="rbar-label" data-i18n="total_recovery">Recuperación Total</div>
+        <div class="rbar-val" id="rbarTotal">—</div>
+        <div class="rbar-track"><div class="rbar-fill" id="rbarTotalFill" style="width:0;background:#34d399"></div></div>
+        <div class="rbar-sub" id="rbarTotalSub">—</div>
+      </div>
+      <div class="rbar">
+        <div class="rbar-label" data-i18n="active_recovery">Solo Activos</div>
+        <div class="rbar-val" id="rbarActive">—</div>
+        <div class="rbar-track"><div class="rbar-fill" id="rbarActiveFill" style="width:0;background:#2dd4bf"></div></div>
+        <div class="rbar-sub" id="rbarActiveSub">—</div>
+      </div>
+      <div class="rbar">
+        <div class="rbar-label" data-i18n="weekly_rate">Tasa Semanal</div>
+        <div class="rbar-val" id="rbarWeekly">—</div>
+        <div class="rbar-track"><div class="rbar-fill" id="rbarWeeklyFill" style="width:0;background:#60a5fa"></div></div>
+        <div class="rbar-sub" id="rbarWeeklySub">—</div>
+      </div>
+      <div class="rbar">
+        <div class="rbar-label" data-i18n="fired_exposure">Exposición Cesados</div>
+        <div class="rbar-val" id="rbarFired">—</div>
+        <div class="rbar-track"><div class="rbar-fill" id="rbarFiredFill" style="width:0;background:#f87171"></div></div>
+        <div class="rbar-sub" id="rbarFiredSub">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="section">
+    <div class="charts-row">
+      <div class="card">
+        <div class="section-title" data-i18n="debt_by_type">Deuda por Tipo</div>
+        <div class="chart-toggle">
+          <button class="toggle-btn active" id="chart-btn-all" onclick="setChartDrivers('all')" data-i18n="all_drivers">Todos</button>
+          <button class="toggle-btn" id="chart-btn-active" onclick="setChartDrivers('active')" data-i18n="active_only">Solo Activos</button>
+        </div>
+        <div id="typeFilterChip" class="filter-chip" style="display:none"></div>
+        <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+      </div>
       <div class="card">
         <div class="section-title" data-i18n="monthly_evolution">Evolución Mensual</div>
         <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
       </div>
-      <div class="card">
-        <div class="section-title" data-i18n="debt_by_type">Deuda por Tipo <span style="font-size:10px;color:#4b5563;font-weight:400;text-transform:none;letter-spacing:0">(click para filtrar)</span></div>
-        <div id="typeFilterChip" class="filter-chip" style="display:none"></div>
-        <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
-      </div>
     </div>
   </div>
 
-  <!-- Drivers table -->
+  <!-- Evolution heat-map -->
   <div class="section card">
-    <div class="section-title" data-i18n="drivers_table">Conductores</div>
+    <div class="section-title" data-i18n="weekly_evolution">Evolución Semanal por Conductor
+      <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:#4b5563;margin-left:6px">(monto facturado por semana)</span>
+    </div>
+    <div class="evol-scroll">
+      <table class="evol-table" id="evolTable"></table>
+    </div>
+  </div>
+
+  <!-- Fired drivers cards -->
+  <div class="section" id="firedSection">
+    <div class="section-title" data-i18n="fired_drivers_section">Conductores Cesados</div>
+    <div class="fired-grid" id="firedGrid"></div>
+  </div>
+
+  <!-- Active drivers table -->
+  <div class="section card">
+    <div class="section-title" data-i18n="active_drivers_table">Conductores Activos</div>
     <div class="filters-bar">
       <select class="filter-select" id="filterType" onchange="applyFilters()">
         <option value="">Todos los tipos</option>
@@ -157,31 +299,60 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <option value="">Todos los estados</option>
       </select>
       <input class="filter-input" id="filterText" type="text" placeholder="Buscar conductor..." oninput="applyFilters()">
-      <button class="filter-clear" onclick="clearAllFilters()">Limpiar todo</button>
+      <button class="filter-clear" onclick="clearAllFilters()" data-i18n="clear_all">Limpiar</button>
     </div>
-
-    <div class="drivers-scroll">
-      <table class="drivers-table">
+    <div class="drv-scroll">
+      <table class="drv-table">
         <thead>
           <tr>
             <th onclick="sortBy('driver')" data-i18n="driver">Conductor</th>
             <th onclick="sortBy('vehicle')" data-i18n="vehicle">Vehículo</th>
             <th onclick="sortBy('bills')" data-i18n="bills">Facturas</th>
             <th onclick="sortBy('amount')" data-i18n="total_amount">Total</th>
-            <th onclick="sortBy('paid')" data-i18n="paid">Pagado</th>
-            <th onclick="sortBy('pending')" data-i18n="pending_debt">Deuda Pendiente</th>
+            <th onclick="sortBy('paid')" data-i18n="paid_col">Pagado</th>
+            <th onclick="sortBy('pending')" data-i18n="pending_debt">Deuda Pend.</th>
             <th data-i18n="recovery">Recuperación</th>
-            <th data-i18n="main_type">Tipo Principal</th>
+            <th data-i18n="main_type">Tipo</th>
           </tr>
         </thead>
         <tbody id="driversBody"></tbody>
       </table>
     </div>
-
     <div class="pagination">
       <span class="page-info" id="pageInfo"></span>
       <button class="page-btn" id="btnPrev" onclick="changePage(-1)" data-i18n="previous">Anterior</button>
       <button class="page-btn" id="btnNext" onclick="changePage(1)" data-i18n="next">Siguiente</button>
+    </div>
+  </div>
+
+  <!-- Recommended KPIs -->
+  <div class="section">
+    <div class="section-title" data-i18n="insights">Métricas Derivadas</div>
+    <div class="rec-grid">
+      <div class="scard">
+        <div class="scard-icon">📊</div>
+        <div class="scard-label" data-i18n="avg_pending">Deuda Promedio/Conductor</div>
+        <div class="scard-val" id="scAvgPending">—</div>
+        <div class="scard-sub" id="scAvgPendingSub">—</div>
+      </div>
+      <div class="scard">
+        <div class="scard-icon">🏆</div>
+        <div class="scard-label" data-i18n="top_debtor">Mayor Deudor</div>
+        <div class="scard-val" id="scTopDebtor">—</div>
+        <div class="scard-sub" id="scTopDebtorSub">—</div>
+      </div>
+      <div class="scard">
+        <div class="scard-icon">⚡</div>
+        <div class="scard-label" data-i18n="best_payer">Mejor Pagador</div>
+        <div class="scard-val" id="scBestPayer">—</div>
+        <div class="scard-sub" id="scBestPayerSub">—</div>
+      </div>
+      <div class="scard">
+        <div class="scard-icon">📈</div>
+        <div class="scard-label" data-i18n="recovery_trend">Tendencia Recuperación</div>
+        <div class="scard-val" id="scTrend">—</div>
+        <div class="scard-sub" id="scTrendSub">—</div>
+      </div>
     </div>
   </div>
 
@@ -192,60 +363,94 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 var USD_RATE = 950;
 var PAGE_SIZE = 50;
 
-var BILLS = [];        // raw bill objects from API
-var DRIVERS = [];      // aggregated per-driver
-var FILTERED = [];     // filtered driver list
+var BILLS = [];
+var DRIVERS = [];
+var FILTERED = [];
 var LANG = 'es';
-var CUR  = 'CLP';
+var CUR = 'CLP';
 var _typeFilter = null;
+var _chartMode = 'all';
 var _page = 1;
 var _sortKey = 'pending';
 var _sortDir = -1;
 var _lineChart = null;
 var _donutChart = null;
 
-// Bill types mapping
 var TYPE_MAP = {
-  energy:['energy','energía','energia'],
-  toll:['toll','peaje'],
-  reparation:['reparation','reparación','reparacion','repair'],
-  administrative:['administrative','administrativo','admin']
+  energy:['energy','energía','energia','luz','electricidad','carga'],
+  toll:['toll','peaje','autopista'],
+  reparation:['reparation','reparación','reparacion','repair','taller','mantención','mantencion','mecánica'],
+  administrative:['administrative','administrativo','admin','multa','permiso','licencia']
 };
-var TYPE_LABELS = {es:{energy:'Energía',toll:'Peaje',reparation:'Reparación',administrative:'Administrativo',other:'Otro'},
-                   en:{energy:'Energy',toll:'Toll',reparation:'Repair',administrative:'Administrative',other:'Other'},
-                   ru:{energy:'Энергия',toll:'Пошлина',reparation:'Ремонт',administrative:'Административные',other:'Прочее'}};
+var TYPE_LABELS = {
+  es:{energy:'Energía',toll:'Peaje',reparation:'Reparación',administrative:'Administrativo',other:'Otro'},
+  en:{energy:'Energy',toll:'Toll',reparation:'Repair',administrative:'Administrative',other:'Other'},
+  ru:{energy:'Энергия',toll:'Пошлина',reparation:'Ремонт',administrative:'Административные',other:'Прочее'}
+};
 var TYPE_COLORS = {energy:'#60a5fa',toll:'#34d399',reparation:'#fbbf24',administrative:'#f87171',other:'#9ca3af'};
-var TYPE_DOT   = {energy:'dot-energy',toll:'dot-toll',reparation:'dot-repair',administrative:'dot-admin',other:'dot-other'};
+var TYPE_DOT = {energy:'dot-energy',toll:'dot-toll',reparation:'dot-repair',administrative:'dot-admin',other:'dot-other'};
 
 var T = {
-  es:{loading:'Cargando datos...',total_debt:'Deuda Total',recovered:'% Recuperado',drivers_debt:'Conductores con Deuda',
-      total_bills:'Total Facturas',monthly_evolution:'Evolución Mensual',debt_by_type:'Deuda por Tipo',
-      drivers_table:'Conductores',driver:'Conductor',vehicle:'Vehículo',bills:'Facturas',total_amount:'Total',
-      paid:'Pagado',pending_debt:'Deuda Pendiente',recovery:'Recuperación',main_type:'Tipo Principal',
+  es:{title:'Reporte de Deudas de Flota',sub:'conductores activos y cesados',refresh:'Actualizar',
+      charged:'Facturado',paid:'Pagado',pending:'Pendiente',open_bills:'Facturas Abiertas',
+      active_drivers:'Conductores Activos',fired_drivers:'Conductores Cesados',
+      last_90_days:'últimos 90 días',no_recent_activity:'sin actividad reciente',
+      total_recovery:'Recuperación Total',active_recovery:'Solo Activos',
+      weekly_rate:'Tasa Semanal',fired_exposure:'Exposición Cesados',
+      debt_by_type:'Deuda por Tipo',all_drivers:'Todos',active_only:'Solo Activos',
+      monthly_evolution:'Evolución Mensual',weekly_evolution:'Evolución Semanal por Conductor',
+      fired_drivers_section:'Conductores Cesados',active_drivers_table:'Conductores Activos',
+      driver:'Conductor',vehicle:'Vehículo',bills:'Facturas',total_amount:'Total',
+      paid_col:'Pagado',pending_debt:'Deuda Pend.',recovery:'Recuperación',main_type:'Tipo',
       all_types:'Todos los tipos',all_statuses:'Todos los estados',search:'Buscar conductor...',
-      clear_all:'Limpiar todo',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
-      no_results:'Sin resultados',error_title:'Error al cargar datos',clear_filter:'Limpiar filtro',
-      bills_label:'facturas',amount_label:'monto total',pending_label:'pendiente'},
-  en:{loading:'Loading data...',total_debt:'Total Debt',recovered:'% Recovered',drivers_debt:'Drivers with Debt',
-      total_bills:'Total Bills',monthly_evolution:'Monthly Evolution',debt_by_type:'Debt by Type',
-      drivers_table:'Drivers',driver:'Driver',vehicle:'Vehicle',bills:'Bills',total_amount:'Total',
-      paid:'Paid',pending_debt:'Pending Debt',recovery:'Recovery',main_type:'Main Type',
+      clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
+      no_results:'Sin resultados',insights:'Métricas Derivadas',
+      avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
+      best_payer:'Mejor Pagador',recovery_trend:'Tendencia Recuperación',
+      clear_filter:'Limpiar filtro',error_title:'Error al cargar datos',
+      bills_label:'facturas',total_label:'total emitido',fired_pending:'pendiente cesados'},
+  en:{title:'Fleet Debt Report',sub:'active and fired drivers',refresh:'Refresh',
+      charged:'Charged',paid:'Paid',pending:'Pending',open_bills:'Open Bills',
+      active_drivers:'Active Drivers',fired_drivers:'Fired Drivers',
+      last_90_days:'last 90 days',no_recent_activity:'no recent activity',
+      total_recovery:'Total Recovery',active_recovery:'Active Only',
+      weekly_rate:'Weekly Rate',fired_exposure:'Fired Exposure',
+      debt_by_type:'Debt by Type',all_drivers:'All',active_only:'Active Only',
+      monthly_evolution:'Monthly Evolution',weekly_evolution:'Weekly Evolution by Driver',
+      fired_drivers_section:'Fired Drivers',active_drivers_table:'Active Drivers',
+      driver:'Driver',vehicle:'Vehicle',bills:'Bills',total_amount:'Total',
+      paid_col:'Paid',pending_debt:'Pending Debt',recovery:'Recovery',main_type:'Type',
       all_types:'All types',all_statuses:'All statuses',search:'Search driver...',
-      clear_all:'Clear all',previous:'Previous',next:'Next',of:'of',results:'results',
-      no_results:'No results',error_title:'Error loading data',clear_filter:'Clear filter',
-      bills_label:'bills',amount_label:'total amount',pending_label:'pending'},
-  ru:{loading:'Загрузка данных...',total_debt:'Общий долг',recovered:'% Погашено',drivers_debt:'Водители с долгом',
-      total_bills:'Всего счетов',monthly_evolution:'Месячная динамика',debt_by_type:'Долг по типу',
-      drivers_table:'Водители',driver:'Водитель',vehicle:'Транспорт',bills:'Счета',total_amount:'Итого',
-      paid:'Оплачено',pending_debt:'Задолженность',recovery:'Погашение',main_type:'Тип',
+      clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
+      no_results:'No results',insights:'Derived Metrics',
+      avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
+      best_payer:'Best Payer',recovery_trend:'Recovery Trend',
+      clear_filter:'Clear filter',error_title:'Error loading data',
+      bills_label:'bills',total_label:'total charged',fired_pending:'fired pending'},
+  ru:{title:'Отчёт о долгах флота',sub:'активные и уволенные водители',refresh:'Обновить',
+      charged:'Начислено',paid:'Оплачено',pending:'Задолженность',open_bills:'Открытые счета',
+      active_drivers:'Активные водители',fired_drivers:'Уволенные водители',
+      last_90_days:'последние 90 дней',no_recent_activity:'нет активности',
+      total_recovery:'Общее погашение',active_recovery:'Только активные',
+      weekly_rate:'Недельный темп',fired_exposure:'Долг уволенных',
+      debt_by_type:'Долг по типу',all_drivers:'Все',active_only:'Только активные',
+      monthly_evolution:'Месячная динамика',weekly_evolution:'Еженедельная динамика',
+      fired_drivers_section:'Уволенные водители',active_drivers_table:'Активные водители',
+      driver:'Водитель',vehicle:'Транспорт',bills:'Счета',total_amount:'Итого',
+      paid_col:'Оплачено',pending_debt:'Задолженность',recovery:'Погашение',main_type:'Тип',
       all_types:'Все типы',all_statuses:'Все статусы',search:'Поиск водителя...',
-      clear_all:'Очистить всё',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
-      no_results:'Нет результатов',error_title:'Ошибка загрузки',clear_filter:'Очистить фильтр',
-      bills_label:'счетов',amount_label:'общая сумма',pending_label:'задолженность'}
+      clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
+      no_results:'Нет результатов',insights:'Производные метрики',
+      avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
+      best_payer:'Лучший плательщик',recovery_trend:'Тенденция погашения',
+      clear_filter:'Очистить фильтр',error_title:'Ошибка загрузки данных',
+      bills_label:'счетов',total_label:'начислено итого',fired_pending:'долг уволенных'}
 };
 
 function t(k){return (T[LANG]||T.es)[k]||k;}
 function typeLabel(tp){return (TYPE_LABELS[LANG]||TYPE_LABELS.es)[tp]||tp;}
+function setText(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function fmtAmt(v){
   var n=CUR==='USD'?v/USD_RATE:v;
@@ -253,31 +458,40 @@ function fmtAmt(v){
   return '$ '+Math.round(n).toLocaleString('es-CL');
 }
 function fmtShort(v){
-  var n=CUR==='USD'?v/USD_RATE:v;
-  var pfx=CUR==='USD'?'US$ ':'$ ';
+  var n=CUR==='USD'?v/USD_RATE:v;var pfx=CUR==='USD'?'US$ ':'$ ';
   if(Math.abs(n)>=1e9)return pfx+(n/1e9).toFixed(1)+'B';
   if(Math.abs(n)>=1e6)return pfx+(n/1e6).toFixed(1)+'M';
   if(Math.abs(n)>=1e3)return pfx+(n/1e3).toFixed(0)+'K';
   return fmtAmt(v);
 }
-
 function parseAmt(v){
-  if(!v&&v!==0)return 0;
-  var n=parseFloat(String(v).replace(/[^\d.-]/g,''));
-  return isNaN(n)?0:n;
+  if(!v&&v!==0)return 0;var n=parseFloat(String(v).replace(/[^\d.-]/g,''));return isNaN(n)?0:n;
 }
 
 function classifyType(typeStr){
   var tl=(typeStr||'').toLowerCase();
-  for(var k in TYPE_MAP){
-    for(var i=0;i<TYPE_MAP[k].length;i++){
-      if(tl.indexOf(TYPE_MAP[k][i])!==-1)return k;
-    }
-  }
+  for(var k in TYPE_MAP)for(var i=0;i<TYPE_MAP[k].length;i++)if(tl.indexOf(TYPE_MAP[k][i])!==-1)return k;
   return 'other';
 }
 
-// ─── Load ─────────────────────────────────────────────────────────────────────
+function parseDate(s){
+  if(!s)return null;
+  var d=new Date(s);if(!isNaN(d))return d;
+  var p=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(p){var yr=p[3].length===2?'20'+p[3]:p[3];return new Date(yr+'-'+p[2].padStart(2,'0')+'-'+p[1].padStart(2,'0'));}
+  return null;
+}
+
+function getWeekKey(d){
+  if(!d)return null;
+  var msPerWeek=7*24*60*60*1000;
+  var epoch=new Date('2020-01-06');
+  var wn=Math.floor((d-epoch)/msPerWeek);
+  var weekStart=new Date(epoch.getTime()+wn*msPerWeek);
+  var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return 'W'+weekStart.getDate()+'/'+mn[weekStart.getMonth()];
+}
+
 async function loadData(){
   show('loadingWrap');
   try{
@@ -297,68 +511,54 @@ function show(id){
     document.getElementById(i).style.display=i===id?'':'none';
   });
 }
-
 function showError(msg){
-  show('errorWrap');
-  document.getElementById('errTitle').textContent=t('error_title');
-  document.getElementById('errMsg').textContent=msg;
-  var isCreds=msg.includes('credentials')||msg.includes('GOOGLE_')||msg.includes('Missing');
-  if(isCreds){
+  show('errorWrap');setText('errTitle',t('error_title'));setText('errMsg',msg);
+  if(msg.includes('credentials')||msg.includes('GOOGLE_')||msg.includes('Missing')){
     var h=document.getElementById('errHint');h.style.display='';
-    h.textContent='GOOGLE_CLIENT_EMAIL=service@project.iam.gserviceaccount.com\nGOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n"';
+    h.textContent='GOOGLE_CLIENT_EMAIL=...\nGOOGLE_PRIVATE_KEY="..."';
   }
 }
 
-// ─── Aggregation ──────────────────────────────────────────────────────────────
 function aggregateDrivers(){
+  var now=new Date();
+  var cutoff=new Date(now.getTime()-90*24*60*60*1000);
   var map={};
   BILLS.forEach(function(b){
     var key=b.driver||'(sin conductor)';
-    if(!map[key]){
-      map[key]={driver:key,vehicle:b.vehicle||'',bills:0,amount:0,paid:0,types:{},statuses:{},dates:[]};
-    }
+    if(!map[key])map[key]={driver:key,vehicle:b.vehicle||'',bills:0,amount:0,paid:0,types:{},statuses:{},lastDate:null};
     var d=map[key];
-    d.bills++;
-    d.amount+=parseAmt(b.amount);
-    d.paid+=parseAmt(b.paidAmount);
-    var tp=classifyType(b.type);
-    d.types[tp]=(d.types[tp]||0)+parseAmt(b.amount);
-    var st=(b.status||'').toLowerCase();
-    d.statuses[st]=(d.statuses[st]||0)+1;
-    if(b.createdAt)d.dates.push(b.createdAt);
-    // keep most recent vehicle
+    d.bills++;d.amount+=parseAmt(b.amount);d.paid+=parseAmt(b.paidAmount);
+    var tp=classifyType(b.type);d.types[tp]=(d.types[tp]||0)+parseAmt(b.amount);
+    var st=(b.status||'').toLowerCase();d.statuses[st]=(d.statuses[st]||0)+1;
+    var bd=parseDate(b.createdAt);
+    if(bd&&(!d.lastDate||bd>d.lastDate))d.lastDate=bd;
     if(b.vehicle)d.vehicle=b.vehicle;
   });
   DRIVERS=Object.values(map).map(function(d){
     d.pending=Math.max(0,d.amount-d.paid);
     d.pct=d.amount>0?Math.round(d.paid/d.amount*100):0;
-    // main type
     var mainType='other';var maxV=0;
     Object.keys(d.types).forEach(function(k){if(d.types[k]>maxV){maxV=d.types[k];mainType=k;}});
     d.mainType=mainType;
+    d.isActive=d.lastDate&&d.lastDate>=cutoff;
     return d;
   });
 }
 
-// ─── Filters ─────────────────────────────────────────────────────────────────
 function buildFilters(){
   var types=[],statuses=[];
   BILLS.forEach(function(b){
-    var tp=classifyType(b.type);
-    if(types.indexOf(tp)<0)types.push(tp);
+    var tp=classifyType(b.type);if(types.indexOf(tp)<0)types.push(tp);
     if(b.status&&statuses.indexOf(b.status)<0)statuses.push(b.status);
   });
-  fillSelect('filterType',types.map(function(tp){return {value:tp,label:typeLabel(tp)};}),t('all_types'));
-  fillSelect('filterStatus',statuses.map(function(s){return {value:s,label:s};}),t('all_statuses'));
+  fillSelect('filterType',types.map(function(tp){return{value:tp,label:typeLabel(tp)};}),t('all_types'));
+  fillSelect('filterStatus',statuses.map(function(s){return{value:s,label:s};}),t('all_statuses'));
 }
 
 function fillSelect(id,opts,all){
   var sel=document.getElementById(id);if(!sel)return;
-  var prev=sel.value;
-  sel.innerHTML='<option value="">'+all+'</option>';
-  opts.forEach(function(o){
-    var op=document.createElement('option');op.value=o.value;op.textContent=o.label;sel.appendChild(op);
-  });
+  var prev=sel.value;sel.innerHTML='<option value="">'+all+'</option>';
+  opts.forEach(function(o){var op=document.createElement('option');op.value=o.value;op.textContent=o.label;sel.appendChild(op);});
   if(prev)sel.value=prev;
 }
 
@@ -366,22 +566,19 @@ function getFiltered(){
   var ft=(document.getElementById('filterType')||{}).value||'';
   var fs=(document.getElementById('filterStatus')||{}).value||'';
   var ftext=((document.getElementById('filterText')||{}).value||'').toLowerCase();
-
   var matchingDrivers=null;
-
-  // If type or status filter, first find matching bills → matching drivers
   if(ft||fs||_typeFilter){
-    var driverSet={};
+    var ds={};
     BILLS.forEach(function(b){
       var tp=classifyType(b.type);
       var tpMatch=(!ft&&!_typeFilter)||(ft&&tp===ft)||(_typeFilter&&tp===_typeFilter);
       var stMatch=!fs||(b.status||'')=== fs;
-      if(tpMatch&&stMatch)driverSet[b.driver||'(sin conductor)']=true;
+      if(tpMatch&&stMatch)ds[b.driver||'(sin conductor)']=true;
     });
-    matchingDrivers=driverSet;
+    matchingDrivers=ds;
   }
-
   return DRIVERS.filter(function(d){
+    if(!d.isActive)return false;
     if(matchingDrivers&&!matchingDrivers[d.driver])return false;
     if(ftext&&d.driver.toLowerCase().indexOf(ftext)===-1&&d.vehicle.toLowerCase().indexOf(ftext)===-1)return false;
     return true;
@@ -389,10 +586,8 @@ function getFiltered(){
 }
 
 function applyFilters(){
-  _page=1;
-  FILTERED=sortDrivers(getFiltered());
-  renderKPIs(FILTERED);
-  renderDriversTable(FILTERED);
+  _page=1;FILTERED=sortDrivers(getFiltered());
+  renderKPIs();renderDriversTable(FILTERED);
 }
 
 function clearAllFilters(){
@@ -401,14 +596,10 @@ function clearAllFilters(){
   clearTypeFilter();
 }
 
-// ─── Type (donut) filter ──────────────────────────────────────────────────────
 function clearTypeFilter(){
   _typeFilter=null;
   var c=document.getElementById('typeFilterChip');c.innerHTML='';c.style.display='none';
-  _page=1;
-  FILTERED=sortDrivers(getFiltered());
-  renderKPIs(FILTERED);
-  renderDriversTable(FILTERED);
+  _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);
 }
 
 function setTypeFilter(tp){
@@ -417,66 +608,161 @@ function setTypeFilter(tp){
   var c=document.getElementById('typeFilterChip');
   c.innerHTML=typeLabel(tp)+' <button onclick="clearTypeFilter()" title="'+t('clear_filter')+'">×</button>';
   c.style.display='inline-flex';
-  _page=1;
-  FILTERED=sortDrivers(getFiltered());
-  renderKPIs(FILTERED);
-  renderDriversTable(FILTERED);
+  _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);
 }
 
-// ─── KPIs ─────────────────────────────────────────────────────────────────────
-function renderKPIs(drv){
-  drv=drv||DRIVERS;
-  var totalAmt=0,totalPaid=0,withDebt=0;
-  drv.forEach(function(d){totalAmt+=d.amount;totalPaid+=d.paid;if(d.pending>0)withDebt++;});
-  var pct=totalAmt>0?Math.round(totalPaid/totalAmt*100):0;
-  var pending=totalAmt-totalPaid;
-
-  document.getElementById('kpiDebt').textContent=fmtAmt(pending);
-  document.getElementById('kpiDebtSub').textContent=fmtAmt(totalAmt)+' total emitido';
-  document.getElementById('kpiRecovered').textContent=pct+'%';
-  document.getElementById('kpiRecoveredAmt').textContent=fmtAmt(totalPaid)+' recuperado';
-  document.getElementById('kpiDrivers').textContent=withDebt;
-  document.getElementById('kpiDriversSub').textContent=drv.length+' conductores en vista';
-  document.getElementById('kpiBills').textContent=BILLS.length;
-  document.getElementById('kpiBillsSub').textContent='en '+BILLS.filter(function(b){return (b.status||'').toLowerCase().indexOf('completed')!==-1||(b.status||'').toLowerCase().indexOf('completado')!==-1;}).length+' completadas';
+function setChartDrivers(mode){
+  _chartMode=mode;
+  document.getElementById('chart-btn-all').classList.toggle('active',mode==='all');
+  document.getElementById('chart-btn-active').classList.toggle('active',mode==='active');
+  renderDonut();
 }
 
-// ─── Monthly chart + donut ────────────────────────────────────────────────────
-var MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function renderKPIs(){
+  var now=new Date();
+  var weekAgo=new Date(now.getTime()-7*24*60*60*1000);
+  var totalCharged=0,totalPaid=0,openBills=0,activeDrv=0,firedDrv=0;
+  var firedPending=0,activePending=0,activePaid=0,activeCharged=0;
+  var weekCharged=0,weekPaid=0;
+
+  DRIVERS.forEach(function(d){
+    totalCharged+=d.amount;totalPaid+=d.paid;
+    if(d.pending>0)openBills+=d.bills;
+    if(d.isActive){activeDrv++;activePending+=d.pending;activePaid+=d.paid;activeCharged+=d.amount;}
+    else{firedDrv++;firedPending+=d.pending;}
+  });
+  BILLS.forEach(function(b){
+    var bd=parseDate(b.createdAt);
+    if(bd&&bd>=weekAgo){weekCharged+=parseAmt(b.amount);weekPaid+=parseAmt(b.paidAmount);}
+  });
+
+  var totalPct=totalCharged>0?Math.round(totalPaid/totalCharged*100):0;
+  var activePct=activeCharged>0?Math.round(activePaid/activeCharged*100):0;
+  var weekPct=weekCharged>0?Math.round(weekPaid/weekCharged*100):0;
+  var totalPending=totalCharged-totalPaid;
+  var firedExp=totalPending>0?Math.round(firedPending/totalPending*100):0;
+
+  setText('kpiCharged',fmtAmt(totalCharged));
+  setText('kpiChargedSub',BILLS.length+' '+t('bills_label'));
+  setText('kpiPaid',fmtAmt(totalPaid));
+  setText('kpiPaidSub',totalPct+'% '+t('total_label'));
+  setText('kpiPending',fmtAmt(totalPending));
+  setText('kpiPendingSub',DRIVERS.filter(function(d){return d.pending>0;}).length+' conductores');
+  setText('kpiOpenBills',openBills);
+  setText('kpiOpenBillsSub',BILLS.filter(function(b){var s=(b.status||'').toLowerCase();return s.indexOf('completado')===-1&&s.indexOf('completed')===-1;}).length+' sin completar');
+  setText('kpiActive',activeDrv);
+  setText('kpiFired',firedDrv);
+
+  function setBar(valId,fillId,subId,pct,subText){
+    setText(valId,pct+'%');
+    var fill=document.getElementById(fillId);if(fill)fill.style.width=Math.min(100,pct)+'%';
+    setText(subId,subText);
+  }
+  setBar('rbarTotal','rbarTotalFill','rbarTotalSub',totalPct,fmtAmt(totalPaid)+' / '+fmtAmt(totalCharged));
+  setBar('rbarActive','rbarActiveFill','rbarActiveSub',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
+  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub',weekPct,fmtAmt(weekPaid)+' cobrado esta semana');
+  setBar('rbarFired','rbarFiredFill','rbarFiredSub',firedExp,fmtAmt(firedPending)+' '+t('fired_pending'));
+
+  // Recommended KPIs
+  var withPending=DRIVERS.filter(function(d){return d.pending>0;});
+  var avgPending=withPending.length>0?withPending.reduce(function(s,d){return s+d.pending;},0)/withPending.length:0;
+  setText('scAvgPending',fmtAmt(avgPending));
+  setText('scAvgPendingSub',withPending.length+' conductores con deuda');
+
+  var topD=DRIVERS.slice().sort(function(a,b){return b.pending-a.pending;})[0];
+  if(topD){setText('scTopDebtor',topD.driver);setText('scTopDebtorSub',fmtAmt(topD.pending)+' pendiente');}
+
+  var bestD=DRIVERS.filter(function(d){return d.amount>0&&d.pct>0;}).sort(function(a,b){return b.pct-a.pct;})[0];
+  if(bestD){setText('scBestPayer',bestD.driver);setText('scBestPayerSub',bestD.pct+'% recuperado');}
+
+  var trend=weekPct-totalPct;
+  var trendStr=(trend>=0?'+':'')+trend+'pp';
+  setText('scTrend',trendStr);
+  setText('scTrendSub',trend>=0?'por encima del promedio':'por debajo del promedio');
+
+  setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
+
+  renderFiredCards(DRIVERS.filter(function(d){return !d.isActive&&d.pending>0;}));
+}
+
+function renderFiredCards(fired){
+  var grid=document.getElementById('firedGrid');if(!grid)return;
+  var sec=document.getElementById('firedSection');
+  if(!fired.length){if(sec)sec.style.display='none';return;}
+  if(sec)sec.style.display='';
+  var html='';
+  fired.sort(function(a,b){return b.pending-a.pending;}).slice(0,12).forEach(function(d){
+    var lastStr=d.lastDate?d.lastDate.toLocaleDateString('es-CL'):'—';
+    html+='<div class="fcard">';
+    html+='<div class="fcard-name" title="'+esc(d.driver)+'">'+esc(d.driver)+'</div>';
+    html+='<div class="fcard-vehicle">'+esc(d.vehicle||'—')+'</div>';
+    html+='<div class="fcard-stats">';
+    html+='<div class="fcard-stat"><div class="lbl">Pendiente</div><div class="val red">'+fmtShort(d.pending)+'</div></div>';
+    html+='<div class="fcard-stat"><div class="lbl">Pagado</div><div class="val green">'+fmtShort(d.paid)+'</div></div>';
+    html+='<div class="fcard-stat"><div class="lbl">Facturas</div><div class="val gray">'+d.bills+'</div></div>';
+    html+='<div class="fcard-stat"><div class="lbl">Último</div><div class="val gray" style="font-size:12px">'+lastStr+'</div></div>';
+    html+='</div>';
+    html+='<div class="fcard-bar"><div class="fcard-fill" style="width:'+d.pct+'%"></div></div>';
+    html+='</div>';
+  });
+  grid.innerHTML=html;
+}
+
+var MONTHS_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var MONTHS_ABBR=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function monthIdx(m){
   if(!m)return 99;var ml=m.toLowerCase();
-  for(var i=0;i<MONTHS.length;i++)if(ml.indexOf(MONTHS[i])!==-1)return i;
+  for(var i=0;i<MONTHS_ES.length;i++)if(ml.indexOf(MONTHS_ES[i])!==-1)return i;
+  for(var i=0;i<MONTHS_ABBR.length;i++)if(ml.indexOf(MONTHS_ABBR[i])!==-1)return i;
   var d=new Date(m);if(!isNaN(d))return d.getMonth();
   return 99;
 }
 
-function renderCharts(){
-  // Monthly evolution from bills createdAt
+function renderDonut(){
+  var srcDrivers=_chartMode==='active'?DRIVERS.filter(function(d){return d.isActive;}):DRIVERS;
+  var typeKeys=['energy','toll','reparation','administrative','other'];
+  var typeAmts={energy:0,toll:0,reparation:0,administrative:0,other:0};
+  BILLS.forEach(function(b){
+    var drv=srcDrivers.find?srcDrivers.find(function(d){return d.driver===(b.driver||'(sin conductor)');})
+             :srcDrivers.filter(function(d){return d.driver===(b.driver||'(sin conductor)');})[0];
+    if(!drv)return;
+    var tp=classifyType(b.type);typeAmts[tp]=(typeAmts[tp]||0)+parseAmt(b.amount);
+  });
+  var donutLabels=typeKeys.map(function(k){return typeLabel(k);});
+  var donutData=typeKeys.map(function(k){return CUR==='USD'?typeAmts[k]/USD_RATE:typeAmts[k];});
+  var donutColors=typeKeys.map(function(k){return TYPE_COLORS[k];});
+  if(_donutChart){
+    _donutChart.data.labels=donutLabels;_donutChart.data.datasets[0].data=donutData;_donutChart.update();
+  } else {
+    _donutChart=new Chart(document.getElementById('donutChart'),{
+      type:'doughnut',
+      data:{labels:donutLabels,datasets:[{data:donutData,backgroundColor:donutColors,borderWidth:2,borderColor:'#111827',hoverOffset:6}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'right',labels:{color:'#9ca3af',font:{size:11},padding:10,usePointStyle:true,pointStyleWidth:7}},
+          tooltip:{callbacks:{label:function(ctx){
+            var raw=CUR==='USD'?ctx.raw*USD_RATE:ctx.raw;
+            var tot=donutData.reduce(function(a,b){return a+b;},0);
+            return ' '+ctx.label+': '+fmtAmt(raw)+' ('+Math.round(tot>0?ctx.raw/tot*100:0)+'%)';
+          }}}
+        },
+        onClick:function(evt,elements){if(elements.length>0)setTypeFilter(typeKeys[elements[0].index]);},
+        onHover:function(evt,elements){if(evt.native)evt.native.target.style.cursor=elements.length>0?'pointer':'default';}
+      }
+    });
+  }
+}
+
+function renderLineChart(){
   var bm={};
   BILLS.forEach(function(b){
     if(!b.createdAt)return;
-    // Try to parse month/year from createdAt (could be "YYYY-MM-DD" or "DD/MM/YYYY" or "Enero 2026")
-    var m='';
-    var d=new Date(b.createdAt);
-    if(!isNaN(d)){
-      var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      m=mn[d.getMonth()]+' '+d.getFullYear();
-    } else {
-      // try DD/MM/YYYY
-      var p=b.createdAt.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-      if(p){
-        var mn2=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        var mo=parseInt(p[2])-1;
-        var yr=p[3].length===2?'20'+p[3]:p[3];
-        m=mn2[mo]+' '+yr;
-      }
-    }
-    if(!m)return;
+    var d=parseDate(b.createdAt);if(!d)return;
+    var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    var m=mn[d.getMonth()]+' '+d.getFullYear();
     if(!bm[m])bm[m]={amount:0,paid:0};
-    bm[m].amount+=parseAmt(b.amount);
-    bm[m].paid+=parseAmt(b.paidAmount);
+    bm[m].amount+=parseAmt(b.amount);bm[m].paid+=parseAmt(b.paidAmount);
   });
-
   var months=Object.keys(bm).sort(function(a,b){
     var ai=monthIdx(a),bi=monthIdx(b);if(ai!==bi)return ai-bi;
     var ya=parseInt((a.match(/\d{4}/)||[9999])[0]);
@@ -485,77 +771,80 @@ function renderCharts(){
   });
   var amtArr=months.map(function(m){return CUR==='USD'?bm[m].amount/USD_RATE:bm[m].amount;});
   var paidArr=months.map(function(m){return CUR==='USD'?bm[m].paid/USD_RATE:bm[m].paid;});
-
   if(_lineChart){
-    _lineChart.data.labels=months;
-    _lineChart.data.datasets[0].data=amtArr;
-    _lineChart.data.datasets[1].data=paidArr;
-    _lineChart.update();
+    _lineChart.data.labels=months;_lineChart.data.datasets[0].data=amtArr;_lineChart.data.datasets[1].data=paidArr;_lineChart.update();
   } else {
     _lineChart=new Chart(document.getElementById('lineChart'),{
       type:'line',
       data:{labels:months,datasets:[
-        {label:'Monto Total',data:amtArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.1)',fill:true,tension:.4,pointRadius:4,pointHoverRadius:6},
-        {label:'Pagado',data:paidArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',fill:true,tension:.4,pointRadius:4,pointHoverRadius:6}
+        {label:'Facturado',data:amtArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.1)',fill:true,tension:.4,pointRadius:3,pointHoverRadius:5},
+        {label:'Pagado',data:paidArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',fill:true,tension:.4,pointRadius:3,pointHoverRadius:5}
       ]},
-      options:{
-        responsive:true,maintainAspectRatio:false,
+      options:{responsive:true,maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
-        plugins:{
-          legend:{labels:{color:'#9ca3af',font:{size:12}}},
-          tooltip:{callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+fmtAmt(CUR==='USD'?ctx.raw*USD_RATE:ctx.raw);}}}
-        },
+        plugins:{legend:{labels:{color:'#9ca3af',font:{size:11}}},
+          tooltip:{callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+fmtAmt(CUR==='USD'?ctx.raw*USD_RATE:ctx.raw);}}}},
         scales:{
-          x:{ticks:{color:'#6b7280',maxRotation:45,font:{size:11}},grid:{color:'#1a2030'}},
-          y:{ticks:{color:'#6b7280',font:{size:11},callback:function(v){return fmtShort(CUR==='USD'?v*USD_RATE:v);}},grid:{color:'#1a2030'}}
-        }
-      }
-    });
-  }
-
-  // Donut — debt by type (from all bills, not filtered)
-  var typeKeys=['energy','toll','reparation','administrative','other'];
-  var typeAmts={energy:0,toll:0,reparation:0,administrative:0,other:0};
-  BILLS.forEach(function(b){
-    var tp=classifyType(b.type);
-    typeAmts[tp]=(typeAmts[tp]||0)+parseAmt(b.amount);
-  });
-  var donutLabels=typeKeys.map(function(k){return typeLabel(k);});
-  var donutData=typeKeys.map(function(k){return CUR==='USD'?typeAmts[k]/USD_RATE:typeAmts[k];});
-  var donutColors=typeKeys.map(function(k){return TYPE_COLORS[k];});
-
-  if(_donutChart){
-    _donutChart.data.labels=donutLabels;
-    _donutChart.data.datasets[0].data=donutData;
-    _donutChart.update();
-  } else {
-    _donutChart=new Chart(document.getElementById('donutChart'),{
-      type:'doughnut',
-      data:{labels:donutLabels,datasets:[{data:donutData,backgroundColor:donutColors,borderWidth:2,borderColor:'#111827',hoverOffset:6}]},
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{
-          legend:{position:'right',labels:{color:'#9ca3af',font:{size:12},padding:12,usePointStyle:true,pointStyleWidth:8}},
-          tooltip:{callbacks:{label:function(ctx){
-            var raw=CUR==='USD'?ctx.raw*USD_RATE:ctx.raw;
-            return ' '+ctx.label+': '+fmtAmt(raw)+' ('+Math.round(ctx.parsed/donutData.reduce(function(a,b){return a+b;},0)*100)+'%)';
-          }}}
-        },
-        onClick:function(evt,elements){
-          if(elements.length>0){
-            var idx=elements[0].index;
-            setTypeFilter(typeKeys[idx]);
-          }
-        },
-        onHover:function(evt,elements){
-          evt.native.target.style.cursor=elements.length>0?'pointer':'default';
+          x:{ticks:{color:'#6b7280',maxRotation:45,font:{size:10}},grid:{color:'#1a2030'}},
+          y:{ticks:{color:'#6b7280',font:{size:10},callback:function(v){return fmtShort(CUR==='USD'?v*USD_RATE:v);}},grid:{color:'#1a2030'}}
         }
       }
     });
   }
 }
 
-// ─── Sort ─────────────────────────────────────────────────────────────────────
+function renderEvolTable(){
+  var tbl=document.getElementById('evolTable');if(!tbl)return;
+  var weekMap={};var driverSet={};
+  BILLS.forEach(function(b){
+    var d=parseDate(b.createdAt);var wk=getWeekKey(d);if(!wk)return;
+    var drv=b.driver||'(sin conductor)';
+    if(!weekMap[wk])weekMap[wk]={};
+    weekMap[wk][drv]=(weekMap[wk][drv]||0)+parseAmt(b.amount);
+    driverSet[drv]=true;
+  });
+
+  var allWeeks=Object.keys(weekMap).slice(-8);
+  var allDrivers=Object.keys(driverSet);
+  if(!allWeeks.length||!allDrivers.length){tbl.innerHTML='<tbody><tr><td style="color:#374151;padding:12px">Sin datos de fechas</td></tr></tbody>';return;}
+
+  var driverTotals={};
+  allDrivers.forEach(function(d){
+    driverTotals[d]=allWeeks.reduce(function(s,w){return s+(weekMap[w][d]||0);},0);
+  });
+  allDrivers.sort(function(a,b){return driverTotals[b]-driverTotals[a];});
+  var topDrivers=allDrivers.slice(0,15);
+
+  var maxVal=0;
+  topDrivers.forEach(function(d){allWeeks.forEach(function(w){var v=weekMap[w][d]||0;if(v>maxVal)maxVal=v;});});
+
+  var html='<thead><tr><th>Conductor</th>';
+  allWeeks.forEach(function(w){html+='<th>'+esc(w)+'</th>';});
+  html+='<th>Total</th></tr></thead><tbody>';
+
+  topDrivers.forEach(function(d){
+    html+='<tr><td>'+esc(d)+'</td>';
+    allWeeks.forEach(function(w){
+      var v=weekMap[w][d]||0;
+      if(v===0){html+='<td class="cell-zero">—</td>';return;}
+      var pct=maxVal>0?v/maxVal:0;
+      var cls=pct>0.66?'cell-hi':pct>0.33?'cell-mid':'cell-lo';
+      html+='<td class="'+cls+'">'+fmtShort(v)+'</td>';
+    });
+    html+='<td style="color:#9ca3af;font-weight:600">'+fmtShort(driverTotals[d])+'</td></tr>';
+  });
+
+  // Grand total row
+  html+='</tbody><tfoot><tr><td>Total</td>';
+  allWeeks.forEach(function(w){
+    var v=0;topDrivers.forEach(function(d){v+=(weekMap[w][d]||0);});
+    html+='<td>'+fmtShort(v)+'</td>';
+  });
+  var gt=topDrivers.reduce(function(s,d){return s+driverTotals[d];},0);
+  html+='<td>'+fmtShort(gt)+'</td></tr></tfoot>';
+  tbl.innerHTML=html;
+}
+
 function sortDrivers(arr){
   return arr.slice().sort(function(a,b){
     var av=a[_sortKey]||0,bv=b[_sortKey]||0;
@@ -565,35 +854,24 @@ function sortDrivers(arr){
 }
 
 function sortBy(key){
-  if(_sortKey===key)_sortDir*=-1; else {_sortKey=key;_sortDir=-1;}
-  FILTERED=sortDrivers(FILTERED);
-  renderDriversTable(FILTERED);
-  // Update header classes
-  document.querySelectorAll('.drivers-table th').forEach(function(th){
-    th.classList.remove('sort-asc','sort-desc');
-  });
-  // Find the th with matching onclick
-  document.querySelectorAll('.drivers-table th[onclick]').forEach(function(th){
-    if(th.getAttribute('onclick')==='sortBy(\''+key+'\')')
-      th.classList.add(_sortDir>0?'sort-asc':'sort-desc');
+  if(_sortKey===key)_sortDir*=-1;else{_sortKey=key;_sortDir=-1;}
+  FILTERED=sortDrivers(FILTERED);renderDriversTable(FILTERED);
+  document.querySelectorAll('.drv-table th').forEach(function(th){th.classList.remove('sort-asc','sort-desc');});
+  document.querySelectorAll('.drv-table th[onclick]').forEach(function(th){
+    if(th.getAttribute('onclick')==='sortBy(\''+key+'\')')th.classList.add(_sortDir>0?'sort-asc':'sort-desc');
   });
 }
 
-// ─── Drivers table ────────────────────────────────────────────────────────────
 function renderDriversTable(drv){
-  var total=drv.length;
-  var pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  var total=drv.length;var pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
   if(_page>pages)_page=pages;
-  var start=(_page-1)*PAGE_SIZE;
-  var slice=drv.slice(start,start+PAGE_SIZE);
+  var start=(_page-1)*PAGE_SIZE;var slice=drv.slice(start,start+PAGE_SIZE);
   var tbody=document.getElementById('driversBody');if(!tbody)return;
-
   if(!slice.length){
     tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#4b5563;padding:24px">'+t('no_results')+'</td></tr>';
   } else {
     var html='';
     slice.forEach(function(d){
-      var pct=d.pct;
       var dot=TYPE_DOT[d.mainType]||'dot-other';
       html+='<tr>';
       html+='<td>'+esc(d.driver)+'</td>';
@@ -602,29 +880,30 @@ function renderDriversTable(drv){
       html+='<td class="amount total-amt">'+fmtAmt(d.amount)+'</td>';
       html+='<td class="amount paid">'+fmtAmt(d.paid)+'</td>';
       html+='<td class="amount debt">'+fmtAmt(d.pending)+'</td>';
-      html+='<td style="min-width:80px"><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">'+pct+'%</div><div class="bar-mini"><div class="bar-fill" style="width:'+pct+'%"></div></div></td>';
+      html+='<td style="min-width:80px"><div style="font-size:11px;color:#9ca3af;margin-bottom:3px">'+d.pct+'%</div><div class="bar-mini"><div class="bar-fill" style="width:'+d.pct+'%"></div></div></td>';
       html+='<td><span class="type-dot '+dot+'"></span><span style="color:#9ca3af;font-size:11px">'+typeLabel(d.mainType)+'</span></td>';
       html+='</tr>';
     });
     tbody.innerHTML=html;
   }
-
-  var info='';
-  if(pages>1)info=(start+1)+'-'+Math.min(start+PAGE_SIZE,total)+' '+t('of')+' '+total+' '+t('results');
-  else info=total+' '+t('results');
-  document.getElementById('pageInfo').textContent=info;
+  var info=pages>1?(start+1)+'-'+Math.min(start+PAGE_SIZE,total)+' '+t('of')+' '+total+' '+t('results')
+                  :total+' '+t('results');
+  setText('pageInfo',info);
   document.getElementById('btnPrev').disabled=_page<=1;
   document.getElementById('btnNext').disabled=_page>=pages;
 }
 
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
 function changePage(d){_page+=d;renderDriversTable(FILTERED);}
 
-// ─── i18n ─────────────────────────────────────────────────────────────────────
 function applyI18n(){
+  document.querySelectorAll('#langSwitch button').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('onclick')==="setLang('"+LANG+"')");
+  });
+  document.querySelectorAll('#currSwitch button').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('onclick')==="setCurrency('"+CUR+"')");
+  });
   document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');if(T[LANG]&&T[LANG][k])el.textContent=T[LANG][k];
+    var k=el.getAttribute('data-i18n');var v=T[LANG]&&T[LANG][k];if(v)el.textContent=v;
   });
   var ft=document.getElementById('filterText');if(ft)ft.placeholder=t('search');
   buildFilters();
@@ -632,21 +911,18 @@ function applyI18n(){
 
 function renderAll(){
   FILTERED=sortDrivers(getFiltered());
-  renderKPIs(FILTERED);
-  renderCharts();
-  renderDriversTable(FILTERED);
-  applyI18n();
+  renderKPIs();renderDonut();renderLineChart();renderEvolTable();renderDriversTable(FILTERED);applyI18n();
 }
 
-function setLanguage(lang){if(!T[lang])return;LANG=lang;renderAll();}
+function setLang(lang){if(!T[lang])return;LANG=lang;renderAll();}
+function setLanguage(lang){setLang(lang);}
 function setCurrency(cur){CUR=cur;renderAll();}
 
 window.addEventListener('message',function(e){
   if(!e.data)return;
-  if(e.data.type==='setLanguage')setLanguage(e.data.lang);
+  if(e.data.type==='setLanguage')setLang(e.data.lang);
   if(e.data.type==='setCurrency')setCurrency(e.data.currency);
 });
-
 window.addEventListener('load',function(){
   try{
     var pl=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_lang');
