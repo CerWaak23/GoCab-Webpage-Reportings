@@ -156,7 +156,7 @@ a{color:inherit;text-decoration:none}
 
 <div id="loadingWrap" class="loading-wrap">
   <div class="spinner"></div>
-  <span id="loadingText">Cargando datos financieros...</span>
+  <span id="loadingText" data-i18n="loading">Cargando datos financieros...</span>
 </div>
 
 <div id="errorWrap" class="error-wrap" style="display:none">
@@ -200,48 +200,48 @@ a{color:inherit;text-decoration:none}
   <div class="scope-bar">
     <label>
       <input type="checkbox" id="includeIntl" onchange="onScopeChange()" checked>
-      <span>Incluir transacciones internacionales (Bank: International)</span>
+      <span data-i18n="include_intl">Incluir transacciones internacionales (Bank: International)</span>
     </label>
-    <span id="scopeInfo" class="scope-info">Solo afecta Total Egresos y Saldo Santander</span>
+    <span id="scopeInfo" class="scope-info" data-i18n="scope_info">Solo afecta Total Egresos y Saldo Santander</span>
   </div>
 
   <!-- SECCIÓN: Resumen General -->
-  <div class="section-title">Resumen general</div>
+  <div class="section-title" data-i18n="sec_resumen">Resumen general</div>
   <div class="kpi-grid" id="kpiGrid"></div>
 
   <!-- SECCIÓN: Cobertura SumUp -->
   <div class="card">
-    <div class="section-title">¿Cubrimos los gastos con SumUp?
-      <span class="meta-chip">Cobertura operacional · SumUp neto vs egresos operativos · CapEx excluido</span>
+    <div class="section-title"><span data-i18n="sec_cobertura">¿Cubrimos los gastos con SumUp?</span>
+      <span class="meta-chip" data-i18n="sec_cobertura_meta">Cobertura operacional · SumUp neto vs egresos operativos · CapEx excluido</span>
     </div>
     <div class="cov-stats" id="covStats"></div>
     <div class="chart-wrap-lg"><canvas id="covChart"></canvas></div>
   </div>
 
   <!-- SECCIÓN: SumUp -->
-  <div class="section-title" style="margin-top:6px">SumUp — Cobros operativos
+  <div class="section-title" style="margin-top:6px"><span data-i18n="sec_sumup">SumUp — Cobros operativos</span>
     <span class="meta-chip" id="sumupMeta"></span>
   </div>
   <div class="kpi-grid" id="sumupKpis"></div>
 
   <!-- SECCIÓN: Ganancia operacional -->
   <div class="card">
-    <div class="section-title">Ganancia operacional mensual
-      <span class="meta-chip">Cobros netos SumUp por mes</span>
+    <div class="section-title"><span data-i18n="sec_ganancia">Ganancia operacional mensual</span>
+      <span class="meta-chip" data-i18n="sec_ganancia_meta">Cobros netos SumUp por mes</span>
     </div>
     <div class="chart-wrap-lg"><canvas id="opChart"></canvas></div>
   </div>
 
   <!-- SECCIÓN: Ingresos por origen -->
   <div class="card">
-    <div class="section-title">Ingresos por origen
-      <span class="meta-chip">Capital del Holding · Indrive subsidio · SumUp neto</span>
+    <div class="section-title"><span data-i18n="sec_ingresos">Ingresos por origen</span>
+      <span class="meta-chip" data-i18n="sec_ingresos_meta">Capital del Holding · Indrive subsidio · SumUp neto</span>
     </div>
     <div class="income-row">
       <div class="income-donut-wrap">
         <canvas id="donutChart"></canvas>
         <div class="donut-center">
-          <div class="dc-label">Total ingresado</div>
+          <div class="dc-label" data-i18n="total_ingresado">Total ingresado</div>
           <div class="dc-val" id="donutCenter">—</div>
         </div>
       </div>
@@ -252,21 +252,21 @@ a{color:inherit;text-decoration:none}
   <!-- SECCIÓN: Evolución mensual + Top egresos -->
   <div class="charts-row">
     <div class="card" style="margin-bottom:0">
-      <div class="section-title">Evolución mensual operacional
-        <span class="meta-chip">SumUp neto vs egresos operativos · sin compra de autos ni capital</span>
+      <div class="section-title"><span data-i18n="sec_evolucion">Evolución mensual operacional</span>
+        <span class="meta-chip" data-i18n="sec_evolucion_meta">SumUp neto vs egresos operativos · sin compra de autos ni capital</span>
       </div>
       <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:0">
-      <div class="section-title">Top egresos por proveedor</div>
+      <div class="section-title" data-i18n="sec_top_egresos">Top egresos por proveedor</div>
       <div class="chart-wrap"><canvas id="barChart"></canvas></div>
     </div>
   </div>
 
   <!-- SECCIÓN: Gastos Recurrentes -->
   <div class="card" style="margin-top:14px">
-    <div class="section-title">Gastos mensuales recurrentes
-      <span class="meta-chip">Proveedores en 2+ meses · ordenados por total ↓ · Excluye pendientes</span>
+    <div class="section-title"><span data-i18n="sec_recurrentes">Gastos mensuales recurrentes</span>
+      <span class="meta-chip" data-i18n="sec_recurrentes_meta">Proveedores en 2+ meses · ordenados por total ↓ · Excluye pendientes</span>
     </div>
     <div id="expFilterChip" class="filter-chip" style="display:none"></div>
     <div class="pivot-scroll"><table class="pivot-table" id="recurringTable"></table></div>
@@ -274,32 +274,32 @@ a{color:inherit;text-decoration:none}
 
   <!-- SECCIÓN: Gastos Variables -->
   <div class="card">
-    <div class="section-title">Gastos mensuales variables
-      <span class="meta-chip">Proveedores en 1 mes · ordenados por total ↓</span>
+    <div class="section-title"><span data-i18n="sec_variables">Gastos mensuales variables</span>
+      <span class="meta-chip" data-i18n="sec_variables_meta">Proveedores en 1 mes · ordenados por total ↓</span>
     </div>
     <div class="pivot-scroll"><table class="pivot-table" id="variableTable"></table></div>
   </div>
 
   <!-- SECCIÓN: Detalle de pagos -->
   <div class="card">
-    <div class="section-title">Detalle de pagos
-      <span class="meta-chip">Transferencias internas SumUp→Banco marcadas en violeta · no suman a ingresos</span>
+    <div class="section-title"><span data-i18n="sec_detalle">Detalle de pagos</span>
+      <span class="meta-chip" data-i18n="sec_detalle_meta">Transferencias internas SumUp→Banco marcadas en violeta · no suman a ingresos</span>
     </div>
     <div class="filters-bar">
-      <select class="filter-select" id="filterMonth" onchange="applyFilters()"><option value="">Todos los meses</option></select>
-      <select class="filter-select" id="filterStatus" onchange="applyFilters()"><option value="">Todos los estados</option></select>
-      <select class="filter-select" id="filterEntity" onchange="applyFilters()"><option value="">Todas las entidades</option></select>
-      <select class="filter-select" id="filterBank" onchange="applyFilters()"><option value="">Todos los bancos</option></select>
+      <select class="filter-select" id="filterMonth" onchange="applyFilters()"><option value="" data-i18n="flt_all_months">Todos los meses</option></select>
+      <select class="filter-select" id="filterStatus" onchange="applyFilters()"><option value="" data-i18n="flt_all_statuses">Todos los estados</option></select>
+      <select class="filter-select" id="filterEntity" onchange="applyFilters()"><option value="" data-i18n="flt_all_entities">Todas las entidades</option></select>
+      <select class="filter-select" id="filterBank" onchange="applyFilters()"><option value="" data-i18n="flt_all_banks">Todos los bancos</option></select>
       <input class="filter-input" id="filterText" type="text" placeholder="Buscar proveedor, descripción..." oninput="applyFilters()">
-      <button class="filter-clear" onclick="clearAllFilters()">Limpiar</button>
+      <button class="filter-clear" onclick="clearAllFilters()" data-i18n="flt_clear">Limpiar</button>
     </div>
     <div class="txn-scroll">
       <table class="txn-table">
         <thead>
           <tr>
-            <th>Fecha</th><th>Mes</th><th>Proveedor</th><th>Descripción</th>
-            <th style="text-align:right">Ingreso</th><th style="text-align:right">Egreso</th>
-            <th>Estado</th><th>Entidad</th><th>Banco</th>
+            <th data-i18n="col_fecha">Fecha</th><th data-i18n="col_mes">Mes</th><th data-i18n="col_proveedor">Proveedor</th><th data-i18n="col_desc">Descripción</th>
+            <th style="text-align:right" data-i18n="col_ingreso">Ingreso</th><th style="text-align:right" data-i18n="col_egreso">Egreso</th>
+            <th data-i18n="col_estado">Estado</th><th data-i18n="col_entidad">Entidad</th><th data-i18n="col_banco">Banco</th>
           </tr>
         </thead>
         <tbody id="txnBody"></tbody>
@@ -307,8 +307,8 @@ a{color:inherit;text-decoration:none}
     </div>
     <div class="pagination">
       <span class="page-info" id="pageInfo"></span>
-      <button class="page-btn" id="btnPrev" onclick="changePage(-1)">Anterior</button>
-      <button class="page-btn" id="btnNext" onclick="changePage(1)">Siguiente</button>
+      <button class="page-btn" id="btnPrev" onclick="changePage(-1)" data-i18n="btn_prev">Anterior</button>
+      <button class="page-btn" id="btnNext" onclick="changePage(1)" data-i18n="btn_next">Siguiente</button>
     </div>
   </div>
 
@@ -326,6 +326,218 @@ var RAW   = [];   // parsed sheet rows
 var SUMUP = {};          // {mes: {bruto,comision,neto,transacciones}}
 var SUMUP_RETIROS = 0;   // total withdrawn from SumUp to bank
 var LANG  = 'es';
+
+var T = {
+  es: {
+    include_intl:'Incluir transacciones internacionales (Bank: International)',
+    scope_info:'Solo afecta Total Egresos y Saldo Santander',
+    loading:'Cargando datos financieros...',
+    err_title:'Error al cargar datos',
+    sec_resumen:'Resumen general',
+    sec_cobertura:'¿Cubrimos los gastos con SumUp?',
+    sec_cobertura_meta:'Cobertura operacional · SumUp neto vs egresos operativos · CapEx excluido',
+    sec_sumup:'SumUp — Cobros operativos',
+    sec_ganancia:'Ganancia operacional mensual',
+    sec_ganancia_meta:'Cobros netos SumUp por mes',
+    sec_ingresos:'Ingresos por origen',
+    sec_ingresos_meta:'Capital del Holding · Indrive subsidio · SumUp neto',
+    total_ingresado:'Total ingresado',
+    sec_evolucion:'Evolución mensual operacional',
+    sec_evolucion_meta:'SumUp neto vs egresos operativos · sin compra de autos ni capital',
+    sec_top_egresos:'Top egresos por proveedor',
+    sec_recurrentes:'Gastos mensuales recurrentes',
+    sec_recurrentes_meta:'Proveedores en 2+ meses · ordenados por total ↓ · Excluye pendientes',
+    sec_variables:'Gastos mensuales variables',
+    sec_variables_meta:'Proveedores en 1 mes · ordenados por total ↓',
+    sec_detalle:'Detalle de pagos',
+    sec_detalle_meta:'Transferencias internas SumUp→Banco marcadas en violeta · no suman a ingresos',
+    flt_all_months:'Todos los meses',
+    flt_all_statuses:'Todos los estados',
+    flt_all_entities:'Todas las entidades',
+    flt_all_banks:'Todos los bancos',
+    flt_search:'Buscar proveedor, descripción...',
+    flt_clear:'Limpiar',
+    col_fecha:'Fecha', col_mes:'Mes', col_proveedor:'Proveedor', col_desc:'Descripción',
+    col_ingreso:'Ingreso', col_egreso:'Egreso', col_estado:'Estado', col_entidad:'Entidad', col_banco:'Banco',
+    btn_prev:'Anterior', btn_next:'Siguiente',
+    kpi_total_ingresos:'Total Ingresos', kpi_total_egresos:'Total Egresos',
+    kpi_cobertura:'Cobertura', kpi_burn_earn:'Burn / Earn',
+    kpi_saldo_sant:'Saldo Santander', kpi_saldo_neto:'Saldo Neto Operativo',
+    kpi_pagos_pend:'Pagos Pendientes', kpi_egresos_label:'Egresos',
+    kpi_ext:'Pagos del Exterior',
+    kpi_meta_ingresos:'Capital + Indrive + SumUp neto',
+    kpi_meta_incl_intl:'Incluye pagos del exterior',
+    kpi_meta_no_intl:'Solo operación local',
+    kpi_meta_sant:'Cash-in − Cash-out (sin pendientes ni exterior)',
+    kpi_meta_neto:'Ingresos − Egresos',
+    kpi_meta_mes_total:'Total pagado en el mes',
+    kpi_meta_ext:'pagos · GoCab Holding',
+    kpi_sin_datos:'Sin datos', kpi_req_sumup:'Requiere datos SumUp', kpi_sin_eg_op:'Sin egresos operativos',
+    vs:'vs',
+    cov_cubierto_por:'cubierto por', cov_prom_3m:'Promedio últimos 3 meses',
+    cov_prom:'cobertura promedio', cov_burn_earn_prom:'Burn / Earn promedio',
+    cov_generando:'generando capital por mes', cov_quemando:'quemando capital por mes',
+    no_sumup_cov:'Sin datos SumUp — el gráfico de cobertura no puede calcularse.',
+    no_sumup_kpis:'Sin datos SumUp cargados. Verifica que la carpeta Drive tenga archivos CSV/XLSX.',
+    no_sumup_chart:'Sin datos SumUp',
+    sumup_total:'Total SumUp (periodo)', sumup_neto_per:'SumUp Neto (periodo)',
+    sumup_comision:'Comisión cobrada SumUp', sumup_saldo:'Saldo disponible en SumUp',
+    sumup_mensual:'Promedio mensual',
+    sumup_brutos:'Cobros brutos acumulados', sumup_brutos_menos_com:'Cobros brutos − comisiones',
+    sumup_costo:'Costo plataforma acumulado',
+    sumup_txn:'transacciones', sumup_ultimos:'Últimos', sumup_meses:'meses',
+    sumup_neto_cobrado:'Neto cobrado', sumup_transferido:'transferido a Santander',
+    sumup_sin_transfer:'(sin transferencias registradas a Santander)',
+    sumup_archivos:'archivos', sumup_sin_archivos:'sin archivos',
+    chart_eg_op:'Egresos operativos', chart_sumup_neto:'SumUp neto',
+    chart_sumup_neto_m:'SumUp neto mensual', chart_eg_op2:'Egresos Op.',
+    chart_capital:'Capital del Holding', chart_indrive:'Indrive subsidio',
+    chart_egresos:'Egresos', chart_del_total:'del total',
+    pivot_total:'Total',
+    txn_sin_res:'Sin resultados', pag_de:'de', pag_resultados:'resultados',
+    last_update:'Actualizado:',
+  },
+  en: {
+    include_intl:'Include international transactions (Bank: International)',
+    scope_info:'Only affects Total Expenses and Santander Balance',
+    loading:'Loading financial data...',
+    err_title:'Error loading data',
+    sec_resumen:'General Summary',
+    sec_cobertura:'Are we covering expenses with SumUp?',
+    sec_cobertura_meta:'Operational coverage · SumUp net vs operational expenses · CapEx excluded',
+    sec_sumup:'SumUp — Operational Payments',
+    sec_ganancia:'Monthly Operational Revenue',
+    sec_ganancia_meta:'SumUp net collections per month',
+    sec_ingresos:'Income by source',
+    sec_ingresos_meta:'Holding Capital · Indrive subsidy · SumUp net',
+    total_ingresado:'Total received',
+    sec_evolucion:'Monthly operational evolution',
+    sec_evolucion_meta:'SumUp net vs operational expenses · excl. car purchases and capital',
+    sec_top_egresos:'Top expenses by supplier',
+    sec_recurrentes:'Recurring monthly expenses',
+    sec_recurrentes_meta:'Suppliers in 2+ months · sorted by total ↓ · Excludes pending',
+    sec_variables:'Variable monthly expenses',
+    sec_variables_meta:'Suppliers in 1 month · sorted by total ↓',
+    sec_detalle:'Payment details',
+    sec_detalle_meta:'Internal SumUp→Bank transfers shown in purple · not counted as income',
+    flt_all_months:'All months',
+    flt_all_statuses:'All statuses',
+    flt_all_entities:'All entities',
+    flt_all_banks:'All banks',
+    flt_search:'Search supplier, description...',
+    flt_clear:'Clear',
+    col_fecha:'Date', col_mes:'Month', col_proveedor:'Supplier', col_desc:'Description',
+    col_ingreso:'Income', col_egreso:'Expense', col_estado:'Status', col_entidad:'Entity', col_banco:'Bank',
+    btn_prev:'Previous', btn_next:'Next',
+    kpi_total_ingresos:'Total Income', kpi_total_egresos:'Total Expenses',
+    kpi_cobertura:'Coverage', kpi_burn_earn:'Burn / Earn',
+    kpi_saldo_sant:'Santander Balance', kpi_saldo_neto:'Net Operational Balance',
+    kpi_pagos_pend:'Pending Payments', kpi_egresos_label:'Expenses',
+    kpi_ext:'International Payments',
+    kpi_meta_ingresos:'Capital + Indrive + SumUp net',
+    kpi_meta_incl_intl:'Includes international payments',
+    kpi_meta_no_intl:'Local operations only',
+    kpi_meta_sant:'Cash-in − Cash-out (excl. pending and international)',
+    kpi_meta_neto:'Income − Expenses',
+    kpi_meta_mes_total:'Total paid this month',
+    kpi_meta_ext:'payments · GoCab Holding',
+    kpi_sin_datos:'No data', kpi_req_sumup:'Requires SumUp data', kpi_sin_eg_op:'No operational expenses',
+    vs:'vs',
+    cov_cubierto_por:'covered by', cov_prom_3m:'Last 3-month average',
+    cov_prom:'average coverage', cov_burn_earn_prom:'Burn / Earn average',
+    cov_generando:'generating capital per month', cov_quemando:'burning capital per month',
+    no_sumup_cov:'No SumUp data — coverage chart cannot be calculated.',
+    no_sumup_kpis:'No SumUp data loaded. Make sure the Drive folder has CSV/XLSX files.',
+    no_sumup_chart:'No SumUp data',
+    sumup_total:'Total SumUp (period)', sumup_neto_per:'SumUp Net (period)',
+    sumup_comision:'SumUp commission charged', sumup_saldo:'Available balance in SumUp',
+    sumup_mensual:'Monthly average',
+    sumup_brutos:'Gross collections accumulated', sumup_brutos_menos_com:'Gross collections − commissions',
+    sumup_costo:'Platform cost accumulated',
+    sumup_txn:'transactions', sumup_ultimos:'Last', sumup_meses:'months',
+    sumup_neto_cobrado:'Net collected', sumup_transferido:'transferred to Santander',
+    sumup_sin_transfer:'(no transfers to Santander recorded)',
+    sumup_archivos:'files', sumup_sin_archivos:'no files',
+    chart_eg_op:'Operational expenses', chart_sumup_neto:'SumUp net',
+    chart_sumup_neto_m:'SumUp net monthly', chart_eg_op2:'Op. Expenses',
+    chart_capital:'Holding Capital', chart_indrive:'Indrive subsidy',
+    chart_egresos:'Expenses', chart_del_total:'of total',
+    pivot_total:'Total',
+    txn_sin_res:'No results', pag_de:'of', pag_resultados:'results',
+    last_update:'Updated:',
+  },
+  ru: {
+    include_intl:'Включить международные транзакции (Bank: International)',
+    scope_info:'Влияет только на Общие расходы и баланс Santander',
+    loading:'Загрузка финансовых данных...',
+    err_title:'Ошибка загрузки данных',
+    sec_resumen:'Общая сводка',
+    sec_cobertura:'Покрываем ли расходы через SumUp?',
+    sec_cobertura_meta:'Операционное покрытие · SumUp нетто vs операционные расходы · CapEx исключён',
+    sec_sumup:'SumUp — Операционные платежи',
+    sec_ganancia:'Ежемесячный операционный доход',
+    sec_ganancia_meta:'Чистые поступления SumUp по месяцам',
+    sec_ingresos:'Доходы по источникам',
+    sec_ingresos_meta:'Капитал холдинга · Субсидия Indrive · SumUp нетто',
+    total_ingresado:'Всего получено',
+    sec_evolucion:'Ежемесячная операционная динамика',
+    sec_evolucion_meta:'SumUp нетто vs операционные расходы · без покупки авто и капитала',
+    sec_top_egresos:'Топ расходов по поставщикам',
+    sec_recurrentes:'Регулярные ежемесячные расходы',
+    sec_recurrentes_meta:'Поставщики в 2+ месяцах · сортировка по итогу ↓ · Ожидающие исключены',
+    sec_variables:'Переменные ежемесячные расходы',
+    sec_variables_meta:'Поставщики в 1 месяце · сортировка по итогу ↓',
+    sec_detalle:'Детали платежей',
+    sec_detalle_meta:'Внутренние переводы SumUp→Банк отмечены фиолетовым · не учитываются в доходах',
+    flt_all_months:'Все месяцы',
+    flt_all_statuses:'Все статусы',
+    flt_all_entities:'Все организации',
+    flt_all_banks:'Все банки',
+    flt_search:'Поиск поставщика, описания...',
+    flt_clear:'Очистить',
+    col_fecha:'Дата', col_mes:'Месяц', col_proveedor:'Поставщик', col_desc:'Описание',
+    col_ingreso:'Доход', col_egreso:'Расход', col_estado:'Статус', col_entidad:'Организация', col_banco:'Банк',
+    btn_prev:'Назад', btn_next:'Вперёд',
+    kpi_total_ingresos:'Общий доход', kpi_total_egresos:'Общие расходы',
+    kpi_cobertura:'Покрытие', kpi_burn_earn:'Burn / Earn',
+    kpi_saldo_sant:'Баланс Santander', kpi_saldo_neto:'Чистый операционный баланс',
+    kpi_pagos_pend:'Ожидающие платежи', kpi_egresos_label:'Расходы',
+    kpi_ext:'Международные платежи',
+    kpi_meta_ingresos:'Капитал + Indrive + SumUp нетто',
+    kpi_meta_incl_intl:'Включая международные платежи',
+    kpi_meta_no_intl:'Только местные операции',
+    kpi_meta_sant:'Cash-in − Cash-out (без ожидающих и международных)',
+    kpi_meta_neto:'Доходы − Расходы',
+    kpi_meta_mes_total:'Итого оплачено за месяц',
+    kpi_meta_ext:'платежей · GoCab Holding',
+    kpi_sin_datos:'Нет данных', kpi_req_sumup:'Требуются данные SumUp', kpi_sin_eg_op:'Нет операционных расходов',
+    vs:'vs',
+    cov_cubierto_por:'покрыто', cov_prom_3m:'Среднее за 3 месяца',
+    cov_prom:'среднее покрытие', cov_burn_earn_prom:'Средний Burn / Earn',
+    cov_generando:'генерируем капитал в месяц', cov_quemando:'сжигаем капитал в месяц',
+    no_sumup_cov:'Нет данных SumUp — график покрытия недоступен.',
+    no_sumup_kpis:'Данные SumUp не загружены. Убедитесь, что в папке Drive есть CSV/XLSX файлы.',
+    no_sumup_chart:'Нет данных SumUp',
+    sumup_total:'Итого SumUp (период)', sumup_neto_per:'SumUp нетто (период)',
+    sumup_comision:'Комиссия SumUp', sumup_saldo:'Доступный баланс в SumUp',
+    sumup_mensual:'Среднемесячный',
+    sumup_brutos:'Валовые поступления накоплено', sumup_brutos_menos_com:'Валовые − комиссии',
+    sumup_costo:'Стоимость платформы накоплено',
+    sumup_txn:'транзакций', sumup_ultimos:'Последние', sumup_meses:'месяцев',
+    sumup_neto_cobrado:'Чистые поступления', sumup_transferido:'переведено в Santander',
+    sumup_sin_transfer:'(переводы в Santander не зарегистрированы)',
+    sumup_archivos:'файлов', sumup_sin_archivos:'нет файлов',
+    chart_eg_op:'Операционные расходы', chart_sumup_neto:'SumUp нетто',
+    chart_sumup_neto_m:'SumUp нетто в месяц', chart_eg_op2:'Опер. расходы',
+    chart_capital:'Капитал холдинга', chart_indrive:'Субсидия Indrive',
+    chart_egresos:'Расходы', chart_del_total:'от итога',
+    pivot_total:'Итого',
+    txn_sin_res:'Нет результатов', pag_de:'из', pag_resultados:'результатов',
+    last_update:'Обновлено:',
+  }
+};
+function t(key){ return (T[LANG]&&T[LANG][key])||T.es[key]||key; }
+
 var CUR   = 'CLP';
 var _includeIntl = true;
 var _expKey = null, _expMonth = null;
@@ -505,14 +717,14 @@ async function loadData() {
       SUMUP_RETIROS = sumupJson.totalRetiros || 0;
       var meta = document.getElementById('sumupMeta');
       if (meta) meta.textContent = sumupJson.sources && sumupJson.sources.length
-        ? sumupJson.sources.length+' archivos'
-        : 'sin archivos';
+        ? sumupJson.sources.length+' '+t('sumup_archivos')
+        : t('sumup_sin_archivos');
     }
 
     buildFilters();
     renderAll();
     var lu = document.getElementById('lastUpdate');
-    if (lu) lu.textContent = 'Actualizado: '+new Date().toLocaleString('es-CL');
+    if (lu) lu.textContent = t('last_update')+' '+new Date().toLocaleString(LANG==='ru'?'ru-RU':LANG==='en'?'en-US':'es-CL');
     show('mainWrap');
   } catch(err) { showError(err.message); }
 }
@@ -581,22 +793,22 @@ function computeKpis() {
   var totalIntl = intlRows.reduce(function(s,r){ return s+r.cashOut; },0);
 
   var cobColor = cob0===null ? 'gray' : cob0>=100?'green':cob0>=70?'amber':'red';
-  var cobVal   = cob0===null ? 'Sin datos' : cob0+'%';
-  var cobMeta  = cob0===null ? 'Requiere datos SumUp' : (deltaHtml(cobDelta,true)||'')+(cob1!==null?' vs '+yyyymmToLabel(MES1):'');
+  var cobVal   = cob0===null ? t('kpi_sin_datos') : cob0+'%';
+  var cobMeta  = cob0===null ? t('kpi_req_sumup') : (deltaHtml(cobDelta,true)||'')+(cob1!==null?' '+t('vs')+' '+yyyymmToLabel(MES1):'');
 
   var beColor = burnEarn0>=0 ? 'green' : 'red';
-  var beMeta  = egresosOpMes0>0 ? (deltaHtml(beDelta,false)||'')+(beDelta!==null?' vs '+yyyymmToLabel(MES1):'') : 'Sin egresos operativos';
+  var beMeta  = egresosOpMes0>0 ? (deltaHtml(beDelta,false)||'')+(beDelta!==null?' '+t('vs')+' '+yyyymmToLabel(MES1):'') : t('kpi_sin_eg_op');
 
   return [
-    {color:'green', label:'Total Ingresos',                        value:fmtAmt(totalIngresos),   meta:'Capital + Indrive + SumUp neto'},
-    {color:'red',   label:'Total Egresos',                         value:fmtAmt(totalEgresos),    meta:_includeIntl?'Incluye pagos del exterior':'Solo operación local'},
-    {color:cobColor,label:'Cobertura '+yyyymmToLabel(MES0),        value:cobVal,                  meta:cobMeta},
-    {color:beColor, label:'Burn / Earn '+yyyymmToLabel(MES0),      value:fmtShort(burnEarn0),     meta:beMeta},
-    {color:saldoSant>=0?'blue':'red', label:'Saldo Santander', value:fmtAmt(saldoSant), meta:'Cash-in − Cash-out (sin pendientes ni exterior)', featured:true},
-    {color:'blue',  label:'Saldo Neto Operativo',                  value:fmtAmt(saldoNeto),       meta:'Ingresos − Egresos'},
-    {color:'amber', label:'Pagos Pendientes',                      value:pendRows.length,         meta:fmtAmt(pendTotal)},
-    {color:'gray',  label:yyyymmToLabel(MES0)+' Egresos',          value:fmtAmt(totalMes0),       meta:'Total pagado en el mes'},
-    {color:'purple',label:'Pagos del Exterior',                    value:fmtAmt(totalIntl),       meta:intlRows.length+' pagos · GoCab Holding'},
+    {color:'green', label:t('kpi_total_ingresos'),                       value:fmtAmt(totalIngresos),   meta:t('kpi_meta_ingresos')},
+    {color:'red',   label:t('kpi_total_egresos'),                         value:fmtAmt(totalEgresos),    meta:_includeIntl?t('kpi_meta_incl_intl'):t('kpi_meta_no_intl')},
+    {color:cobColor,label:t('kpi_cobertura')+' '+yyyymmToLabel(MES0),    value:cobVal,                  meta:cobMeta},
+    {color:beColor, label:t('kpi_burn_earn')+' '+yyyymmToLabel(MES0),    value:fmtShort(burnEarn0),     meta:beMeta},
+    {color:saldoSant>=0?'blue':'red', label:t('kpi_saldo_sant'), value:fmtAmt(saldoSant), meta:t('kpi_meta_sant'), featured:true},
+    {color:'blue',  label:t('kpi_saldo_neto'),                            value:fmtAmt(saldoNeto),       meta:t('kpi_meta_neto')},
+    {color:'amber', label:t('kpi_pagos_pend'),                            value:pendRows.length,         meta:fmtAmt(pendTotal)},
+    {color:'gray',  label:yyyymmToLabel(MES0)+' '+t('kpi_egresos_label'), value:fmtAmt(totalMes0),       meta:t('kpi_meta_mes_total')},
+    {color:'purple',label:t('kpi_ext'),                                   value:fmtAmt(totalIntl),       meta:intlRows.length+' '+t('kpi_meta_ext')},
   ];
 }
 
@@ -649,7 +861,7 @@ function renderCovStats() {
   var burnAvg = beArr.length ? beArr.reduce(function(s,v){ return s+v; },0)/beArr.length : null;
 
   if (!hasSumup) {
-    document.getElementById('covStats').innerHTML = '<div class="no-sumup">Sin datos SumUp — el gráfico de cobertura no puede calcularse.</div>';
+    document.getElementById('covStats').innerHTML = '<div class="no-sumup">'+t('no_sumup_cov')+'</div>';
     return;
   }
 
@@ -658,9 +870,9 @@ function renderCovStats() {
   var beCls  = burnAvg===null?'gray':burnAvg>=0?'green':'red';
 
   document.getElementById('covStats').innerHTML = [
-    {cls:c0cls,   lbl:'Cobertura '+yyyymmToLabel(MES0),      val:cob0!==null?Math.round(cob0)+'%':'—', sub:fmtAmt((covByMes[MES0]||{}).egresosOp||0)+' cubierto por '+fmtAmt((covByMes[MES0]||{}).sumupNeto||0)},
-    {cls:avgCls,  lbl:'Promedio últimos 3 meses', val:avgCov!==null?Math.round(avgCov)+'%':'—', sub:'cobertura promedio'},
-    {cls:beCls,   lbl:'Burn / Earn promedio',  val:burnAvg!==null?fmtShort(burnAvg):'—', sub:burnAvg!==null&&burnAvg>=0?'generando capital por mes':'quemando capital por mes'},
+    {cls:c0cls,   lbl:t('kpi_cobertura')+' '+yyyymmToLabel(MES0), val:cob0!==null?Math.round(cob0)+'%':'—', sub:fmtAmt((covByMes[MES0]||{}).egresosOp||0)+' '+t('cov_cubierto_por')+' '+fmtAmt((covByMes[MES0]||{}).sumupNeto||0)},
+    {cls:avgCls,  lbl:t('cov_prom_3m'), val:avgCov!==null?Math.round(avgCov)+'%':'—', sub:t('cov_prom')},
+    {cls:beCls,   lbl:t('cov_burn_earn_prom'), val:burnAvg!==null?fmtShort(burnAvg):'—', sub:burnAvg!==null&&burnAvg>=0?t('cov_generando'):t('cov_quemando')},
   ].map(function(s) {
     return '<div class="cov-stat cov-'+s.cls+'">'
       +'<div class="cov-lbl">'+esc2(s.lbl)+'</div>'
@@ -677,7 +889,7 @@ function renderSumupKpis() {
   var hasSumup = Object.keys(SUMUP).length > 0;
 
   if (!hasSumup) {
-    grid.innerHTML = '<div class="no-sumup">Sin datos SumUp cargados. Verifica que la carpeta Drive tenga archivos CSV/XLSX.</div>';
+    grid.innerHTML = '<div class="no-sumup">'+t('no_sumup_kpis')+'</div>';
     return;
   }
 
@@ -698,16 +910,16 @@ function renderSumupKpis() {
   var totalTransferido = sumupTransferRows.reduce(function(s,r){ return s+r.cashIn; },0);
   var saldoSumUp = totalNeto - totalTransferido;
   var saldoMeta = totalTransferido > 0
-    ? 'Neto cobrado − '+fmtAmt(totalTransferido)+' transferido a Santander'
-    : 'Neto cobrado (sin transferencias registradas a Santander)';
+    ? t('sumup_neto_cobrado')+' − '+fmtAmt(totalTransferido)+' '+t('sumup_transferido')
+    : t('sumup_neto_cobrado')+' '+t('sumup_sin_transfer');
 
   grid.innerHTML = [
-    {color:'teal',  label:'Total SumUp (periodo)',       value:fmtAmt(totalBruto),    meta:'Cobros brutos acumulados'},
-    {color:'teal',  label:'SumUp Neto (periodo)',        value:fmtAmt(totalNeto),      meta:'Cobros brutos − comisiones'},
-    {color:'amber', label:'Comisión cobrada SumUp',      value:fmtAmt(totalComision),  meta:'Costo plataforma acumulado · '+yyyymmToLabel(MES0)+': '+fmtAmt(mesCurrComis)},
-    {color:saldoSumUp>=0?'teal':'red', label:'Saldo disponible en SumUp', value:fmtAmt(saldoSumUp), meta:saldoMeta},
-    {color:'teal',  label:'SumUp '+yyyymmToLabel(MES0), value:fmtAmt(mesCurrNeto),    meta:mesCurrTxn+' transacciones'},
-    {color:'teal',  label:'Promedio mensual',            value:fmtShort(avgMensual),   meta:'Últimos '+meses.length+' meses'},
+    {color:'teal',  label:t('sumup_total'),              value:fmtAmt(totalBruto),    meta:t('sumup_brutos')},
+    {color:'teal',  label:t('sumup_neto_per'),           value:fmtAmt(totalNeto),      meta:t('sumup_brutos_menos_com')},
+    {color:'amber', label:t('sumup_comision'),           value:fmtAmt(totalComision),  meta:t('sumup_costo')+' · '+yyyymmToLabel(MES0)+': '+fmtAmt(mesCurrComis)},
+    {color:saldoSumUp>=0?'teal':'red', label:t('sumup_saldo'), value:fmtAmt(saldoSumUp), meta:saldoMeta},
+    {color:'teal',  label:'SumUp '+yyyymmToLabel(MES0), value:fmtAmt(mesCurrNeto),    meta:mesCurrTxn+' '+t('sumup_txn')},
+    {color:'teal',  label:t('sumup_mensual'),            value:fmtShort(avgMensual),   meta:t('sumup_ultimos')+' '+meses.length+' '+t('sumup_meses')},
   ].map(function(k) {
     return '<div class="kpi-card kpi-'+k.color+'">'
       +'<div class="kpi-label">'+esc2(k.label)+'</div>'
@@ -741,8 +953,8 @@ function renderCovChart() {
   _covChart = new Chart(document.getElementById('covChart'),{
     type:'bar',
     data:{labels:meses.map(yyyymmToLabel),datasets:[
-      {type:'bar', label:'Egresos operativos',data:egArr,backgroundColor:'rgba(248,113,113,.2)',borderColor:'#f87171',borderWidth:1,yAxisID:'y'},
-      {type:'line',label:'SumUp neto',        data:hasSumup?suArr:[], borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',tension:.3,pointRadius:4,pointBackgroundColor:'#34d399',fill:true,yAxisID:'y'},
+      {type:'bar', label:t('chart_eg_op'),data:egArr,backgroundColor:'rgba(248,113,113,.2)',borderColor:'#f87171',borderWidth:1,yAxisID:'y'},
+      {type:'line',label:t('chart_sumup_neto'), data:hasSumup?suArr:[], borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',tension:.3,pointRadius:4,pointBackgroundColor:'#34d399',fill:true,yAxisID:'y'},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
@@ -761,7 +973,7 @@ function renderOpChart() {
   var hasSumup = Object.keys(SUMUP).length > 0;
   if (!hasSumup) {
     var ctx=document.getElementById('opChart');
-    if(ctx&&ctx.parentElement){ctx.parentElement.innerHTML='<div class="no-sumup" style="padding:40px 0;text-align:center">Sin datos SumUp</div>';}
+    if(ctx&&ctx.parentElement){ctx.parentElement.innerHTML='<div class="no-sumup" style="padding:40px 0;text-align:center">'+t('no_sumup_chart')+'</div>';}
     return;
   }
   var meses = sortMonths(Object.keys(SUMUP));
@@ -770,7 +982,7 @@ function renderOpChart() {
   _opChart = new Chart(document.getElementById('opChart'),{
     type:'line',
     data:{labels:meses.map(yyyymmToLabel),datasets:[{
-      label:'SumUp neto mensual',data:data,
+      label:t('chart_sumup_neto_m'),data:data,
       borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',
       tension:.3,pointRadius:5,pointBackgroundColor:'#60a5fa',pointBorderColor:'#0a0d14',pointBorderWidth:2,fill:true,
     }]},
@@ -807,9 +1019,9 @@ function renderIncomeDonut() {
   var sumupNetoTotal = Object.keys(SUMUP).reduce(function(s,m){ return s+(SUMUP[m].neto||0); },0);
 
   var cats = [
-    {label:'Capital del Holding', value:capital,        color:'#6366f1'},
-    {label:'Indrive subsidio',    value:indrive,         color:'#f59e0b'},
-    {label:'SumUp neto',          value:sumupNetoTotal,  color:'#10b981'},
+    {label:t('chart_capital'), value:capital,        color:'#6366f1'},
+    {label:t('chart_indrive'), value:indrive,         color:'#f59e0b'},
+    {label:t('chart_sumup_neto'), value:sumupNetoTotal,  color:'#10b981'},
   ].filter(function(c){ return c.value>0; });
 
   var total = cats.reduce(function(s,c){ return s+c.value; },0);
@@ -824,7 +1036,7 @@ function renderIncomeDonut() {
         +'<div class="legend-swatch" style="background:'+c.color+'"></div>'
         +'<div><div class="legend-lbl">'+esc2(c.label)+'</div>'
         +'<div class="legend-val">'+fmtAmt(c.value)+'</div>'
-        +'<div class="legend-pct">'+pct+'% del total</div></div>'
+        +'<div class="legend-pct">'+pct+'% '+t('chart_del_total')+'</div></div>'
         +'</div>';
     }).join('');
   }
@@ -869,8 +1081,8 @@ function renderLineChart() {
   _lineChart = new Chart(document.getElementById('lineChart'),{
     type:'line',
     data:{labels:meses.map(yyyymmToLabel),datasets:[
-      {label:'SumUp neto', data:suArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.08)',fill:true,tension:.4,pointRadius:3},
-      {label:'Egresos Op.', data:outArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.08)',fill:true,tension:.4,pointRadius:3},
+      {label:t('chart_sumup_neto'), data:suArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.08)',fill:true,tension:.4,pointRadius:3},
+      {label:t('chart_eg_op2'), data:outArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.08)',fill:true,tension:.4,pointRadius:3},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
@@ -893,7 +1105,7 @@ function renderBarChart() {
 
   _barChart = new Chart(document.getElementById('barChart'),{
     type:'bar',
-    data:{labels:top,datasets:[{label:'Egresos',data:vals,backgroundColor:'rgba(251,191,36,.45)',borderWidth:0}]},
+    data:{labels:top,datasets:[{label:t('chart_egresos'),data:vals,backgroundColor:'rgba(251,191,36,.45)',borderWidth:0}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:function(ctx){ return ' '+fmtAmt(CUR==='USD'?ctx.raw*USD_RATE:ctx.raw); }}}},
@@ -922,9 +1134,9 @@ function buildPivotData() {
 function _renderPivot(tableId, suppliers, bs, allM) {
   var tbl=document.getElementById(tableId); if(!tbl) return;
   if(!suppliers.length){tbl.innerHTML='<tbody><tr><td colspan="2" style="color:#374151;padding:12px;text-align:left">—</td></tr></tbody>';return;}
-  var html='<thead><tr><th>Proveedor</th>';
+  var html='<thead><tr><th>'+t('col_proveedor')+'</th>';
   allM.forEach(function(m){html+='<th>'+esc2(yyyymmToLabel(m))+'</th>';});
-  html+='<th>Total</th></tr></thead><tbody>';
+  html+='<th>'+t('pivot_total')+'</th></tr></thead><tbody>';
   suppliers.forEach(function(sup){
     var row=bs[sup];
     html+='<tr><td onclick="filterByProvider(\''+esc(sup)+'\',this)">'+esc2(sup)+'</td>';
@@ -935,7 +1147,7 @@ function _renderPivot(tableId, suppliers, bs, allM) {
     });
     html+='<td class="tot">'+fmtAmt(row.total)+'</td></tr>';
   });
-  html+='<tr><td class="tot" style="font-weight:700">Total</td>';
+  html+='<tr><td class="tot" style="font-weight:700">'+t('pivot_total')+'</td>';
   allM.forEach(function(m){var v=0;suppliers.forEach(function(s){v+=(bs[s].bm[m]||0);});html+='<td class="tot">'+fmtAmt(v)+'</td>';});
   var gt=0;suppliers.forEach(function(s){gt+=bs[s].total;});
   html+='<td class="tot">'+fmtAmt(gt)+'</td></tr></tbody>';
@@ -972,7 +1184,7 @@ function renderTxnTable(rows) {
   var tbody=document.getElementById('txnBody'); if(!tbody) return;
 
   if(!slice.length){
-    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#4b5563;padding:24px">Sin resultados</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#4b5563;padding:24px">'+t('txn_sin_res')+'</td></tr>';
   } else {
     tbody.innerHTML=slice.map(function(r){
       var bankHtml = isIntl(r)
@@ -992,8 +1204,8 @@ function renderTxnTable(rows) {
     }).join('');
   }
 
-  var info=pages>1?(start+1)+'-'+Math.min(start+PAGE_SIZE,total)+' de '+total+' resultados'
-                  :total+' resultados';
+  var info=pages>1?(start+1)+'-'+Math.min(start+PAGE_SIZE,total)+' '+t('pag_de')+' '+total+' '+t('pag_resultados')
+                  :total+' '+t('pag_resultados');
   var pi=document.getElementById('pageInfo'); if(pi) pi.textContent=info;
   document.getElementById('btnPrev').disabled=_page<=1;
   document.getElementById('btnNext').disabled=_page>=pages;
@@ -1098,11 +1310,26 @@ function onScopeChange(){
 }
 
 // ── Language / Currency ───────────────────────────────────────────────────────
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  var fi = document.getElementById('filterText');
+  if(fi) fi.placeholder = t('flt_search');
+  var fids = ['filterMonth','filterStatus','filterEntity','filterBank'];
+  var fkeys = ['flt_all_months','flt_all_statuses','flt_all_entities','flt_all_banks'];
+  fids.forEach(function(fid,i){
+    var s=document.getElementById(fid); if(s&&s.options[0]) s.options[0].textContent=t(fkeys[i]);
+  });
+}
+
 function setLanguage(lang){
   LANG=lang;
   document.querySelectorAll('#langSwitch button').forEach(function(b){
     b.classList.toggle('active', b.getAttribute('onclick')==="setLanguage('"+lang+"')");
   });
+  applyI18n();
+  renderAll();
 }
 
 function setCurrency(cur){
@@ -1127,7 +1354,7 @@ function show(id){
 }
 function showError(msg){
   show('errorWrap');
-  var et=document.getElementById('errTitle');if(et)et.textContent='Error al cargar datos';
+  var et=document.getElementById('errTitle');if(et)et.textContent=t('err_title');
   var em=document.getElementById('errMsg');if(em)em.textContent=msg;
   var isCreds=msg.indexOf('credentials')!==-1||msg.indexOf('GOOGLE_')!==-1||msg.indexOf('Missing')!==-1;
   if(isCreds){var h=document.getElementById('errHint');if(h){h.style.display='';h.textContent='GOOGLE_CLIENT_EMAIL=service@project.iam.gserviceaccount.com\nGOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n"';}}
@@ -1168,6 +1395,7 @@ window.addEventListener('load', function(){
     var pc=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_currency');
     if(pc&&(pc==='CLP'||pc==='USD'))CUR=pc;
   }catch(e){}
+  applyI18n();
   // Fetch live USD/CLP rate then load data
   fetch('/api/fx').then(function(r){return r.ok?r.json():null;}).then(function(fx){
     if(fx&&fx.rate>0) USD_RATE=fx.rate;
