@@ -192,52 +192,42 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     </div>
   </div>
 
-  <!-- KPIs: active drivers (main) + fleet totals (secondary) -->
+  <!-- 6 KPI cards — layout matches original -->
   <div class="section">
-    <!-- Label row -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div class="kpi-teal" style="width:8px;height:8px;border-radius:50%;background:#2dd4bf;flex-shrink:0"></div>
-      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#2dd4bf">Conductores Activos</span>
-      <span style="font-size:10px;color:#4b5563" id="kpiActiveCountLabel">— en planilla</span>
-    </div>
-    <div class="kpi-grid" style="margin-bottom:10px">
-      <div class="kpi-card kpi-blue">
-        <div class="kpi-label">Facturado Activos</div>
-        <div class="kpi-value" id="kpiActiveCharged">—</div>
-        <div class="kpi-sub" id="kpiActiveChargedSub">—</div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Pagado Activos</div>
-        <div class="kpi-value" id="kpiActivePaid">—</div>
-        <div class="kpi-sub" id="kpiActivePaidSub">—</div>
-      </div>
-      <div class="kpi-card kpi-red" style="border-color:#dc2626aa">
-        <div class="kpi-label" style="color:#f87171;font-weight:700">⚠ Pendiente Activos</div>
-        <div class="kpi-value" id="kpiActivePending" style="font-size:22px">—</div>
-        <div class="kpi-sub" id="kpiActivePendingSub">—</div>
-      </div>
-    </div>
-
-    <!-- Secondary: totals & cesados -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div style="width:8px;height:8px;border-radius:50%;background:#6b7280;flex-shrink:0"></div>
-      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7280">Resumen General</span>
-    </div>
-    <div class="kpi-grid">
+    <!-- Row 1: financial totals -->
+    <div class="kpi-grid" style="margin-bottom:11px">
       <div class="kpi-card kpi-amber">
-        <div class="kpi-label">Facturado Total</div>
+        <div class="kpi-label">Total Facturado</div>
         <div class="kpi-value" id="kpiCharged">—</div>
         <div class="kpi-sub" id="kpiChargedSub">—</div>
       </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Total Cobrado</div>
+        <div class="kpi-value" id="kpiPaid">—</div>
+        <div class="kpi-sub" id="kpiPaidSub">—</div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label">Deuda Pendiente</div>
+        <div class="kpi-value" id="kpiPending">—</div>
+        <div class="kpi-sub" id="kpiPendingSub">—</div>
+      </div>
+    </div>
+    <!-- Row 2: breakdown by status -->
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-label">Cobros Abiertos</div>
+        <div class="kpi-value" id="kpiOpenBills">—</div>
+        <div class="kpi-sub" id="kpiOpenBillsSub">—</div>
+      </div>
       <div class="kpi-card kpi-teal">
-        <div class="kpi-label">Conductores Activos</div>
-        <div class="kpi-value" id="kpiActive">—</div>
-        <div class="kpi-sub">en planilla de flota</div>
+        <div class="kpi-label">Deuda Conductores Activos</div>
+        <div class="kpi-value" id="kpiActivePending">—</div>
+        <div class="kpi-sub" id="kpiActivePendingSub">—</div>
       </div>
       <div class="kpi-card kpi-gray">
-        <div class="kpi-label">Conductores Despedidos</div>
-        <div class="kpi-value" id="kpiFired">—</div>
-        <div class="kpi-sub" id="kpiFiredSub">—</div>
+        <div class="kpi-label">Deuda Conductores Despedidos</div>
+        <div class="kpi-value" id="kpiFiredDebt">—</div>
+        <div class="kpi-sub" id="kpiFiredDebtSub">—</div>
       </div>
     </div>
   </div>
@@ -246,25 +236,25 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   <div class="section">
     <div class="rbar-grid">
       <div class="rbar">
-        <div class="rbar-label" data-i18n="total_recovery">Recuperación Total</div>
+        <div class="rbar-label">Cobranza Total</div>
         <div class="rbar-val" id="rbarTotal">—</div>
-        <div class="rbar-track"><div class="rbar-fill" id="rbarTotalFill" style="width:0;background:#34d399"></div></div>
+        <div class="rbar-track"><div class="rbar-fill" id="rbarTotalFill" style="width:0;background:#818cf8"></div></div>
         <div class="rbar-sub" id="rbarTotalSub">—</div>
       </div>
       <div class="rbar">
-        <div class="rbar-label" data-i18n="active_recovery">Solo Activos</div>
+        <div class="rbar-label">Cobranza Solo Activos</div>
         <div class="rbar-val" id="rbarActive">—</div>
-        <div class="rbar-track"><div class="rbar-fill" id="rbarActiveFill" style="width:0;background:#2dd4bf"></div></div>
+        <div class="rbar-track"><div class="rbar-fill" id="rbarActiveFill" style="width:0;background:#34d399"></div></div>
         <div class="rbar-sub" id="rbarActiveSub">—</div>
       </div>
       <div class="rbar">
-        <div class="rbar-label" data-i18n="weekly_rate">Tasa Semanal</div>
+        <div class="rbar-label">Tasa Cobranza Semanal Neta</div>
         <div class="rbar-val" id="rbarWeekly">—</div>
-        <div class="rbar-track"><div class="rbar-fill" id="rbarWeeklyFill" style="width:0;background:#60a5fa"></div></div>
+        <div class="rbar-track"><div class="rbar-fill" id="rbarWeeklyFill" style="width:0;background:#fbbf24"></div></div>
         <div class="rbar-sub" id="rbarWeeklySub">—</div>
       </div>
       <div class="rbar">
-        <div class="rbar-label" data-i18n="fired_exposure">Exposición Cesados</div>
+        <div class="rbar-label">Exposición Deuda Despedidos</div>
         <div class="rbar-val" id="rbarFired">—</div>
         <div class="rbar-track"><div class="rbar-fill" id="rbarFiredFill" style="width:0;background:#f87171"></div></div>
         <div class="rbar-sub" id="rbarFiredSub">—</div>
@@ -711,21 +701,25 @@ function renderKPIs(){
   var totalPending=totalCharged-totalPaid;
   var firedExp=totalPending>0?Math.round(firedPending/totalPending*100):0;
 
-  // Active driver KPIs (top section — most important)
-  setText('kpiActiveCharged',fmtAmt(activeCharged));
-  setText('kpiActiveChargedSub',activeDrv+' conductores · '+BILLS.filter(function(b){var d=DRIVERS.find(function(x){return x.driver===(b.driver||'').trim().toUpperCase();});return d&&d.isActive;}).length+' facturas');
-  setText('kpiActivePaid',fmtAmt(activePaid));
-  setText('kpiActivePaidSub',activePct+'% recuperado de activos');
-  setText('kpiActivePending',fmtAmt(activePending));
-  setText('kpiActivePendingSub',DRIVERS.filter(function(d){return d.isActive&&d.pending>0;}).length+' conductores con deuda');
-  setText('kpiActiveCountLabel',activeDrv+' en planilla');
+  var driversWithDebt=DRIVERS.filter(function(d){return d.pending>0;});
+  var activeWithDebt=DRIVERS.filter(function(d){return d.isActive&&d.pending>0;});
+  var firedWithDebt=DRIVERS.filter(function(d){return !d.isActive&&d.pending>0;});
 
-  // General totals (secondary section)
+  // Row 1: financial totals
   setText('kpiCharged',fmtAmt(totalCharged));
-  setText('kpiChargedSub',BILLS.length+' facturas · toda la flota');
-  setText('kpiActive',activeDrv);
-  setText('kpiFired',firedDrv);
-  setText('kpiFiredSub',firedPending>0?fmtShort(firedPending)+' pendiente':'sin deuda pendiente');
+  setText('kpiChargedSub',BILLS.length+' facturas emitidas');
+  setText('kpiPaid',fmtAmt(totalPaid));
+  setText('kpiPaidSub','Pagos recibidos');
+  setText('kpiPending',fmtAmt(totalCharged-totalPaid));
+  setText('kpiPendingSub','Saldo por cobrar');
+
+  // Row 2: breakdown by status
+  setText('kpiOpenBills',driversWithDebt.length);
+  setText('kpiOpenBillsSub',driversWithDebt.length+' conductores con saldo');
+  setText('kpiActivePending',fmtAmt(activePending));
+  setText('kpiActivePendingSub',activeWithDebt.length+' activos con deuda');
+  setText('kpiFiredDebt',fmtAmt(firedPending));
+  setText('kpiFiredDebtSub',firedWithDebt.length+' despedidos con saldo');
 
   function setBar(valId,fillId,subId,pct,subText){
     setText(valId,pct+'%');
@@ -734,8 +728,14 @@ function renderKPIs(){
   }
   setBar('rbarTotal','rbarTotalFill','rbarTotalSub',totalPct,fmtAmt(totalPaid)+' / '+fmtAmt(totalCharged));
   setBar('rbarActive','rbarActiveFill','rbarActiveSub',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
-  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub',weekPct,fmtAmt(weekPaid)+' cobrado esta semana');
-  setBar('rbarFired','rbarFiredFill','rbarFiredSub',firedExp,fmtAmt(firedPending)+' '+t('fired_pending'));
+  // Weekly rate: bills created in last 30 days (current period approximation)
+  var month30=new Date(new Date().getTime()-30*24*60*60*1000);
+  var period30Bills=BILLS.filter(function(b){var d=parseDate(b.createdAt);return d&&d>=month30;});
+  var p30charged=period30Bills.reduce(function(s,b){return s+parseAmt(b.amount);},0);
+  var p30paid=period30Bills.reduce(function(s,b){return s+parseAmt(b.paidAmount);},0);
+  var weekPct30=p30charged>0?Math.round(p30paid/p30charged*100):0;
+  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub',weekPct30,'Cobrado período actual / Facturado período actual');
+  setBar('rbarFired','rbarFiredFill','rbarFiredSub',firedExp,fmtAmt(firedPending)+' pendiente cesados');
 
   // Recommended KPIs
   var withPending=DRIVERS.filter(function(d){return d.pending>0;});
