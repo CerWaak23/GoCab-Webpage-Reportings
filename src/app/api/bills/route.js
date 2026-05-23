@@ -27,7 +27,7 @@ export async function GET() {
     const auth = getAuth();
     const drive = google.drive({ version: 'v3', auth });
 
-    // List XLSX (and XLS) files in the bills folder
+    // Files ordered oldest→newest so each iteration overwrites with fresher data
     const listRes = await drive.files.list({
       q: `'${BILLS_FOLDER_ID}' in parents and trashed=false`,
       fields: 'files(id,name,mimeType,modifiedTime)',
@@ -35,10 +35,11 @@ export async function GET() {
     });
 
     const files = listRes.data.files || [];
-    const billsMap = new Map();
+    const billsMap = new Map();      // ref → latest bill state
+    const paymentEvents = [];        // payment deltas detected between file versions
+    const snapshots = [];            // recovery-rate snapshot after each file
 
     for (const file of files) {
-      // Skip non-spreadsheet files
       const name = file.name.toLowerCase();
       if (!name.endsWith('.xlsx') && !name.endsWith('.xls') && !name.endsWith('.csv')) continue;
 
@@ -52,7 +53,6 @@ export async function GET() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-      // Row 0 is header — detect column positions dynamically
       if (rows.length < 2) continue;
       const header = rows[0].map((h) => String(h).toLowerCase().trim());
 
@@ -64,39 +64,76 @@ export async function GET() {
         return -1;
       };
 
-      const iRef = col(['reference', 'ref']);
-      const iType = col(['type', 'tipo']);
+      const iRef    = col(['reference', 'ref']);
+      const iType   = col(['type', 'tipo']);
       const iStatus = col(['status', 'estado']);
       const iVehicle = col(['vehicle', 'vehículo', 'vehiculo']);
       const iDriver = col(['driver', 'conductor']);
-      const iPhone = col(['phone', 'teléfono', 'telefono']);
+      const iPhone  = col(['phone', 'teléfono', 'telefono']);
       const iAmount = col(['amount', 'monto', 'total']);
-      const iPaid = col(['paid amount', 'paid', 'pagado']);
-      const iDesc = col(['description', 'descripción', 'descripcion']);
-      const iDate = col(['created at', 'created', 'fecha']);
+      const iPaid   = col(['paid amount', 'paid', 'pagado']);
+      const iDesc   = col(['description', 'descripción', 'descripcion']);
+      const iDate   = col(['created at', 'created', 'fecha']);
 
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const ref = iRef >= 0 ? String(row[iRef] || '') : String(i);
-        if (!ref || ref === '') continue;
+        if (!ref) continue;
+
+        const newPaid    = parseAmount(iPaid >= 0 ? row[iPaid] : 0);
+        const newDriver  = iDriver >= 0 ? String(row[iDriver] || '').trim() : '';
+        const newVehicle = iVehicle >= 0 ? String(row[iVehicle] || '').trim() : '';
+        const newType    = iType >= 0 ? String(row[iType] || '').trim() : '';
+        const newAmount  = parseAmount(iAmount >= 0 ? row[iAmount] : 0);
+
+        // Detect payment: paidAmount increased vs previous version of this bill
+        if (billsMap.has(ref)) {
+          const prev = billsMap.get(ref);
+          const delta = newPaid - prev.paidAmount;
+          if (delta > 0) {
+            paymentEvents.push({
+              reference: ref,
+              driver: newDriver || prev.driver,
+              vehicle: newVehicle || prev.vehicle,
+              amount: delta,
+              date: file.modifiedTime, // ISO datetime of the file upload
+              type: newType || prev.type,
+            });
+          }
+        }
 
         billsMap.set(ref, {
           reference: ref,
-          type: iType >= 0 ? String(row[iType] || '') : '',
+          type: newType,
           status: iStatus >= 0 ? String(row[iStatus] || '') : '',
-          vehicle: iVehicle >= 0 ? String(row[iVehicle] || '') : '',
-          driver: iDriver >= 0 ? String(row[iDriver] || '') : '',
+          vehicle: newVehicle,
+          driver: newDriver,
           phone: iPhone >= 0 ? String(row[iPhone] || '') : '',
-          amount: parseAmount(iAmount >= 0 ? row[iAmount] : 0),
-          paidAmount: parseAmount(iPaid >= 0 ? row[iPaid] : 0),
+          amount: newAmount,
+          paidAmount: newPaid,
           description: iDesc >= 0 ? String(row[iDesc] || '') : '',
           createdAt: iDate >= 0 ? String(row[iDate] || '') : '',
         });
       }
+
+      // Snapshot: total recovery state after processing this file
+      let snapCharged = 0, snapPaid = 0;
+      for (const bill of billsMap.values()) {
+        snapCharged += bill.amount;
+        snapPaid += bill.paidAmount;
+      }
+      snapshots.push({
+        date: file.modifiedTime,
+        name: file.name,
+        totalCharged: snapCharged,
+        totalPaid: snapPaid,
+      });
     }
 
     return NextResponse.json({
       bills: Array.from(billsMap.values()),
+      paymentEvents,
+      snapshots,
       sources: files.map((f) => f.name),
     });
   } catch (err) {

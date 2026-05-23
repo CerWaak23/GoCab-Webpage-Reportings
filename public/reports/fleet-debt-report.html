@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reporte de Flota GoCab</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
@@ -237,26 +238,38 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     <div class="rbar-grid">
       <div class="rbar">
         <div class="rbar-label">Cobranza Total</div>
-        <div class="rbar-val" id="rbarTotal">—</div>
         <div class="rbar-track"><div class="rbar-fill" id="rbarTotalFill" style="width:0;background:#818cf8"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div class="rbar-val" id="rbarTotal">—</div>
+          <div id="rbarTotalDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
+        </div>
         <div class="rbar-sub" id="rbarTotalSub">—</div>
       </div>
       <div class="rbar">
         <div class="rbar-label">Cobranza Solo Activos</div>
-        <div class="rbar-val" id="rbarActive">—</div>
         <div class="rbar-track"><div class="rbar-fill" id="rbarActiveFill" style="width:0;background:#34d399"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div class="rbar-val" id="rbarActive">—</div>
+          <div id="rbarActiveDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
+        </div>
         <div class="rbar-sub" id="rbarActiveSub">—</div>
       </div>
       <div class="rbar">
         <div class="rbar-label">Tasa Cobranza Semanal Neta</div>
-        <div class="rbar-val" id="rbarWeekly">—</div>
         <div class="rbar-track"><div class="rbar-fill" id="rbarWeeklyFill" style="width:0;background:#fbbf24"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div class="rbar-val" id="rbarWeekly">—</div>
+          <div id="rbarWeeklyDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
+        </div>
         <div class="rbar-sub" id="rbarWeeklySub">—</div>
       </div>
       <div class="rbar">
         <div class="rbar-label">Exposición Deuda Despedidos</div>
-        <div class="rbar-val" id="rbarFired">—</div>
         <div class="rbar-track"><div class="rbar-fill" id="rbarFiredFill" style="width:0;background:#f87171"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div class="rbar-val" id="rbarFired">—</div>
+          <div id="rbarFiredDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
+        </div>
         <div class="rbar-sub" id="rbarFiredSub">—</div>
       </div>
     </div>
@@ -404,10 +417,13 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 </div>
 
 <script>
+if(typeof ChartDataLabels!=='undefined')Chart.register(ChartDataLabels);
 var USD_RATE = 950;
 var PAGE_SIZE = 50;
 
 var BILLS = [];
+var PAYMENT_EVENTS = [];
+var SNAPSHOTS = [];
 var DRIVERS = [];
 var FILTERED = [];
 var ACTIVE_CONDUCTORS = new Set();
@@ -547,6 +563,8 @@ async function loadData(){
     var fleetJson=await results[1].json();
     if(billsJson.error){showError(billsJson.error);return;}
     BILLS=billsJson.bills||[];
+    PAYMENT_EVENTS=billsJson.paymentEvents||[];
+    SNAPSHOTS=billsJson.snapshots||[];
     var fleetDrivers=fleetJson.drivers||[];
     ACTIVE_CONDUCTORS=new Set(fleetDrivers.map(function(d){return d.conductor.toUpperCase();}));
     aggregateDrivers();
@@ -721,21 +739,47 @@ function renderKPIs(){
   setText('kpiFiredDebt',fmtAmt(firedPending));
   setText('kpiFiredDebtSub',firedWithDebt.length+' despedidos con saldo');
 
-  function setBar(valId,fillId,subId,pct,subText){
+  // Snapshot comparison: use second-to-last vs last file snapshot
+  var prevSnap=SNAPSHOTS.length>=2?SNAPSHOTS[SNAPSHOTS.length-2]:null;
+  var prevTotalPct=prevSnap&&prevSnap.totalCharged>0?Math.round(prevSnap.totalPaid/prevSnap.totalCharged*100):null;
+
+  function setBar(valId,fillId,subId,deltaId,pct,subText,prevPct){
     setText(valId,pct+'%');
     var fill=document.getElementById(fillId);if(fill)fill.style.width=Math.min(100,pct)+'%';
     setText(subId,subText);
+    if(deltaId&&prevPct!==null&&prevPct!==undefined){
+      var del=document.getElementById(deltaId);
+      if(del){
+        var diff=Math.round((pct-prevPct)*10)/10;
+        var sign=diff>=0?'↑ +':'↓ ';
+        del.textContent=sign+Math.abs(diff)+'pp';
+        del.style.background=diff>=0?'#052e16':'#2d0a0a';
+        del.style.color=diff>=0?'#34d399':'#f87171';
+        del.style.border='1px solid '+(diff>=0?'#064e3b':'#7f1d1d');
+        del.style.display='inline-block';
+        setText(subId,'snapshot anterior: '+prevPct+'%');
+      }
+    }
   }
-  setBar('rbarTotal','rbarTotalFill','rbarTotalSub',totalPct,fmtAmt(totalPaid)+' / '+fmtAmt(totalCharged));
-  setBar('rbarActive','rbarActiveFill','rbarActiveSub',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
-  // Weekly rate: bills created in last 30 days (current period approximation)
+
+  setBar('rbarTotal','rbarTotalFill','rbarTotalSub','rbarTotalDelta',totalPct,fmtAmt(totalPaid)+' / '+fmtAmt(totalCharged),prevTotalPct);
+  setBar('rbarActive','rbarActiveFill','rbarActiveSub','rbarActiveDelta',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged),prevTotalPct);
+  // Weekly rate: bills from last 30 days
   var month30=new Date(new Date().getTime()-30*24*60*60*1000);
   var period30Bills=BILLS.filter(function(b){var d=parseDate(b.createdAt);return d&&d>=month30;});
   var p30charged=period30Bills.reduce(function(s,b){return s+parseAmt(b.amount);},0);
   var p30paid=period30Bills.reduce(function(s,b){return s+parseAmt(b.paidAmount);},0);
   var weekPct30=p30charged>0?Math.round(p30paid/p30charged*100):0;
-  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub',weekPct30,'Cobrado período actual / Facturado período actual');
-  setBar('rbarFired','rbarFiredFill','rbarFiredSub',firedExp,fmtAmt(firedPending)+' pendiente cesados');
+  // Previous weekly rate from second-to-last snapshot period
+  var prevWeekPct=null;
+  if(SNAPSHOTS.length>=3){
+    var snapPrev2=SNAPSHOTS[SNAPSHOTS.length-3];var snapPrev1=SNAPSHOTS[SNAPSHOTS.length-2];
+    var dCharged=snapPrev1.totalCharged-snapPrev2.totalCharged;
+    var dPaid=snapPrev1.totalPaid-snapPrev2.totalPaid;
+    if(dCharged>0)prevWeekPct=Math.round(dPaid/dCharged*100);
+  }
+  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub','rbarWeeklyDelta',weekPct30,'Cobrado período actual / Facturado período actual',prevWeekPct);
+  setBar('rbarFired','rbarFiredFill','rbarFiredSub','rbarFiredDelta',firedExp,fmtAmt(firedPending)+' pendiente cesados',null);
 
   // Recommended KPIs
   var withPending=DRIVERS.filter(function(d){return d.pending>0;});
@@ -825,7 +869,16 @@ function renderDonut(){
             var raw=CUR==='USD'?ctx.raw*USD_RATE:ctx.raw;
             var tot=donutData.reduce(function(a,b){return a+b;},0);
             return ' '+ctx.label+': '+fmtAmt(raw)+' ('+Math.round(tot>0?ctx.raw/tot*100:0)+'%)';
-          }}}
+          }}},
+          datalabels:{
+            color:'#fff',
+            font:{weight:'bold',size:13},
+            formatter:function(value,ctx){
+              var tot=ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+              var pct=Math.round(tot>0?value/tot*100:0);
+              return pct>=5?pct+'%':'';
+            }
+          }
         },
         onClick:function(evt,elements){if(elements.length>0)setTypeFilter(typeKeys[elements[0].index]);},
         onHover:function(evt,elements){if(evt.native)evt.native.target.style.cursor=elements.length>0?'pointer':'default';}
@@ -914,38 +967,58 @@ function renderMixedChart(){
 function renderEvolTable(){
   var tbl=document.getElementById('evolTable');if(!tbl)return;
 
-  // Filter bills by type if active
   var srcBills=_typeFilter?BILLS.filter(function(b){return classifyType(b.type)===_typeFilter;}):BILLS;
+  var srcPayments=_typeFilter?PAYMENT_EVENTS.filter(function(p){return classifyType(p.type)===_typeFilter;}):PAYMENT_EVENTS;
 
-  var weekMap={};var weekDates={};var driverSet={};
-  var driverPending={}; // current pending per driver (for last column)
+  // chargeMap[wk][drv] = total new charges that week
+  // payMap[wk][drv]    = total payments that week
+  var chargeMap={};var payMap={};var weekDates={};var driverSet={};
+  var driverPending={};
 
   srcBills.forEach(function(b){
     var d=parseDate(b.createdAt);var wk=getWeekKey(d);if(!wk)return;
     var drv=(b.driver||'(sin conductor)').trim().toUpperCase();
-    if(!weekMap[wk]){weekMap[wk]={};weekDates[wk]=d;}
-    weekMap[wk][drv]=(weekMap[wk][drv]||0)+parseAmt(b.amount);
+    if(!chargeMap[wk]){chargeMap[wk]={};weekDates[wk]=d;}
+    chargeMap[wk][drv]=(chargeMap[wk][drv]||0)+parseAmt(b.amount);
     driverSet[drv]=true;
     driverPending[drv]=(driverPending[drv]||0)+Math.max(0,parseAmt(b.amount)-parseAmt(b.paidAmount));
   });
 
-  var allWeeks=Object.keys(weekMap).sort(function(a,b){return weekDates[a]-weekDates[b];}).slice(-8);
+  srcPayments.forEach(function(p){
+    var d=new Date(p.date);var wk=getWeekKey(d);if(!wk)return;
+    var drv=(p.driver||'').trim().toUpperCase();
+    if(!payMap[wk])payMap[wk]={};
+    if(!weekDates[wk])weekDates[wk]=d;
+    payMap[wk][drv]=(payMap[wk][drv]||0)+p.amount;
+    driverSet[drv]=true;
+  });
+
+  // All weeks from both charges and payments, sorted, take last 8
+  var allWeekSet={};
+  Object.keys(chargeMap).forEach(function(w){allWeekSet[w]=true;});
+  Object.keys(payMap).forEach(function(w){allWeekSet[w]=true;});
+  var allWeeks=Object.keys(allWeekSet).sort(function(a,b){
+    var da=weekDates[a]||new Date(0),db=weekDates[b]||new Date(0);return da-db;
+  }).slice(-8);
+
   var allDrivers=Object.keys(driverSet);
   if(!allWeeks.length||!allDrivers.length){
     tbl.innerHTML='<tbody><tr><td style="color:#374151;padding:12px">Sin datos de fechas</td></tr></tbody>';return;
   }
 
+  // Sort drivers by total charges descending
   var driverTotals={};
   allDrivers.forEach(function(drv){
-    driverTotals[drv]=allWeeks.reduce(function(s,w){return s+(weekMap[w][drv]||0);},0);
+    driverTotals[drv]=allWeeks.reduce(function(s,w){return s+(chargeMap[w]&&chargeMap[w][drv]||0);},0);
   });
   allDrivers.sort(function(a,b){return driverTotals[b]-driverTotals[a];});
   var topDrivers=allDrivers.slice(0,15);
 
-  var maxVal=0;
-  topDrivers.forEach(function(drv){allWeeks.forEach(function(w){var v=weekMap[w][drv]||0;if(v>maxVal)maxVal=v;});});
+  var maxCharge=0;
+  topDrivers.forEach(function(drv){allWeeks.forEach(function(w){
+    var v=chargeMap[w]&&chargeMap[w][drv]||0;if(v>maxCharge)maxCharge=v;
+  });});
 
-  // Header — "PENDIENTE ACTUAL" last column with special style
   var pendingLabel=_typeFilter?typeLabel(_typeFilter).toUpperCase():'PENDIENTE';
   var html='<thead><tr><th style="text-align:left">Conductor</th>';
   allWeeks.forEach(function(w){html+='<th>'+esc(w.toUpperCase())+'</th>';});
@@ -954,25 +1027,26 @@ function renderEvolTable(){
 
   topDrivers.forEach(function(drv){
     var pending=driverPending[drv]||0;
-    var isPaidOff=pending<=0;
     html+='<tr><td>'+esc(drv)+'</td>';
     var running=0;
     allWeeks.forEach(function(w){
-      var v=weekMap[w][drv]||0;
-      running+=v;
-      if(v===0){
-        html+='<td class="cell-zero" style="text-align:right"><div style="color:#1f2937;font-size:10px">—</div><div class="evol-cell-acc" style="color:#374151">'+fmtShort(running)+'</div></td>';
+      var charge=chargeMap[w]&&chargeMap[w][drv]||0;
+      var pay=payMap[w]&&payMap[w][drv]||0;
+      running+=charge-pay;
+      var hasActivity=charge>0||pay>0;
+      if(!hasActivity){
+        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div><div class="evol-cell-acc" style="color:#374151">'+fmtShort(running)+'</div></td>';
         return;
       }
-      var pct=maxVal>0?v/maxVal:0;
-      var cls=pct>0.66?'cell-hi':pct>0.33?'cell-mid':'cell-lo';
-      html+='<td class="'+cls+'" style="text-align:right">';
-      html+='<div class="evol-cell-new">+'+fmtShort(v)+'</div>';
+      var pct=maxCharge>0?charge/maxCharge:0;
+      var bgCls=charge>0?(pct>0.66?'cell-hi':pct>0.33?'cell-mid':'cell-lo'):'';
+      html+='<td class="'+bgCls+'" style="text-align:right;background:'+(pay>0&&charge===0?'#0a1f12':'')+'">';
+      if(charge>0)html+='<div class="evol-cell-new">+'+fmtShort(charge)+'</div>';
+      if(pay>0)html+='<div style="font-size:10px;color:#34d399;font-weight:500;line-height:1.3">−'+fmtShort(pay)+'</div>';
       html+='<div class="evol-cell-acc">'+fmtShort(running)+'</div>';
       html+='</td>';
     });
-    // PENDIENTE ACTUAL badge
-    if(isPaidOff){
+    if(pending<=0){
       html+='<td style="text-align:right"><span style="color:#34d399;font-weight:700;font-size:13px">$0 ✓</span></td>';
     } else {
       html+='<td style="text-align:right"><span style="background:#3b0a0a;border:1px solid #7f1d1d55;color:#fca5a5;border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block">'+fmtShort(pending)+'</span></td>';
@@ -980,17 +1054,19 @@ function renderEvolTable(){
     html+='</tr>';
   });
 
-  // Grand total row
   html+='</tbody><tfoot><tr><td>Total</td>';
   var grandRunning=0;
   allWeeks.forEach(function(w){
-    var v=0;topDrivers.forEach(function(drv){v+=(weekMap[w][drv]||0);});
-    grandRunning+=v;
-    html+='<td style="text-align:right"><div class="evol-cell-new" style="color:#fbbf24">+'+fmtShort(v)+'</div><div class="evol-cell-acc">'+fmtShort(grandRunning)+'</div></td>';
+    var c=0,p=0;
+    topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
+    grandRunning+=c-p;
+    html+='<td style="text-align:right">';
+    if(c>0)html+='<div class="evol-cell-new" style="color:#fbbf24">+'+fmtShort(c)+'</div>';
+    if(p>0)html+='<div style="font-size:10px;color:#34d399;font-weight:600;line-height:1.3">−'+fmtShort(p)+'</div>';
+    html+='<div class="evol-cell-acc">'+fmtShort(grandRunning)+'</div></td>';
   });
   var totalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
-  html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(totalPending)+'</td>';
-  html+='</tr></tfoot>';
+  html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(totalPending)+'</td></tr></tfoot>';
   tbl.innerHTML=html;
 }
 
