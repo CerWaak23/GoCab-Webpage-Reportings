@@ -81,17 +81,22 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 
 /* Fired drivers cards */
 .fired-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:11px}
-.fcard{background:#0f1117;border:1px solid #1f2937;border-radius:12px;padding:15px 17px}
-.fcard-name{font-weight:600;font-size:13px;color:#d1d5db;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fcard-vehicle{font-size:11px;color:#4b5563;margin-bottom:10px}
+.fcard{background:#1a0808;border:1px solid #7f1d1d55;border-radius:12px;padding:15px 17px}
+.fcard-name{font-weight:600;font-size:13px;color:#fca5a5;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fcard-vehicle{font-size:11px;color:#6b7280;margin-bottom:10px}
 .fcard-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .fcard-stat .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
 .fcard-stat .val{font-size:14px;font-weight:700;margin-top:1px}
 .fcard-stat .val.red{color:#f87171}
 .fcard-stat .val.green{color:#34d399}
 .fcard-stat .val.gray{color:#9ca3af}
-.fcard-bar{height:3px;border-radius:2px;background:#1f2937;margin-top:10px;overflow:hidden}
-.fcard-fill{height:100%;border-radius:2px;background:#34d399}
+.fcard-bar{height:3px;border-radius:2px;background:#3b1111;margin-top:10px;overflow:hidden}
+.fcard-fill{height:100%;border-radius:2px;background:#f87171}
+
+/* Evolution table 2-line cells */
+.evol-cell-new{font-size:10px;color:#f87171;font-weight:500;line-height:1.3}
+.evol-cell-acc{font-size:11px;font-weight:700;color:#d1d5db;line-height:1.3}
+.cell-zero .evol-cell-new,.cell-zero .evol-cell-acc{color:#1f2937}
 
 /* Recommended KPIs */
 .rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px}
@@ -213,12 +218,12 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       <div class="kpi-card kpi-teal">
         <div class="kpi-label" data-i18n="active_drivers">Conductores Activos</div>
         <div class="kpi-value" id="kpiActive">—</div>
-        <div class="kpi-sub" data-i18n="last_90_days">últimos 90 días</div>
+        <div class="kpi-sub">en planilla de flota</div>
       </div>
-      <div class="kpi-card kpi-gray">
-        <div class="kpi-label" data-i18n="fired_drivers">Conductores Cesados</div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label" data-i18n="fired_drivers">Conductores Despedidos</div>
         <div class="kpi-value" id="kpiFired">—</div>
-        <div class="kpi-sub" data-i18n="no_recent_activity">sin actividad reciente</div>
+        <div class="kpi-sub">no están en planilla</div>
       </div>
     </div>
   </div>
@@ -256,26 +261,61 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   <!-- Charts row -->
   <div class="section">
     <div class="charts-row">
+
+      <!-- Donut: pending by type -->
       <div class="card">
-        <div class="section-title" data-i18n="debt_by_type">Deuda por Tipo</div>
-        <div class="chart-toggle">
-          <button class="toggle-btn active" id="chart-btn-all" onclick="setChartDrivers('all')" data-i18n="all_drivers">Todos</button>
-          <button class="toggle-btn" id="chart-btn-active" onclick="setChartDrivers('active')" data-i18n="active_only">Solo Activos</button>
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
+          <span style="font-size:16px">📊</span>
+          <div>
+            <div class="section-title" style="margin-bottom:1px">Deuda Pendiente por Tipo</div>
+            <div style="font-size:10px;color:#4b5563">Distribución del saldo sin cobrar según categoría</div>
+          </div>
         </div>
-        <div id="typeFilterChip" class="filter-chip" style="display:none"></div>
-        <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+        <div class="sw-group" style="margin-bottom:12px">
+          <button id="chart-btn-active" onclick="setChartDrivers('active')" class="active">Solo activos</button>
+          <button id="chart-btn-all" onclick="setChartDrivers('all')">Todos</button>
+        </div>
+        <div style="position:relative">
+          <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+          <div id="donutCenter" style="position:absolute;top:50%;left:42%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+            <div id="donutCenterVal" style="font-size:16px;font-weight:700;color:#e2e8f0">—</div>
+            <div style="font-size:10px;color:#6b7280;margin-top:1px">pendiente</div>
+          </div>
+        </div>
       </div>
+
+      <!-- Mixed bar+line chart -->
       <div class="card">
-        <div class="section-title" data-i18n="monthly_evolution">Evolución Mensual</div>
-        <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div class="section-title" style="margin-bottom:1px">Cobros, pagos y saldo neto</div>
+            <div style="font-size:10px;color:#4b5563">Barras = cobros (rojo) y pagos (verde) · Línea = saldo pendiente acumulado</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;margin-left:10px">
+            <div class="sw-group">
+              <button id="mc-btn-active" onclick="setMcDrivers('active')" class="active">Solo activos</button>
+              <button id="mc-btn-all" onclick="setMcDrivers('all')">Todos</button>
+            </div>
+            <div class="sw-group">
+              <button id="mc-btn-weekly" onclick="setMcPeriod('weekly')" class="active">Semanal</button>
+              <button id="mc-btn-daily" onclick="setMcPeriod('daily')">Diario</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="mixedChart"></canvas></div>
       </div>
+
     </div>
   </div>
 
-  <!-- Evolution heat-map -->
+  <!-- Evolution table -->
   <div class="section card">
-    <div class="section-title" data-i18n="weekly_evolution">Evolución Semanal por Conductor
-      <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:#4b5563;margin-left:6px">(monto facturado por semana)</span>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+      <div>
+        <div class="section-title" id="evolTitle" style="margin-bottom:1px">Evolución semanal de pagos</div>
+        <div style="font-size:10px;color:#4b5563">Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado hasta esa semana</div>
+      </div>
+      <div id="typeFilterChip" class="filter-chip" style="display:none;flex-shrink:0;margin-left:12px"></div>
     </div>
     <div class="evol-scroll">
       <table class="evol-table" id="evolTable"></table>
@@ -284,7 +324,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 
   <!-- Fired drivers cards -->
   <div class="section" id="firedSection">
-    <div class="section-title" data-i18n="fired_drivers_section">Conductores Cesados</div>
+    <div class="section-title" style="color:#f87171">Deuda Irrecuperable — Conductores Despedidos</div>
     <div class="fired-grid" id="firedGrid"></div>
   </div>
 
@@ -366,14 +406,17 @@ var PAGE_SIZE = 50;
 var BILLS = [];
 var DRIVERS = [];
 var FILTERED = [];
+var ACTIVE_CONDUCTORS = new Set();
 var LANG = 'es';
 var CUR = 'CLP';
 var _typeFilter = null;
-var _chartMode = 'all';
+var _chartMode = 'active';
+var _mcPeriod = 'weekly';
+var _mcDrivers = 'active';
 var _page = 1;
 var _sortKey = 'pending';
 var _sortDir = -1;
-var _lineChart = null;
+var _mixedChart = null;
 var _donutChart = null;
 
 var TYPE_MAP = {
@@ -495,10 +538,13 @@ function getWeekKey(d){
 async function loadData(){
   show('loadingWrap');
   try{
-    var res=await fetch('/api/bills');
-    var json=await res.json();
-    if(json.error){showError(json.error);return;}
-    BILLS=json.bills||[];
+    var results=await Promise.all([fetch('/api/bills'),fetch('/api/fleet')]);
+    var billsJson=await results[0].json();
+    var fleetJson=await results[1].json();
+    if(billsJson.error){showError(billsJson.error);return;}
+    BILLS=billsJson.bills||[];
+    var fleetDrivers=fleetJson.drivers||[];
+    ACTIVE_CONDUCTORS=new Set(fleetDrivers.map(function(d){return d.conductor.toUpperCase();}));
     aggregateDrivers();
     buildFilters();
     renderAll();
@@ -520,11 +566,9 @@ function showError(msg){
 }
 
 function aggregateDrivers(){
-  var now=new Date();
-  var cutoff=new Date(now.getTime()-90*24*60*60*1000);
   var map={};
   BILLS.forEach(function(b){
-    var key=b.driver||'(sin conductor)';
+    var key=(b.driver||'(sin conductor)').trim().toUpperCase();
     if(!map[key])map[key]={driver:key,vehicle:b.vehicle||'',bills:0,amount:0,paid:0,types:{},statuses:{},lastDate:null};
     var d=map[key];
     d.bills++;d.amount+=parseAmt(b.amount);d.paid+=parseAmt(b.paidAmount);
@@ -540,7 +584,12 @@ function aggregateDrivers(){
     var mainType='other';var maxV=0;
     Object.keys(d.types).forEach(function(k){if(d.types[k]>maxV){maxV=d.types[k];mainType=k;}});
     d.mainType=mainType;
-    d.isActive=d.lastDate&&d.lastDate>=cutoff;
+    // If fleet sheet has data, use it; if empty (all deleted), treat everyone as active
+    if(ACTIVE_CONDUCTORS.size>0){
+      d.isActive=ACTIVE_CONDUCTORS.has(d.driver);
+    }else{
+      d.isActive=true;
+    }
     return d;
   });
 }
@@ -599,16 +648,18 @@ function clearAllFilters(){
 function clearTypeFilter(){
   _typeFilter=null;
   var c=document.getElementById('typeFilterChip');c.innerHTML='';c.style.display='none';
-  _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);
+  var ti=document.getElementById('evolTitle');if(ti)ti.textContent='Evolución semanal de pagos';
+  _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);renderEvolTable();
 }
 
 function setTypeFilter(tp){
   if(_typeFilter===tp){clearTypeFilter();return;}
   _typeFilter=tp;
   var c=document.getElementById('typeFilterChip');
-  c.innerHTML=typeLabel(tp)+' <button onclick="clearTypeFilter()" title="'+t('clear_filter')+'">×</button>';
+  c.innerHTML=typeLabel(tp)+' <button onclick="clearTypeFilter()" style="background:none;border:none;color:inherit;cursor:pointer;font-size:15px;padding:0 2px;line-height:1">×</button>';
   c.style.display='inline-flex';
-  _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);
+  var ti=document.getElementById('evolTitle');if(ti)ti.textContent='Distribución de pagos';
+  _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);renderEvolTable();
 }
 
 function setChartDrivers(mode){
@@ -719,17 +770,24 @@ function monthIdx(m){
 }
 
 function renderDonut(){
+  var srcDriverSet={};
   var srcDrivers=_chartMode==='active'?DRIVERS.filter(function(d){return d.isActive;}):DRIVERS;
+  srcDrivers.forEach(function(d){srcDriverSet[d.driver]=true;});
   var typeKeys=['energy','toll','reparation','administrative','other'];
-  var typeAmts={energy:0,toll:0,reparation:0,administrative:0,other:0};
+  var typePending={energy:0,toll:0,reparation:0,administrative:0,other:0};
+  // accumulate pending (amount - paidAmount) per bill, grouped by type
   BILLS.forEach(function(b){
-    var drv=srcDrivers.find?srcDrivers.find(function(d){return d.driver===(b.driver||'(sin conductor)');})
-             :srcDrivers.filter(function(d){return d.driver===(b.driver||'(sin conductor)');})[0];
-    if(!drv)return;
-    var tp=classifyType(b.type);typeAmts[tp]=(typeAmts[tp]||0)+parseAmt(b.amount);
+    var drvKey=(b.driver||'(sin conductor)').trim().toUpperCase();
+    if(!srcDriverSet[drvKey])return;
+    var pending=Math.max(0,parseAmt(b.amount)-parseAmt(b.paidAmount));
+    if(pending<=0)return;
+    var tp=classifyType(b.type);typePending[tp]=(typePending[tp]||0)+pending;
   });
+  var totalPending=Object.values(typePending).reduce(function(s,v){return s+v;},0);
+  var el=document.getElementById('donutCenterVal');
+  if(el)el.textContent=fmtShort(totalPending);
   var donutLabels=typeKeys.map(function(k){return typeLabel(k);});
-  var donutData=typeKeys.map(function(k){return CUR==='USD'?typeAmts[k]/USD_RATE:typeAmts[k];});
+  var donutData=typeKeys.map(function(k){return CUR==='USD'?typePending[k]/USD_RATE:typePending[k];});
   var donutColors=typeKeys.map(function(k){return TYPE_COLORS[k];});
   if(_donutChart){
     _donutChart.data.labels=donutLabels;_donutChart.data.datasets[0].data=donutData;_donutChart.update();
@@ -737,7 +795,7 @@ function renderDonut(){
     _donutChart=new Chart(document.getElementById('donutChart'),{
       type:'doughnut',
       data:{labels:donutLabels,datasets:[{data:donutData,backgroundColor:donutColors,borderWidth:2,borderColor:'#111827',hoverOffset:6}]},
-      options:{responsive:true,maintainAspectRatio:false,
+      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
         plugins:{
           legend:{position:'right',labels:{color:'#9ca3af',font:{size:11},padding:10,usePointStyle:true,pointStyleWidth:7}},
           tooltip:{callbacks:{label:function(ctx){
@@ -753,95 +811,163 @@ function renderDonut(){
   }
 }
 
-function renderLineChart(){
-  var bm={};
+function setMcPeriod(p){
+  _mcPeriod=p;
+  document.getElementById('mc-btn-weekly').classList.toggle('active',p==='weekly');
+  document.getElementById('mc-btn-daily').classList.toggle('active',p==='daily');
+  renderMixedChart();
+}
+function setMcDrivers(m){
+  _mcDrivers=m;
+  document.getElementById('mc-btn-all').classList.toggle('active',m==='all');
+  document.getElementById('mc-btn-active').classList.toggle('active',m==='active');
+  renderMixedChart();
+}
+
+function renderMixedChart(){
+  var activeSet={};
+  if(_mcDrivers==='active')DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
+
+  var buckets={};
   BILLS.forEach(function(b){
     if(!b.createdAt)return;
     var d=parseDate(b.createdAt);if(!d)return;
-    var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    var m=mn[d.getMonth()]+' '+d.getFullYear();
-    if(!bm[m])bm[m]={amount:0,paid:0};
-    bm[m].amount+=parseAmt(b.amount);bm[m].paid+=parseAmt(b.paidAmount);
+    var drvKey=(b.driver||'(sin conductor)').trim().toUpperCase();
+    if(_mcDrivers==='active'&&!activeSet[drvKey])return;
+    var label;
+    if(_mcPeriod==='daily'){
+      label=d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    } else {
+      label=getWeekKey(d);
+    }
+    if(!buckets[label])buckets[label]={charged:0,paid:0,_date:d};
+    buckets[label].charged+=parseAmt(b.amount);
+    buckets[label].paid+=parseAmt(b.paidAmount);
   });
-  var months=Object.keys(bm).sort(function(a,b){
-    var ai=monthIdx(a),bi=monthIdx(b);if(ai!==bi)return ai-bi;
-    var ya=parseInt((a.match(/\d{4}/)||[9999])[0]);
-    var yb=parseInt((b.match(/\d{4}/)||[9999])[0]);
-    return ya-yb;
+
+  var labels=Object.keys(buckets).sort(function(a,b){return buckets[a]._date-buckets[b]._date;});
+  var chargedArr=[],paidArr=[],balanceArr=[];
+  var running=0;
+  labels.forEach(function(lbl){
+    var c=CUR==='USD'?buckets[lbl].charged/USD_RATE:buckets[lbl].charged;
+    var p=CUR==='USD'?buckets[lbl].paid/USD_RATE:buckets[lbl].paid;
+    running+=c-p;
+    chargedArr.push(c);paidArr.push(p>0?-p:0);balanceArr.push(running);
   });
-  var amtArr=months.map(function(m){return CUR==='USD'?bm[m].amount/USD_RATE:bm[m].amount;});
-  var paidArr=months.map(function(m){return CUR==='USD'?bm[m].paid/USD_RATE:bm[m].paid;});
-  if(_lineChart){
-    _lineChart.data.labels=months;_lineChart.data.datasets[0].data=amtArr;_lineChart.data.datasets[1].data=paidArr;_lineChart.update();
-  } else {
-    _lineChart=new Chart(document.getElementById('lineChart'),{
-      type:'line',
-      data:{labels:months,datasets:[
-        {label:'Facturado',data:amtArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.1)',fill:true,tension:.4,pointRadius:3,pointHoverRadius:5},
-        {label:'Pagado',data:paidArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',fill:true,tension:.4,pointRadius:3,pointHoverRadius:5}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,
-        interaction:{mode:'index',intersect:false},
-        plugins:{legend:{labels:{color:'#9ca3af',font:{size:11}}},
-          tooltip:{callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+fmtAmt(CUR==='USD'?ctx.raw*USD_RATE:ctx.raw);}}}},
-        scales:{
-          x:{ticks:{color:'#6b7280',maxRotation:45,font:{size:10}},grid:{color:'#1a2030'}},
-          y:{ticks:{color:'#6b7280',font:{size:10},callback:function(v){return fmtShort(CUR==='USD'?v*USD_RATE:v);}},grid:{color:'#1a2030'}}
-        }
-      }
-    });
+
+  if(_mixedChart){
+    _mixedChart.data.labels=labels;
+    _mixedChart.data.datasets[0].data=balanceArr;
+    _mixedChart.data.datasets[1].data=chargedArr;
+    _mixedChart.data.datasets[2].data=paidArr;
+    _mixedChart.update();
+    return;
   }
+  _mixedChart=new Chart(document.getElementById('mixedChart'),{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {type:'line',label:'Saldo pendiente acumulado',data:balanceArr,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:false,tension:.4,pointRadius:3,pointHoverRadius:5,yAxisID:'y',borderWidth:2,order:0},
+      {type:'bar',label:'Cobros semana',data:chargedArr,backgroundColor:'rgba(248,113,113,.55)',borderColor:'#f87171',borderWidth:1,borderRadius:3,yAxisID:'y',order:1},
+      {type:'bar',label:'Pagos semana',data:paidArr,backgroundColor:'rgba(52,211,153,.45)',borderColor:'#34d399',borderWidth:1,borderRadius:3,yAxisID:'y',order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#9ca3af',font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},
+        tooltip:{callbacks:{label:function(ctx){
+          var raw=CUR==='USD'?Math.abs(ctx.raw)*USD_RATE:Math.abs(ctx.raw);
+          return ' '+ctx.dataset.label+': '+fmtShort(raw);
+        }}}},
+      scales:{
+        x:{ticks:{color:'#6b7280',maxRotation:45,font:{size:10}},grid:{color:'#1a2030'}},
+        y:{ticks:{color:'#6b7280',font:{size:10},callback:function(v){
+          var abs=CUR==='USD'?Math.abs(v)*USD_RATE:Math.abs(v);
+          return (v<0?'-':'')+fmtShort(abs);
+        }},grid:{color:'#1a2030'}}
+      }
+    }
+  });
 }
 
 function renderEvolTable(){
   var tbl=document.getElementById('evolTable');if(!tbl)return;
-  var weekMap={};var driverSet={};
-  BILLS.forEach(function(b){
+
+  // Filter bills by type if active
+  var srcBills=_typeFilter?BILLS.filter(function(b){return classifyType(b.type)===_typeFilter;}):BILLS;
+
+  var weekMap={};var weekDates={};var driverSet={};
+  var driverPending={}; // current pending per driver (for last column)
+
+  srcBills.forEach(function(b){
     var d=parseDate(b.createdAt);var wk=getWeekKey(d);if(!wk)return;
-    var drv=b.driver||'(sin conductor)';
-    if(!weekMap[wk])weekMap[wk]={};
+    var drv=(b.driver||'(sin conductor)').trim().toUpperCase();
+    if(!weekMap[wk]){weekMap[wk]={};weekDates[wk]=d;}
     weekMap[wk][drv]=(weekMap[wk][drv]||0)+parseAmt(b.amount);
     driverSet[drv]=true;
+    driverPending[drv]=(driverPending[drv]||0)+Math.max(0,parseAmt(b.amount)-parseAmt(b.paidAmount));
   });
 
-  var allWeeks=Object.keys(weekMap).slice(-8);
+  var allWeeks=Object.keys(weekMap).sort(function(a,b){return weekDates[a]-weekDates[b];}).slice(-8);
   var allDrivers=Object.keys(driverSet);
-  if(!allWeeks.length||!allDrivers.length){tbl.innerHTML='<tbody><tr><td style="color:#374151;padding:12px">Sin datos de fechas</td></tr></tbody>';return;}
+  if(!allWeeks.length||!allDrivers.length){
+    tbl.innerHTML='<tbody><tr><td style="color:#374151;padding:12px">Sin datos de fechas</td></tr></tbody>';return;
+  }
 
   var driverTotals={};
-  allDrivers.forEach(function(d){
-    driverTotals[d]=allWeeks.reduce(function(s,w){return s+(weekMap[w][d]||0);},0);
+  allDrivers.forEach(function(drv){
+    driverTotals[drv]=allWeeks.reduce(function(s,w){return s+(weekMap[w][drv]||0);},0);
   });
   allDrivers.sort(function(a,b){return driverTotals[b]-driverTotals[a];});
   var topDrivers=allDrivers.slice(0,15);
 
   var maxVal=0;
-  topDrivers.forEach(function(d){allWeeks.forEach(function(w){var v=weekMap[w][d]||0;if(v>maxVal)maxVal=v;});});
+  topDrivers.forEach(function(drv){allWeeks.forEach(function(w){var v=weekMap[w][drv]||0;if(v>maxVal)maxVal=v;});});
 
-  var html='<thead><tr><th>Conductor</th>';
-  allWeeks.forEach(function(w){html+='<th>'+esc(w)+'</th>';});
-  html+='<th>Total</th></tr></thead><tbody>';
+  // Header — "PENDIENTE ACTUAL" last column with special style
+  var pendingLabel=_typeFilter?typeLabel(_typeFilter).toUpperCase():'PENDIENTE';
+  var html='<thead><tr><th style="text-align:left">Conductor</th>';
+  allWeeks.forEach(function(w){html+='<th>'+esc(w.toUpperCase())+'</th>';});
+  html+='<th style="background:#1e2a42;color:#93c5fd;text-align:right">'+pendingLabel+'<br><span style="font-weight:400;text-transform:none;font-size:9px;color:#4b5563">ACTUAL</span></th>';
+  html+='</tr></thead><tbody>';
 
-  topDrivers.forEach(function(d){
-    html+='<tr><td>'+esc(d)+'</td>';
+  topDrivers.forEach(function(drv){
+    var pending=driverPending[drv]||0;
+    var isPaidOff=pending<=0;
+    html+='<tr><td>'+esc(drv)+'</td>';
+    var running=0;
     allWeeks.forEach(function(w){
-      var v=weekMap[w][d]||0;
-      if(v===0){html+='<td class="cell-zero">—</td>';return;}
+      var v=weekMap[w][drv]||0;
+      running+=v;
+      if(v===0){
+        html+='<td class="cell-zero" style="text-align:right"><div style="color:#1f2937;font-size:10px">—</div><div class="evol-cell-acc" style="color:#374151">'+fmtShort(running)+'</div></td>';
+        return;
+      }
       var pct=maxVal>0?v/maxVal:0;
       var cls=pct>0.66?'cell-hi':pct>0.33?'cell-mid':'cell-lo';
-      html+='<td class="'+cls+'">'+fmtShort(v)+'</td>';
+      html+='<td class="'+cls+'" style="text-align:right">';
+      html+='<div class="evol-cell-new">+'+fmtShort(v)+'</div>';
+      html+='<div class="evol-cell-acc">'+fmtShort(running)+'</div>';
+      html+='</td>';
     });
-    html+='<td style="color:#9ca3af;font-weight:600">'+fmtShort(driverTotals[d])+'</td></tr>';
+    // PENDIENTE ACTUAL badge
+    if(isPaidOff){
+      html+='<td style="text-align:right"><span style="color:#34d399;font-weight:700;font-size:13px">$0 ✓</span></td>';
+    } else {
+      html+='<td style="text-align:right"><span style="background:#3b0a0a;border:1px solid #7f1d1d55;color:#fca5a5;border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block">'+fmtShort(pending)+'</span></td>';
+    }
+    html+='</tr>';
   });
 
   // Grand total row
   html+='</tbody><tfoot><tr><td>Total</td>';
+  var grandRunning=0;
   allWeeks.forEach(function(w){
-    var v=0;topDrivers.forEach(function(d){v+=(weekMap[w][d]||0);});
-    html+='<td>'+fmtShort(v)+'</td>';
+    var v=0;topDrivers.forEach(function(drv){v+=(weekMap[w][drv]||0);});
+    grandRunning+=v;
+    html+='<td style="text-align:right"><div class="evol-cell-new" style="color:#fbbf24">+'+fmtShort(v)+'</div><div class="evol-cell-acc">'+fmtShort(grandRunning)+'</div></td>';
   });
-  var gt=topDrivers.reduce(function(s,d){return s+driverTotals[d];},0);
-  html+='<td>'+fmtShort(gt)+'</td></tr></tfoot>';
+  var totalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
+  html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(totalPending)+'</td>';
+  html+='</tr></tfoot>';
   tbl.innerHTML=html;
 }
 
@@ -911,7 +1037,7 @@ function applyI18n(){
 
 function renderAll(){
   FILTERED=sortDrivers(getFiltered());
-  renderKPIs();renderDonut();renderLineChart();renderEvolTable();renderDriversTable(FILTERED);applyI18n();
+  renderKPIs();renderDonut();renderMixedChart();renderEvolTable();renderDriversTable(FILTERED);applyI18n();
 }
 
 function setLang(lang){if(!T[lang])return;LANG=lang;renderAll();}
