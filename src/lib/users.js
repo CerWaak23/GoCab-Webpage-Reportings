@@ -9,7 +9,7 @@
 
 const USERS = [
   { name: 'Joy Varela',      email: 'joy.varela@gocab.io',      role: 'Coordinador de Flota'    },
-  { name: 'Shamil Tokarev',  email: 'shamil.tokarev@gocab.io',  role: 'Gerente de Producto'     },
+  { name: 'Artem Tokarev',   email: 'artem.tokarev@gocab.io',   role: 'Gerente de Producto'     },
   { name: 'Andrés Cerda',    email: 'andres.cerda@gocab.io',    role: 'Gerente de Operaciones'  },
   { name: 'Felipe Catalan',  email: 'felipe.catalan@gocab.io',  role: 'Gerente de Pais'         },
 ];
