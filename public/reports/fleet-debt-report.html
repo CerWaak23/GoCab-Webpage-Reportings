@@ -285,12 +285,8 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
           <span style="font-size:16px">📊</span>
           <div>
             <div class="section-title" style="margin-bottom:1px">Deuda Pendiente por Tipo</div>
-            <div style="font-size:10px;color:#4b5563">Distribución del saldo sin cobrar según categoría</div>
+            <div style="font-size:10px;color:#4b5563">Conductores activos · saldo sin cobrar según categoría</div>
           </div>
-        </div>
-        <div class="sw-group" style="margin-bottom:12px">
-          <button id="chart-btn-active" onclick="setChartDrivers('active')" class="active">Solo activos</button>
-          <button id="chart-btn-all" onclick="setChartDrivers('all')">Todos</button>
         </div>
         <div style="position:relative">
           <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
@@ -306,17 +302,11 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <div class="section-title" style="margin-bottom:1px">Cobros, pagos y saldo neto</div>
-            <div style="font-size:10px;color:#4b5563">Barras = cobros (rojo) y pagos (verde) · Línea = saldo pendiente acumulado</div>
+            <div style="font-size:10px;color:#4b5563">Conductores activos · cobros (rojo) y pagos (verde) · línea = saldo acumulado</div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;margin-left:10px">
-            <div class="sw-group">
-              <button id="mc-btn-active" onclick="setMcDrivers('active')" class="active">Solo activos</button>
-              <button id="mc-btn-all" onclick="setMcDrivers('all')">Todos</button>
-            </div>
-            <div class="sw-group">
-              <button id="mc-btn-weekly" onclick="setMcPeriod('weekly')" class="active">Semanal</button>
-              <button id="mc-btn-daily" onclick="setMcPeriod('daily')">Diario</button>
-            </div>
+          <div class="sw-group">
+            <button id="mc-btn-weekly" onclick="setMcPeriod('weekly')" class="active">Semanal</button>
+            <button id="mc-btn-daily" onclick="setMcPeriod('daily')">Diario</button>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="mixedChart"></canvas></div>
@@ -431,9 +421,7 @@ var ACTIVE_CONDUCTORS = new Set();
 var LANG = 'es';
 var CUR = 'CLP';
 var _typeFilter = null;
-var _chartMode = 'active';
 var _mcPeriod = 'weekly';
-var _mcDrivers = 'active';
 var _page = 1;
 var _sortKey = 'pending';
 var _sortDir = -1;
@@ -702,12 +690,6 @@ function setTypeFilter(tp){
   _page=1;FILTERED=sortDrivers(getFiltered());renderKPIs();renderDriversTable(FILTERED);renderEvolTable();
 }
 
-function setChartDrivers(mode){
-  _chartMode=mode;
-  document.getElementById('chart-btn-all').classList.toggle('active',mode==='all');
-  document.getElementById('chart-btn-active').classList.toggle('active',mode==='active');
-  renderDonut();
-}
 
 function renderKPIs(){
   var now=new Date();
@@ -879,14 +861,14 @@ function monthIdx(m){
 }
 
 function renderDonut(){
+  // Active drivers only — fired shown separately in Despedidos section
   var srcDriverSet={};
-  var srcDrivers=_chartMode==='active'?DRIVERS.filter(function(d){return d.isActive;}):DRIVERS;
-  srcDrivers.forEach(function(d){srcDriverSet[d.driver]=true;});
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){srcDriverSet[d.driver]=true;});
   var typeKeys=['energy','toll','reparation','administrative','other'];
   var typePending={energy:0,toll:0,reparation:0,administrative:0,other:0};
   // accumulate pending (amount - paidAmount) per bill, grouped by type
   BILLS.forEach(function(b){
-    var drvKey=(b.driver||'(sin conductor)').trim().toUpperCase();
+    var drvKey=normalizeName(b.driver);
     if(!srcDriverSet[drvKey])return;
     var pending=Math.max(0,parseAmt(b.amount)-parseAmt(b.paidAmount));
     if(pending<=0)return;
@@ -935,23 +917,18 @@ function setMcPeriod(p){
   document.getElementById('mc-btn-daily').classList.toggle('active',p==='daily');
   renderMixedChart();
 }
-function setMcDrivers(m){
-  _mcDrivers=m;
-  document.getElementById('mc-btn-all').classList.toggle('active',m==='all');
-  document.getElementById('mc-btn-active').classList.toggle('active',m==='active');
-  renderMixedChart();
-}
 
 function renderMixedChart(){
+  // Active drivers only — fired shown separately in Despedidos section
   var activeSet={};
-  if(_mcDrivers==='active')DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
 
   var buckets={};
   BILLS.forEach(function(b){
     if(!b.createdAt)return;
     var d=parseDate(b.createdAt);if(!d)return;
-    var drvKey=(b.driver||'(sin conductor)').trim().toUpperCase();
-    if(_mcDrivers==='active'&&!activeSet[drvKey])return;
+    var drvKey=normalizeName(b.driver);
+    if(!activeSet[drvKey])return;
     var label;
     if(_mcPeriod==='daily'){
       label=d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
@@ -1014,9 +991,14 @@ function renderEvolTable(){
   var chargeMap={};var payMap={};var weekDates={};var driverSet={};
   var driverPending={};
 
+  // Active drivers only — fired shown separately in Despedidos section
+  var activeSet={};
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
+
   srcBills.forEach(function(b){
+    var drv=normalizeName(b.driver);
+    if(!activeSet[drv])return;
     var d=parseDate(b.createdAt);var wk=getWeekKey(d);if(!wk)return;
-    var drv=(b.driver||'(sin conductor)').trim().toUpperCase();
     if(!chargeMap[wk]){chargeMap[wk]={};weekDates[wk]=d;}
     chargeMap[wk][drv]=(chargeMap[wk][drv]||0)+parseAmt(b.amount);
     driverSet[drv]=true;
@@ -1024,8 +1006,9 @@ function renderEvolTable(){
   });
 
   srcPayments.forEach(function(p){
+    var drv=normalizeName(p.driver);
+    if(!activeSet[drv])return;
     var d=new Date(p.date);var wk=getWeekKey(d);if(!wk)return;
-    var drv=(p.driver||'').trim().toUpperCase();
     if(!payMap[wk])payMap[wk]={};
     if(!weekDates[wk])weekDates[wk]=d;
     payMap[wk][drv]=(payMap[wk][drv]||0)+p.amount;
