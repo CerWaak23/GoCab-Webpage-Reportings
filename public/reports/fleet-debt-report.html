@@ -606,13 +606,14 @@ function aggregateDrivers(){
     var mainType='other';var maxV=0;
     Object.keys(d.types).forEach(function(k){if(d.types[k]>maxV){maxV=d.types[k];mainType=k;}});
     d.mainType=mainType;
-    // Active = in fleet sheet  OR  has activity in last 90 days (sheet may be incomplete)
-    // Fired = NOT in fleet sheet AND last bill older than 90 days
-    var cutoff90=new Date(new Date().getTime()-90*24*60*60*1000);
+    // Active = in fleet control sheet ONLY (source of truth)
+    // Fired = in bills but NOT in fleet sheet
+    // Fallback to 90-day activity only when fleet sheet returned no rows
     if(ACTIVE_CONDUCTORS.size>0){
-      d.isActive=ACTIVE_CONDUCTORS.has(d.driver)||(d.lastDate&&d.lastDate>=cutoff90);
+      d.isActive=ACTIVE_CONDUCTORS.has(d.driver);
     }else{
-      d.isActive=true;
+      var cutoff90=new Date(new Date().getTime()-90*24*60*60*1000);
+      d.isActive=!!(d.lastDate&&d.lastDate>=cutoff90);
     }
     return d;
   });
