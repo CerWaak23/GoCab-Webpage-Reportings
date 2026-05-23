@@ -421,7 +421,7 @@ var PAYMENT_EVENTS = [];
 var SNAPSHOTS = [];
 var DRIVERS = [];
 var FILTERED = [];
-var ACTIVE_CONDUCTORS = new Set();
+var FLEET_NAMES = []; // normalized names from fleet control sheet
 var LANG = 'es';
 var CUR = 'CLP';
 var _typeFilter = null;
@@ -560,6 +560,24 @@ function normalizeName(s){
   return stripped.toUpperCase().replace(/\s+/g,' ');
 }
 
+// Check if a (already normalized) driver name matches any fleet name.
+// Handles longer names in bills vs. shorter names in fleet sheet, e.g.:
+//   bills: "FABIAN ANDRES ROLDAN ORTIZ"  fleet: "FABIAN ROLDAN"
+// → all fleet words appear in the bill name → same person.
+function isInFleet(normalizedDriver){
+  if(!FLEET_NAMES.length) return false;
+  var dWords=normalizedDriver.split(' ');
+  return FLEET_NAMES.some(function(fn){
+    if(fn===normalizedDriver) return true; // exact match fast path
+    var fWords=fn.split(' ');
+    // All fleet-sheet words present in bill name (fleet name is shorter/incomplete)
+    if(fWords.every(function(w){return dWords.indexOf(w)>=0;})) return true;
+    // All bill words present in fleet name (bill name is shorter — less common)
+    if(dWords.every(function(w){return fWords.indexOf(w)>=0;})) return true;
+    return false;
+  });
+}
+
 async function loadData(){
   show('loadingWrap');
   try{
@@ -571,7 +589,7 @@ async function loadData(){
     PAYMENT_EVENTS=billsJson.paymentEvents||[];
     SNAPSHOTS=billsJson.snapshots||[];
     var fleetDrivers=fleetJson.drivers||[];
-    ACTIVE_CONDUCTORS=new Set(fleetDrivers.map(function(d){return normalizeName(d.conductor);}));
+    FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
     aggregateDrivers();
     buildFilters();
     renderAll();
@@ -612,10 +630,10 @@ function aggregateDrivers(){
     Object.keys(d.types).forEach(function(k){if(d.types[k]>maxV){maxV=d.types[k];mainType=k;}});
     d.mainType=mainType;
     // Active = in fleet control sheet ONLY (source of truth)
-    // Fired = in bills but NOT in fleet sheet
+    // Active = matches fleet control sheet (word-subset fuzzy match)
     // Fallback to 90-day activity only when fleet sheet returned no rows
-    if(ACTIVE_CONDUCTORS.size>0){
-      d.isActive=ACTIVE_CONDUCTORS.has(d.driver);
+    if(FLEET_NAMES.length>0){
+      d.isActive=isInFleet(d.driver);
     }else{
       var cutoff90=new Date(new Date().getTime()-90*24*60*60*1000);
       d.isActive=!!(d.lastDate&&d.lastDate>=cutoff90);
