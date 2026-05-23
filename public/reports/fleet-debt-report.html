@@ -1061,12 +1061,8 @@ function renderEvolTable(){
     tbl.innerHTML='<tbody><tr><td style="color:#374151;padding:12px">Sin datos de fechas</td></tr></tbody>';return;
   }
 
-  // Sort drivers by total charges descending
-  var driverTotals={};
-  allDrivers.forEach(function(drv){
-    driverTotals[drv]=allWeeks.reduce(function(s,w){return s+(chargeMap[w]&&chargeMap[w][drv]||0);},0);
-  });
-  allDrivers.sort(function(a,b){return driverTotals[b]-driverTotals[a];});
+  // Sort drivers by current pending descending (matches KPI card order)
+  allDrivers.sort(function(a,b){return (driverPending[b]||0)-(driverPending[a]||0);});
   var topDrivers=allDrivers.slice(0,15);
 
   var maxCharge=0;
