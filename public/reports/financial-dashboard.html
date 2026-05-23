@@ -683,20 +683,30 @@ function renderSumupKpis() {
   }
 
   var meses = sortMonths(Object.keys(SUMUP));
-  var totalBruto   = meses.reduce(function(s,m){ return s+(SUMUP[m].bruto||0); },0);
-  var totalNeto    = meses.reduce(function(s,m){ return s+(SUMUP[m].neto||0); },0);
-  var totalComision= totalBruto - totalNeto;
-  var saldoSumUp   = totalNeto - SUMUP_RETIROS;
-  var mesCurrNeto  = (SUMUP[MES0]||{}).neto||0;
-  var mesCurrTxn   = (SUMUP[MES0]||{}).transacciones||0;
-  var mesCurrComis = (SUMUP[MES0]||{}).comision||0;
-  var avgMensual   = meses.length ? totalNeto/meses.length : 0;
+  var totalBruto    = meses.reduce(function(s,m){ return s+(SUMUP[m].bruto||0); },0);
+  var totalNeto     = meses.reduce(function(s,m){ return s+(SUMUP[m].neto||0); },0);
+  var totalComision = totalBruto - totalNeto;
+  var mesCurrNeto   = (SUMUP[MES0]||{}).neto||0;
+  var mesCurrTxn    = (SUMUP[MES0]||{}).transacciones||0;
+  var mesCurrComis  = (SUMUP[MES0]||{}).comision||0;
+  var avgMensual    = meses.length ? totalNeto/meses.length : 0;
+
+  // Transfers FROM SumUp TO Santander = Cash-in rows in Invoices tagged "SumUp"
+  var sumupTransferRows = RAW.filter(function(r){
+    var tag = (r.supplier+' '+r.desc+' '+r.entity).toLowerCase();
+    return r.cashIn > 0 && tag.indexOf('sumup') >= 0;
+  });
+  var totalTransferido = sumupTransferRows.reduce(function(s,r){ return s+r.cashIn; },0);
+  var saldoSumUp = totalNeto - totalTransferido;
+  var saldoMeta = totalTransferido > 0
+    ? 'Neto cobrado − '+fmtAmt(totalTransferido)+' transferido a Santander'
+    : 'Neto cobrado (sin transferencias registradas a Santander)';
 
   grid.innerHTML = [
     {color:'teal',  label:'Total SumUp (periodo)',       value:fmtAmt(totalBruto),    meta:'Cobros brutos acumulados'},
     {color:'teal',  label:'SumUp Neto (periodo)',        value:fmtAmt(totalNeto),      meta:'Cobros brutos − comisiones'},
     {color:'amber', label:'Comisión cobrada SumUp',      value:fmtAmt(totalComision),  meta:'Costo plataforma acumulado · '+yyyymmToLabel(MES0)+': '+fmtAmt(mesCurrComis)},
-    {color: saldoSumUp>=0?'teal':'red', label:'Saldo disponible en SumUp', value:fmtAmt(saldoSumUp), meta:SUMUP_RETIROS>0?'Neto cobrado − '+fmtAmt(SUMUP_RETIROS)+' retirado':'Neto acumulado (sin retiros registrados)'},
+    {color:saldoSumUp>=0?'teal':'red', label:'Saldo disponible en SumUp', value:fmtAmt(saldoSumUp), meta:saldoMeta},
     {color:'teal',  label:'SumUp '+yyyymmToLabel(MES0), value:fmtAmt(mesCurrNeto),    meta:mesCurrTxn+' transacciones'},
     {color:'teal',  label:'Promedio mensual',            value:fmtShort(avgMensual),   meta:'Últimos '+meses.length+' meses'},
   ].map(function(k) {
