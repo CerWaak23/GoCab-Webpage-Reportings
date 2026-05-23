@@ -473,7 +473,7 @@ function parseRows(raw) {
       entity:   iEntidad>=0 ? String(r[iEntidad]||'') : '',
       bank:     iBanco>=0   ? String(r[iBanco]||'')   : '',
     };
-  }).filter(function(r){ return r.date||r.supplier||r.cashIn||r.cashOut; });
+  }).filter(function(r){ return r.month && (r.cashIn > 0 || r.cashOut > 0); });
 }
 
 // ── Scope ─────────────────────────────────────────────────────────────────────
