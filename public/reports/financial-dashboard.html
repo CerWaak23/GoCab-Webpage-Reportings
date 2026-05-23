@@ -324,7 +324,8 @@ var PAGE_SIZE = 50;
 
 // ── State ────────────────────────────────────────────────────────────────────
 var RAW   = [];   // parsed sheet rows
-var SUMUP = {};   // {mes: {bruto,comision,neto,transacciones}}
+var SUMUP = {};          // {mes: {bruto,comision,neto,transacciones}}
+var SUMUP_RETIROS = 0;   // total withdrawn from SumUp to bank
 var LANG  = 'es';
 var CUR   = 'CLP';
 var _includeIntl = true;
@@ -498,9 +499,11 @@ async function loadData() {
     RAW = parseRows(sheetJson.rows || []);
 
     SUMUP = {};
+    SUMUP_RETIROS = 0;
     if (sumupRes.ok) {
       var sumupJson = await sumupRes.json().catch(function(){ return {}; });
       SUMUP = sumupJson.sumupByMes || {};
+      SUMUP_RETIROS = sumupJson.totalRetiros || 0;
       var meta = document.getElementById('sumupMeta');
       if (meta) meta.textContent = sumupJson.sources && sumupJson.sources.length
         ? sumupJson.sources.length+' archivos'
@@ -680,17 +683,22 @@ function renderSumupKpis() {
   }
 
   var meses = sortMonths(Object.keys(SUMUP));
-  var totalBruto = meses.reduce(function(s,m){ return s+(SUMUP[m].bruto||0); },0);
-  var totalNeto  = meses.reduce(function(s,m){ return s+(SUMUP[m].neto||0); },0);
-  var mesCurrNeto = (SUMUP[MES0]||{}).neto||0;
-  var mesCurrTxn  = (SUMUP[MES0]||{}).transacciones||0;
-  var avgMensual  = meses.length ? totalNeto/meses.length : 0;
+  var totalBruto   = meses.reduce(function(s,m){ return s+(SUMUP[m].bruto||0); },0);
+  var totalNeto    = meses.reduce(function(s,m){ return s+(SUMUP[m].neto||0); },0);
+  var totalComision= totalBruto - totalNeto;
+  var saldoSumUp   = totalNeto - SUMUP_RETIROS;
+  var mesCurrNeto  = (SUMUP[MES0]||{}).neto||0;
+  var mesCurrTxn   = (SUMUP[MES0]||{}).transacciones||0;
+  var mesCurrComis = (SUMUP[MES0]||{}).comision||0;
+  var avgMensual   = meses.length ? totalNeto/meses.length : 0;
 
   grid.innerHTML = [
-    {color:'teal', label:'Total SumUp (periodo)',  value:fmtAmt(totalBruto),     meta:'Cobros brutos acumulados'},
-    {color:'teal', label:'SumUp Neto (periodo)',   value:fmtAmt(totalNeto),       meta:'Cobros brutos − comisiones'},
-    {color:'teal', label:'SumUp '+yyyymmToLabel(MES0), value:fmtAmt(mesCurrNeto),   meta:mesCurrTxn+' transacciones'},
-    {color:'teal', label:'Promedio mensual',       value:fmtShort(avgMensual),    meta:'Últimos '+meses.length+' meses'},
+    {color:'teal',  label:'Total SumUp (periodo)',       value:fmtAmt(totalBruto),    meta:'Cobros brutos acumulados'},
+    {color:'teal',  label:'SumUp Neto (periodo)',        value:fmtAmt(totalNeto),      meta:'Cobros brutos − comisiones'},
+    {color:'amber', label:'Comisión cobrada SumUp',      value:fmtAmt(totalComision),  meta:'Costo plataforma acumulado · '+yyyymmToLabel(MES0)+': '+fmtAmt(mesCurrComis)},
+    {color: saldoSumUp>=0?'teal':'red', label:'Saldo disponible en SumUp', value:fmtAmt(saldoSumUp), meta:SUMUP_RETIROS>0?'Neto cobrado − '+fmtAmt(SUMUP_RETIROS)+' retirado':'Neto acumulado (sin retiros registrados)'},
+    {color:'teal',  label:'SumUp '+yyyymmToLabel(MES0), value:fmtAmt(mesCurrNeto),    meta:mesCurrTxn+' transacciones'},
+    {color:'teal',  label:'Promedio mensual',            value:fmtShort(avgMensual),   meta:'Últimos '+meses.length+' meses'},
   ].map(function(k) {
     return '<div class="kpi-card kpi-'+k.color+'">'
       +'<div class="kpi-label">'+esc2(k.label)+'</div>'

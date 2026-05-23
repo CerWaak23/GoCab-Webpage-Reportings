@@ -81,6 +81,7 @@ export async function GET() {
 
     const files = listRes.data.files || [];
     const sumupByMes = {};
+    let totalRetiros = 0;
 
     for (const file of files) {
       const name = file.name.toLowerCase();
@@ -115,11 +116,23 @@ export async function GET() {
         const row = rows[i];
         if (!row || row.every(c => !c)) continue;
 
-        // Only count completed payment transactions
-        if (iType >= 0) {
-          const tipo = String(row[iType] || '').toLowerCase().trim();
-          if (tipo && tipo !== 'pago') continue;
+        const tipo = iType >= 0 ? String(row[iType] || '').toLowerCase().trim() : '';
+        const isRetiro = tipo && (
+          tipo.includes('retiro') || tipo.includes('withdrawal') ||
+          tipo.includes('payout') || tipo.includes('depósito') ||
+          tipo.includes('deposito') || tipo.includes('transferencia')
+        );
+
+        // Capture payout/withdrawal rows for SumUp balance calc
+        if (isRetiro) {
+          const brutoR = parseAmt(iGross >= 0 ? row[iGross] : 0);
+          const netoR  = iNet >= 0 ? parseAmt(row[iNet]) : brutoR;
+          totalRetiros += Math.abs(brutoR || netoR);
+          continue;
         }
+
+        // Only count completed payment transactions
+        if (tipo && tipo !== 'pago') continue;
         if (iState >= 0) {
           const estado = String(row[iState] || '').toLowerCase().trim();
           if (estado && estado !== 'exitosa') continue;
@@ -143,7 +156,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ sumupByMes, sources: files.map(f => f.name) });
+    return NextResponse.json({ sumupByMes, totalRetiros, sources: files.map(f => f.name) });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
