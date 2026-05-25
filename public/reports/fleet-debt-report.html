@@ -208,16 +208,6 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     </div>
   </div>
 
-  <!-- Data quality warning panel (hidden until warnings exist) -->
-  <div id="dqPanel" class="dq-panel" style="display:none">
-    <div class="dq-icon">⚠️</div>
-    <div class="dq-body">
-      <div class="dq-title">Advertencia de calidad de datos</div>
-      <ul class="dq-list" id="dqList"></ul>
-    </div>
-    <button class="dq-dismiss" onclick="document.getElementById('dqPanel').style.display='none'" title="Cerrar">✕</button>
-  </div>
-
   <!-- 6 KPI cards — layout matches original -->
   <div class="section">
     <!-- Row 1: financial totals -->
@@ -420,35 +410,14 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     </div>
   </div>
 
-  <!-- Recommended KPIs -->
-  <div class="section">
-    <div class="section-title" data-i18n="insights">Métricas Derivadas</div>
-    <div class="rec-grid">
-      <div class="scard">
-        <div class="scard-icon">📊</div>
-        <div class="scard-label" data-i18n="avg_pending">Deuda Promedio/Conductor</div>
-        <div class="scard-val" id="scAvgPending">—</div>
-        <div class="scard-sub" id="scAvgPendingSub">—</div>
-      </div>
-      <div class="scard">
-        <div class="scard-icon">🏆</div>
-        <div class="scard-label" data-i18n="top_debtor">Mayor Deudor</div>
-        <div class="scard-val" id="scTopDebtor">—</div>
-        <div class="scard-sub" id="scTopDebtorSub">—</div>
-      </div>
-      <div class="scard">
-        <div class="scard-icon">⚡</div>
-        <div class="scard-label" data-i18n="best_payer">Mejor Pagador</div>
-        <div class="scard-val" id="scBestPayer">—</div>
-        <div class="scard-sub" id="scBestPayerSub">—</div>
-      </div>
-      <div class="scard">
-        <div class="scard-icon">📈</div>
-        <div class="scard-label" data-i18n="recovery_trend">Tendencia Recuperación</div>
-        <div class="scard-val" id="scTrend">—</div>
-        <div class="scard-sub" id="scTrendSub">—</div>
-      </div>
+  <!-- Data quality warning panel (replaces Métricas Derivadas; hidden until warnings exist) -->
+  <div id="dqPanel" class="dq-panel" style="display:none">
+    <div class="dq-icon">⚠️</div>
+    <div class="dq-body">
+      <div class="dq-title">Advertencia de calidad de datos</div>
+      <ul class="dq-list" id="dqList"></ul>
     </div>
+    <button class="dq-dismiss" onclick="document.getElementById('dqPanel').style.display='none'" title="Cerrar">✕</button>
   </div>
 
 </div>
