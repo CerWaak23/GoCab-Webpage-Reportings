@@ -63,6 +63,7 @@ export async function GET() {
     // byPatente[normPlate] = { [weekKey]: totalCLP, _rawPlate }
     const byPatente = {};
     const weekDates = {}; // weekKey → Date (for sorting)
+    const _debug = []; // temporary: header info per file
 
     for (const file of files) {
       const name = file.name.toLowerCase();
@@ -95,9 +96,18 @@ export async function GET() {
           break;
         }
       }
+      const header = headerIdx === -1 ? [] : rows[headerIdx].map(h => String(h).toLowerCase().trim());
+      _debug.push({
+        file: file.name,
+        headerIdx,
+        header: header.slice(0, 20),
+        row0: (rows[0] || []).slice(0, 10).map(String),
+        row14: (rows[14] || []).slice(0, 10).map(String),
+        totalRows: rows.length,
+      });
+
       if (headerIdx === -1) continue;
 
-      const header = rows[headerIdx].map(h => String(h).toLowerCase().trim());
       const ci = (names) => {
         for (const n of names) {
           const idx = header.findIndex(h => h.includes(n));
@@ -106,9 +116,9 @@ export async function GET() {
         return -1;
       };
 
-      const iPatente = ci(['patente']);
-      const iValor   = ci(['valor']);
-      const iFecha   = ci(['fecha inicial', 'fecha']);
+      const iPatente = ci(['patente', 'móvil', 'movil', 'placa']);
+      const iValor   = ci(['valor', 'monto', 'importe', 'cobro']);
+      const iFecha   = ci(['fecha inicial', 'fecha inicio', 'fecha']);
 
       if (iPatente === -1 || iValor === -1 || iFecha === -1) continue;
 
@@ -149,6 +159,7 @@ export async function GET() {
       allWeeks,
       totalByPatente,
       sources: files.map(f => f.name),
+      _debug,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
