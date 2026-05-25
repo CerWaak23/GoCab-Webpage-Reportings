@@ -249,18 +249,10 @@ a{color:inherit;text-decoration:none}
     </div>
   </div>
 
-  <!-- SECCIÓN: Evolución mensual + Top egresos -->
-  <div class="charts-row">
-    <div class="card" style="margin-bottom:0">
-      <div class="section-title"><span data-i18n="sec_evolucion">Evolución mensual operacional</span>
-        <span class="meta-chip" data-i18n="sec_evolucion_meta">SumUp neto vs egresos operativos · sin compra de autos ni capital</span>
-      </div>
-      <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
-    </div>
-    <div class="card" style="margin-bottom:0">
-      <div class="section-title" data-i18n="sec_top_egresos">Top egresos por proveedor</div>
-      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
-    </div>
+  <!-- SECCIÓN: Top egresos -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="section-title" data-i18n="sec_top_egresos">Top egresos por proveedor</div>
+    <div class="chart-wrap"><canvas id="barChart"></canvas></div>
   </div>
 
   <!-- SECCIÓN: Gastos Recurrentes -->
@@ -542,7 +534,7 @@ var CUR   = 'CLP';
 var _includeIntl = true;
 var _expKey = null, _expMonth = null;
 var _page   = 1;
-var _covChart=null,_opChart=null,_donutChart=null,_lineChart=null,_barChart=null;
+var _covChart=null,_opChart=null,_donutChart=null,_barChart=null;
 
 // ── Month helpers ─────────────────────────────────────────────────────────────
 var MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -934,7 +926,7 @@ var CHART_GRID = '#1a2030';
 var CHART_TEXT = '#6b7280';
 
 function destroyAll() {
-  [['_covChart'],['_opChart'],['_donutChart'],['_lineChart'],['_barChart']].forEach(function(pair) {
+  [['_covChart'],['_opChart'],['_donutChart'],['_barChart']].forEach(function(pair) {
     var name = pair[0];
     if (window[name]) { window[name].destroy(); window[name]=null; }
   });
@@ -1056,42 +1048,6 @@ function renderIncomeDonut() {
           var pct=total>0?Math.round(ctx.raw/(CUR==='USD'?total/USD_RATE:total)*100):0;
           return ' '+ctx.label+': '+fmtAmt(raw)+' ('+pct+'%)';
         }}}}
-    }
-  });
-}
-
-function renderLineChart() {
-  if (_lineChart) { _lineChart.destroy(); _lineChart=null; }
-
-  // Operational expenses per month (excluding car purchases / CapEx)
-  var outByMes = {};
-  RAW.filter(function(r){ return r.cashOut > 0 && r.status !== 'Pending' && !isCapEx(r); })
-    .forEach(function(r){ if(r.month) outByMes[r.month] = (outByMes[r.month]||0) + r.cashOut; });
-
-  // Union months from operational expenses and SumUp
-  var mesSet = {};
-  Object.keys(outByMes).forEach(function(m){ mesSet[m]=1; });
-  Object.keys(SUMUP).forEach(function(m){ mesSet[m]=1; });
-  var meses = sortMonths(Object.keys(mesSet));
-  if (!meses.length) return;
-
-  var suArr  = meses.map(function(m){ var v=(SUMUP[m]||{}).neto||0; return CUR==='USD'?v/USD_RATE:v; });
-  var outArr = meses.map(function(m){ var v=outByMes[m]||0; return CUR==='USD'?v/USD_RATE:v; });
-
-  _lineChart = new Chart(document.getElementById('lineChart'),{
-    type:'line',
-    data:{labels:meses.map(yyyymmToLabel),datasets:[
-      {label:t('chart_sumup_neto'), data:suArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.08)',fill:true,tension:.4,pointRadius:3},
-      {label:t('chart_eg_op2'), data:outArr,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.08)',fill:true,tension:.4,pointRadius:3},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:CHART_TEXT,font:{size:11},usePointStyle:true}},
-        tooltip:{callbacks:{label:function(ctx){ return ' '+ctx.dataset.label+': '+fmtAmt(CUR==='USD'?ctx.raw*USD_RATE:ctx.raw); }}}},
-      scales:{
-        x:{ticks:{color:CHART_TEXT,font:{size:10},maxRotation:45},grid:{color:CHART_GRID}},
-        y:{ticks:{color:CHART_TEXT,font:{size:10},callback:function(v){ return fmtShort(CUR==='USD'?v*USD_RATE:v); }},grid:{color:CHART_GRID}},
-      }
     }
   });
 }
@@ -1341,7 +1297,6 @@ function setCurrency(cur){
   if(_covChart){_covChart.destroy();_covChart=null;}
   if(_opChart){_opChart.destroy();_opChart=null;}
   if(_donutChart){_donutChart.destroy();_donutChart=null;}
-  if(_lineChart){_lineChart.destroy();_lineChart=null;}
   if(_barChart){_barChart.destroy();_barChart=null;}
   renderAll();
 }
@@ -1376,7 +1331,6 @@ function renderAll(){
   renderCovChart();
   renderOpChart();
   renderIncomeDonut();
-  renderLineChart();
   renderBarChart();
   renderPivotTables();
   renderTxnTable(getFiltered());
