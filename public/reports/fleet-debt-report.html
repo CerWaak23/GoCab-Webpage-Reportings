@@ -479,7 +479,12 @@ var T = {
       ftbl_bills:'Facts.',ftbl_recovery:'% Rec.',ftbl_last:'Último',
       kpi_sub_active_only:'Solo conductores activos',kpi_sub_collected:'Cobrado a activos',
       loading_text:'Cargando datos...',refresh_hint:'Para ver datos nuevos, recarga la página (F5)',
-      donut_center:'pendiente'},
+      donut_center:'pendiente',
+      kpi_active_with_balance:'activos con saldo',kpi_with_pending:'con deuda pendiente',kpi_active_with_debt:'activos con deuda',
+      snapshot_prev:'snapshot anterior:',weekly_period_sub:'Cobrado período actual / Facturado período actual',
+      drivers_with_debt:'conductores con deuda',pending_label:'pendiente',recovered_label:'recuperado',
+      above_avg:'por encima del promedio',below_avg:'por debajo del promedio',
+      chart_balance:'Saldo pendiente acumulado',chart_charges_week:'Cobros semana',chart_payments_week:'Pagos semana'},
   en:{title:'Fleet Debt Report',sub:'active and fired drivers',refresh:'Refresh',
       charged:'Charged',paid:'Paid',pending:'Pending',open_bills:'Open Bills',
       active_drivers:'Active Drivers',fired_drivers:'Fired Drivers',
@@ -513,7 +518,12 @@ var T = {
       ftbl_bills:'Bills',ftbl_recovery:'% Rec.',ftbl_last:'Last',
       kpi_sub_active_only:'Active drivers only',kpi_sub_collected:'Collected from active',
       loading_text:'Loading data...',refresh_hint:'To see new data, reload the page (F5)',
-      donut_center:'pending'},
+      donut_center:'pending',
+      kpi_active_with_balance:'active with balance',kpi_with_pending:'with pending debt',kpi_active_with_debt:'active with debt',
+      snapshot_prev:'previous snapshot:',weekly_period_sub:'Collected current period / Charged current period',
+      drivers_with_debt:'drivers with debt',pending_label:'pending',recovered_label:'recovered',
+      above_avg:'above average',below_avg:'below average',
+      chart_balance:'Accumulated pending balance',chart_charges_week:'Weekly charges',chart_payments_week:'Weekly payments'},
   ru:{title:'Отчёт о долгах флота',sub:'активные и уволенные водители',refresh:'Обновить',
       charged:'Начислено',paid:'Оплачено',pending:'Задолженность',open_bills:'Открытые счета',
       active_drivers:'Активные водители',fired_drivers:'Уволенные водители',
@@ -547,7 +557,12 @@ var T = {
       ftbl_bills:'Счетов',ftbl_recovery:'% Пог.',ftbl_last:'Последний',
       kpi_sub_active_only:'Только активные водители',kpi_sub_collected:'Собрано с активных',
       loading_text:'Загрузка данных...',refresh_hint:'Для обновления перезагрузите страницу (F5)',
-      donut_center:'долг'}
+      donut_center:'долг',
+      kpi_active_with_balance:'активных с балансом',kpi_with_pending:'с задолженностью',kpi_active_with_debt:'активных с долгом',
+      snapshot_prev:'предыдущий снимок:',weekly_period_sub:'Оплачено за период / Начислено за период',
+      drivers_with_debt:'водителей с долгом',pending_label:'задолженность',recovered_label:'погашено',
+      above_avg:'выше среднего',below_avg:'ниже среднего',
+      chart_balance:'Накопленное сальдо',chart_charges_week:'Начисления недели',chart_payments_week:'Платежи недели'}
 };
 
 function t(k){return (T[LANG]||T.es)[k]||k;}
@@ -794,13 +809,13 @@ function renderKPIs(){
   setText('kpiPaid',fmtAmt(activePaid));
   setText('kpiPaidSub',t('kpi_sub_collected'));
   setText('kpiPending',fmtAmt(activePending));
-  setText('kpiPendingSub',activeWithDebt.length+' activos con saldo');
+  setText('kpiPendingSub',activeWithDebt.length+' '+t('kpi_active_with_balance'));
 
   // Row 2: active-only breakdown
   setText('kpiOpenBills',activeDrv);
-  setText('kpiOpenBillsSub',activeWithDebt.length+' con deuda pendiente');
+  setText('kpiOpenBillsSub',activeWithDebt.length+' '+t('kpi_with_pending'));
   setText('kpiActivePending',fmtAmt(activePending));
-  setText('kpiActivePendingSub',activeWithDebt.length+' activos con deuda');
+  setText('kpiActivePendingSub',activeWithDebt.length+' '+t('kpi_active_with_debt'));
   setText('kpiFiredDebt',activePct+'%');
   setText('kpiFiredDebtSub',fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
 
@@ -822,7 +837,7 @@ function renderKPIs(){
         del.style.color=diff>=0?'#34d399':'#f87171';
         del.style.border='1px solid '+(diff>=0?'#064e3b':'#7f1d1d');
         del.style.display='inline-block';
-        setText(subId,'snapshot anterior: '+prevPct+'%');
+        setText(subId,t('snapshot_prev')+' '+prevPct+'%');
       }
     }
   }
@@ -843,25 +858,25 @@ function renderKPIs(){
     var dPaid=snapPrev1.totalPaid-snapPrev2.totalPaid;
     if(dCharged>0)prevWeekPct=Math.round(dPaid/dCharged*100);
   }
-  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub','rbarWeeklyDelta',weekPct30,'Cobrado período actual / Facturado período actual',prevWeekPct);
-  setBar('rbarFired','rbarFiredFill','rbarFiredSub','rbarFiredDelta',firedExp,fmtAmt(firedPending)+' pendiente cesados',null);
+  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub','rbarWeeklyDelta',weekPct30,t('weekly_period_sub'),prevWeekPct);
+  setBar('rbarFired','rbarFiredFill','rbarFiredSub','rbarFiredDelta',firedExp,fmtAmt(firedPending)+' '+t('fired_pending'),null);
 
   // Recommended KPIs
   var withPending=DRIVERS.filter(function(d){return d.pending>0;});
   var avgPending=withPending.length>0?withPending.reduce(function(s,d){return s+d.pending;},0)/withPending.length:0;
   setText('scAvgPending',fmtAmt(avgPending));
-  setText('scAvgPendingSub',withPending.length+' conductores con deuda');
+  setText('scAvgPendingSub',withPending.length+' '+t('drivers_with_debt'));
 
   var topD=DRIVERS.slice().sort(function(a,b){return b.pending-a.pending;})[0];
-  if(topD){setText('scTopDebtor',topD.driver);setText('scTopDebtorSub',fmtAmt(topD.pending)+' pendiente');}
+  if(topD){setText('scTopDebtor',topD.driver);setText('scTopDebtorSub',fmtAmt(topD.pending)+' '+t('pending_label'));}
 
   var bestD=DRIVERS.filter(function(d){return d.amount>0&&d.pct>0;}).sort(function(a,b){return b.pct-a.pct;})[0];
-  if(bestD){setText('scBestPayer',bestD.driver);setText('scBestPayerSub',bestD.pct+'% recuperado');}
+  if(bestD){setText('scBestPayer',bestD.driver);setText('scBestPayerSub',bestD.pct+'% '+t('recovered_label'));}
 
   var trend=weekPct-totalPct;
   var trendStr=(trend>=0?'+':'')+trend+'pp';
   setText('scTrend',trendStr);
-  setText('scTrendSub',trend>=0?'por encima del promedio':'por debajo del promedio');
+  setText('scTrendSub',trend>=0?t('above_avg'):t('below_avg'));
 
   setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
 
@@ -1035,9 +1050,9 @@ function renderMixedChart(){
   _mixedChart=new Chart(document.getElementById('mixedChart'),{
     type:'bar',
     data:{labels:labels,datasets:[
-      {type:'line',label:'Saldo pendiente acumulado',data:balanceArr,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:false,tension:.4,pointRadius:3,pointHoverRadius:5,yAxisID:'y',borderWidth:2,order:0},
-      {type:'bar',label:'Cobros semana',data:chargedArr,backgroundColor:'rgba(248,113,113,.55)',borderColor:'#f87171',borderWidth:1,borderRadius:3,yAxisID:'y',order:1},
-      {type:'bar',label:'Pagos semana',data:paidArr,backgroundColor:'rgba(52,211,153,.45)',borderColor:'#34d399',borderWidth:1,borderRadius:3,yAxisID:'y',order:1}
+      {type:'line',label:t('chart_balance'),data:balanceArr,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',fill:false,tension:.4,pointRadius:3,pointHoverRadius:5,yAxisID:'y',borderWidth:2,order:0},
+      {type:'bar',label:t('chart_charges_week'),data:chargedArr,backgroundColor:'rgba(248,113,113,.55)',borderColor:'#f87171',borderWidth:1,borderRadius:3,yAxisID:'y',order:1},
+      {type:'bar',label:t('chart_payments_week'),data:paidArr,backgroundColor:'rgba(52,211,153,.45)',borderColor:'#34d399',borderWidth:1,borderRadius:3,yAxisID:'y',order:1}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
