@@ -6,6 +6,7 @@
 <title>Reporte de Flota GoCab</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
@@ -158,6 +159,17 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .err-title{font-size:17px;font-weight:700;color:#f87171}
 .err-msg{color:#9ca3af;max-width:500px;line-height:1.6;font-size:13px}
 .err-hint{background:#111827;border:1px solid #374151;border-radius:10px;padding:14px 18px;font-family:monospace;font-size:11px;color:#fbbf24;text-align:left;max-width:500px;white-space:pre-wrap;word-break:break-all}
+
+/* Data quality warning panel */
+.dq-panel{background:#130d02;border:1px solid #92400e88;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px}
+.dq-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.dq-body{flex:1;min-width:0}
+.dq-title{font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:5px}
+.dq-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px}
+.dq-item{font-size:11px;color:#d97706;line-height:1.5}
+.dq-item strong{color:#fbbf24}
+.dq-dismiss{background:none;border:none;color:#6b7280;cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0;margin-top:-2px}
+.dq-dismiss:hover{color:#9ca3af}
 </style>
 </head>
 <body>
@@ -194,6 +206,16 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       <div class="fx-badge" id="fxBadge">1 USD = $890 CLP</div>
       <span style="font-size:11px;color:#4b5563" data-i18n="refresh_hint">Para ver datos nuevos, recarga la página (F5)</span>
     </div>
+  </div>
+
+  <!-- Data quality warning panel (hidden until warnings exist) -->
+  <div id="dqPanel" class="dq-panel" style="display:none">
+    <div class="dq-icon">⚠️</div>
+    <div class="dq-body">
+      <div class="dq-title">Advertencia de calidad de datos</div>
+      <ul class="dq-list" id="dqList"></ul>
+    </div>
+    <button class="dq-dismiss" onclick="document.getElementById('dqPanel').style.display='none'" title="Cerrar">✕</button>
   </div>
 
   <!-- 6 KPI cards — layout matches original -->
@@ -341,11 +363,24 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 
   <!-- Tolls / Pórticos -->
   <div class="section card" id="tollsSection" style="display:none;margin-top:14px;border-color:#78350f44">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-      <div class="section-title" style="margin-bottom:0" data-i18n="tolls_title">Cargos de Pórticos</div>
-      <span class="meta-chip" data-i18n="tolls_sub">Solo conductores activos · separado de Bills · pendiente de cobrar</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="section-title" style="margin-bottom:0" data-i18n="tolls_title">Cargos de Pórticos</div>
+        <span class="meta-chip" data-i18n="tolls_sub">Solo conductores activos · separado de Bills · pendiente de cobrar</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input id="tollsFilter" type="text" class="filter-input"
+          placeholder="Buscar conductor..." oninput="applyTollsFilter()"
+          style="width:180px;padding:5px 10px;font-size:12px">
+        <button onclick="exportTollsExcel()" class="btn-act" style="background:#065f46;border-color:#065f46;gap:5px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span data-i18n="tolls_download">Descargar Excel</span>
+        </button>
+      </div>
     </div>
-    <div id="tollsTableWrap" class="pivot-scroll" style="margin-top:12px"></div>
+    <div id="tollsTableWrap" class="pivot-scroll"></div>
   </div>
 
   <!-- Active drivers table -->
@@ -430,6 +465,7 @@ var SNAPSHOTS = [];
 var DRIVERS = [];
 var TOLLS = null;          // { byPatente, allWeeks, totalByPatente }
 var FLEET_PLATE_MAP = {};  // normPlate → { conductorDisplay, conductorNorm }
+var _tollsFilter = '';     // driver name search string
 var FILTERED = [];
 var FLEET_NAMES = []; // normalized names from fleet control sheet
 var LANG = 'es';
@@ -498,7 +534,8 @@ var T = {
       chart_balance:'Saldo pendiente acumulado',chart_charges_week:'Cobros semana',chart_payments_week:'Pagos semana',
       tolls_title:'Cargos de Pórticos',tolls_sub:'Solo conductores activos · separado de Bills · pendiente de cobrar',
       tolls_col_conductor:'Conductor',tolls_col_plate:'Patente',tolls_col_total:'Total',
-      tolls_no_data:'Sin datos de pórticos para conductores activos.'},
+      tolls_no_data:'Sin datos de pórticos para conductores activos.',
+      tolls_filter:'Buscar conductor...',tolls_download:'Descargar Excel'},
   en:{title:'Fleet Debt Report',sub:'active and fired drivers',refresh:'Refresh',
       charged:'Charged',paid:'Paid',pending:'Pending',open_bills:'Open Bills',
       active_drivers:'Active Drivers',fired_drivers:'Fired Drivers',
@@ -540,7 +577,8 @@ var T = {
       chart_balance:'Accumulated pending balance',chart_charges_week:'Weekly charges',chart_payments_week:'Weekly payments',
       tolls_title:'Toll Charges',tolls_sub:'Active drivers only · separate from Bills · pending collection',
       tolls_col_conductor:'Driver',tolls_col_plate:'Plate',tolls_col_total:'Total',
-      tolls_no_data:'No toll data found for active drivers.'},
+      tolls_no_data:'No toll data found for active drivers.',
+      tolls_filter:'Search driver...',tolls_download:'Download Excel'},
   ru:{title:'Отчёт о долгах флота',sub:'активные и уволенные водители',refresh:'Обновить',
       charged:'Начислено',paid:'Оплачено',pending:'Задолженность',open_bills:'Открытые счета',
       active_drivers:'Активные водители',fired_drivers:'Уволенные водители',
@@ -582,7 +620,8 @@ var T = {
       chart_balance:'Накопленное сальдо',chart_charges_week:'Начисления недели',chart_payments_week:'Платежи недели',
       tolls_title:'Сборы на платных дорогах',tolls_sub:'Только активные водители · отдельно от Bills · ожидает списания',
       tolls_col_conductor:'Водитель',tolls_col_plate:'Номер',tolls_col_total:'Итого',
-      tolls_no_data:'Нет данных о сборах для активных водителей.'}
+      tolls_no_data:'Нет данных о сборах для активных водителей.',
+      tolls_filter:'Поиск водителя...',tolls_download:'Скачать Excel'}
 };
 
 function t(k){return (T[LANG]||T.es)[k]||k;}
@@ -694,6 +733,24 @@ async function loadData(){
     // Load tolls if available
     if(results[2].ok){
       TOLLS=await results[2].json().catch(function(){return null;});
+    }
+    // Render data-quality warnings if any files had suspicious data
+    var dataWarnings=billsJson.dataWarnings||[];
+    var dqPanel=document.getElementById('dqPanel');
+    var dqList=document.getElementById('dqList');
+    if(dataWarnings.length>0&&dqPanel&&dqList){
+      dqList.innerHTML='';
+      dataWarnings.forEach(function(w){
+        var li=document.createElement('li');li.className='dq-item';
+        var dateStr=w.date?new Date(w.date).toLocaleDateString('es-CL'):'';
+        li.innerHTML='<strong>'+esc(w.file)+'</strong>'+(dateStr?' ('+dateStr+')':'')
+          +' — '+w.emptyDriverPct+'% de '+w.totalRows+' registros sin conductor. '
+          +'<span style="color:#92400e">Reemplazá el archivo por uno con los campos completos.</span>';
+        dqList.appendChild(li);
+      });
+      dqPanel.style.display='flex';
+    }else if(dqPanel){
+      dqPanel.style.display='none';
     }
     aggregateDrivers();
     buildFilters();
@@ -1285,43 +1342,54 @@ function applyI18n(){
 }
 
 // ── Tolls Section ─────────────────────────────────────────────────────────────
-function renderTollsSection(){
-  var sec=document.getElementById('tollsSection');
-  var wrap=document.getElementById('tollsTableWrap');
-  if(!sec||!wrap)return;
-
-  if(!TOLLS||!TOLLS.byPatente||!TOLLS.allWeeks||!TOLLS.allWeeks.length){
-    sec.style.display='none';return;
-  }
-  sec.style.display='';
-
-  // Weeks: show all, sorted (API already sorts chronologically)
+function _buildTollsRows(){
+  if(!TOLLS||!TOLLS.byPatente||!TOLLS.allWeeks||!TOLLS.allWeeks.length)return[];
   var weeks=TOLLS.allWeeks;
-
-  // Rows: only fleet-active drivers that have toll data
   var rows=[];
   Object.keys(TOLLS.byPatente).forEach(function(normP){
     var fleet=FLEET_PLATE_MAP[normP];
-    if(!fleet)return; // patente not in fleet → skip
+    if(!fleet)return;
     var data=TOLLS.byPatente[normP];
     var total=weeks.reduce(function(s,wk){return s+(data[wk]||0);},0);
     if(total<=0)return;
     rows.push({plate:normP,display:data._rawPlate||normP,conductor:fleet.conductorDisplay,data:data,total:total});
   });
+  rows.sort(function(a,b){return b.total-a.total;});
+  return rows;
+}
+
+function applyTollsFilter(){
+  _tollsFilter=((document.getElementById('tollsFilter')||{}).value||'').toLowerCase().trim();
+  renderTollsSection();
+}
+
+function renderTollsSection(){
+  var sec=document.getElementById('tollsSection');
+  var wrap=document.getElementById('tollsTableWrap');
+  if(!sec||!wrap)return;
+
+  if(!TOLLS||!TOLLS.allWeeks||!TOLLS.allWeeks.length){sec.style.display='none';return;}
+  sec.style.display='';
+
+  var weeks=TOLLS.allWeeks;
+  var allRows=_buildTollsRows();
+
+  // Apply name filter
+  var rows=_tollsFilter
+    ?allRows.filter(function(r){return normalizeName(r.conductor).indexOf(normalizeName(_tollsFilter))!==-1;})
+    :allRows;
+
+  // Update placeholder text via i18n
+  var fi=document.getElementById('tollsFilter');
+  if(fi&&!fi.dataset.i18nDone){fi.placeholder=t('tolls_filter');fi.dataset.i18nDone='1';}
 
   if(!rows.length){
     wrap.innerHTML='<div style="color:#4b5563;font-size:13px;padding:12px 0">'+t('tolls_no_data')+'</div>';
     return;
   }
 
-  // Sort by total desc
-  rows.sort(function(a,b){return b.total-a.total;});
-
-  // Compute column totals
   var colTotals={};
-  weeks.forEach(function(wk){
-    colTotals[wk]=rows.reduce(function(s,r){return s+(r.data[wk]||0);},0);
-  });
+  weeks.forEach(function(wk){colTotals[wk]=rows.reduce(function(s,r){return s+(r.data[wk]||0);},0);});
   var grandTotal=rows.reduce(function(s,r){return s+r.total;},0);
 
   var html='<table class="pivot-table" style="min-width:600px"><thead><tr>'
@@ -1331,10 +1399,11 @@ function renderTollsSection(){
   html+='<th class="tot">'+t('tolls_col_total')+'</th></tr></thead><tbody>';
 
   rows.forEach(function(r){
-    html+='<tr><td style="font-weight:600">'+esc(r.conductor)+'</td><td style="color:#9ca3af;font-size:11px">'+esc(r.display)+'</td>';
+    html+='<tr><td style="font-weight:600">'+esc(r.conductor)+'</td>'
+      +'<td style="color:#9ca3af;font-size:11px">'+esc(r.display)+'</td>';
     weeks.forEach(function(wk){
       var v=r.data[wk]||0;
-      if(v>0) html+='<td class="clickable" style="color:#fbbf24">'+fmtAmt(v)+'</td>';
+      if(v>0) html+='<td style="color:#fbbf24">'+fmtAmt(v)+'</td>';
       else    html+='<td class="zero">—</td>';
     });
     html+='<td class="tot" style="color:#fbbf24;font-weight:700">'+fmtAmt(r.total)+'</td></tr>';
@@ -1349,6 +1418,37 @@ function renderTollsSection(){
   html+='</tbody></table>';
 
   wrap.innerHTML=html;
+}
+
+function exportTollsExcel(){
+  if(!TOLLS||!TOLLS.allWeeks)return;
+  var weeks=TOLLS.allWeeks;
+  var rows=_buildTollsRows();
+  if(!rows.length)return;
+
+  // Build sheet data array
+  var header=[t('tolls_col_conductor'),t('tolls_col_plate')].concat(weeks).concat([t('tolls_col_total')]);
+  var sheetData=[header];
+  rows.forEach(function(r){
+    var row=[r.conductor, r.display];
+    weeks.forEach(function(wk){row.push(r.data[wk]||0);});
+    row.push(r.total);
+    sheetData.push(row);
+  });
+  // Totals row
+  var totRow=[t('tolls_col_total'),''];
+  weeks.forEach(function(wk){totRow.push(rows.reduce(function(s,r){return s+(r.data[wk]||0);},0));});
+  totRow.push(rows.reduce(function(s,r){return s+r.total;},0));
+  sheetData.push(totRow);
+
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(sheetData);
+
+  // Column widths
+  ws['!cols']=[{wch:24},{wch:10}].concat(weeks.map(function(){return{wch:12};})).concat([{wch:14}]);
+
+  XLSX.utils.book_append_sheet(wb,ws,'Pórticos');
+  XLSX.writeFile(wb,'GoCab_Porticos_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 function renderAll(){

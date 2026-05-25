@@ -22,6 +22,47 @@ function parseAmount(val) {
   return isNaN(n) ? 0 : n;
 }
 
+// ── HTML-in-cells parser ───────────────────────────────────────────────────────
+// Some exports (e.g. GoCab billing system) dump a full HTML table into an Excel
+// where every row in column A is one line of raw HTML.  We detect this case and
+// parse the embedded table instead of treating the cells as normal data.
+
+function stripHtml(s) {
+  return String(s || '')
+    .replace(/<[^>]+>/g, '')        // remove all tags
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+}
+
+function isHtmlFile(rows) {
+  // Check if first few non-empty cells look like HTML markup
+  const sample = rows.slice(0, 10).flat().filter(Boolean).map(String);
+  return sample.some(c => /^<(tr|td|table|thead|tbody)/i.test(c.trim()));
+}
+
+function parseHtmlRows(rows) {
+  // Concatenate all cells into one HTML string
+  const html = rows.map(r => r.join('')).join('\n');
+
+  // Extract every <tr> block
+  const tableRows = [];
+  const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let trM;
+  while ((trM = trRe.exec(html)) !== null) {
+    const cells = [];
+    const tdRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;  // match <td> and <th>
+    let tdM;
+    while ((tdM = tdRe.exec(trM[1])) !== null) {
+      cells.push(stripHtml(tdM[1]));
+    }
+    if (cells.some(c => c)) tableRows.push(cells);
+  }
+  return tableRows;
+}
+
 export async function GET() {
   try {
     const auth = getAuth();
@@ -38,6 +79,7 @@ export async function GET() {
     const billsMap = new Map();      // ref → latest bill state
     const paymentEvents = [];        // payment deltas detected between file versions
     const snapshots = [];            // recovery-rate snapshot after each file
+    const dataWarnings = [];         // data-quality issues detected per file
 
     for (const file of files) {
       const name = file.name.toLowerCase();
@@ -49,9 +91,21 @@ export async function GET() {
       );
 
       const buffer = Buffer.from(fileRes.data);
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      let rows;
+      if (name.endsWith('.csv')) {
+        // CSV: read as text and split
+        const text = buffer.toString('utf-8');
+        const lines = text.split(/\r?\n/);
+        const delim = lines[0]?.includes(';') ? ';' : ',';
+        rows = lines.map(l => l.split(delim).map(c => c.replace(/^"|"$/g, '').trim()));
+      } else {
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      }
+
+      // Detect HTML-in-cells format and re-parse if needed
+      if (isHtmlFile(rows)) rows = parseHtmlRows(rows);
 
       if (rows.length < 2) continue;
       const header = rows[0].map((h) => String(h).toLowerCase().trim());
@@ -75,20 +129,31 @@ export async function GET() {
       const iDesc   = col(['description', 'descripción', 'descripcion']);
       const iDate   = col(['created at', 'created', 'fecha']);
 
+      let fileDataRows = 0;
+      let fileEmptyDriverRows = 0;
+
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const ref = iRef >= 0 ? String(row[iRef] || '') : String(i);
         if (!ref) continue;
 
+        const prev = billsMap.get(ref) || null;
+
         const newPaid    = parseAmount(iPaid >= 0 ? row[iPaid] : 0);
-        const newDriver  = iDriver >= 0 ? String(row[iDriver] || '').trim() : '';
-        const newVehicle = iVehicle >= 0 ? String(row[iVehicle] || '').trim() : '';
+        // Preserve driver/vehicle from the previous version of this bill when
+        // the current file has those fields empty (e.g. a re-export that omits columns).
+        const rawDriver  = iDriver >= 0 ? String(row[iDriver] || '').trim() : '';
+        const rawVehicle = iVehicle >= 0 ? String(row[iVehicle] || '').trim() : '';
+        const newDriver  = rawDriver  || (prev?.driver  || '');
+        const newVehicle = rawVehicle || (prev?.vehicle || '');
         const newType    = iType >= 0 ? String(row[iType] || '').trim() : '';
         const newAmount  = parseAmount(iAmount >= 0 ? row[iAmount] : 0);
 
+        fileDataRows++;
+        if (!rawDriver) fileEmptyDriverRows++;
+
         // Detect payment: paidAmount increased vs previous version of this bill
-        if (billsMap.has(ref)) {
-          const prev = billsMap.get(ref);
+        if (prev) {
           const delta = newPaid - prev.paidAmount;
           if (delta > 0) {
             paymentEvents.push({
@@ -116,6 +181,17 @@ export async function GET() {
         });
       }
 
+      // Data-quality check: flag files where driver column is mostly empty
+      if (fileDataRows >= 5 && fileEmptyDriverRows / fileDataRows > 0.8) {
+        dataWarnings.push({
+          file: file.name,
+          date: file.modifiedTime,
+          issue: 'empty_drivers',
+          emptyDriverPct: Math.round(fileEmptyDriverRows / fileDataRows * 100),
+          totalRows: fileDataRows,
+        });
+      }
+
       // Snapshot: total recovery state after processing this file
       let snapCharged = 0, snapPaid = 0;
       for (const bill of billsMap.values()) {
@@ -134,6 +210,7 @@ export async function GET() {
       bills: Array.from(billsMap.values()),
       paymentEvents,
       snapshots,
+      dataWarnings,
       sources: files.map((f) => f.name),
     });
   } catch (err) {
