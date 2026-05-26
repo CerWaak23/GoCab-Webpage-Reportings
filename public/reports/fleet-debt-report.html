@@ -350,10 +350,16 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   <div class="section card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
       <div>
-        <div class="section-title" id="evolTitle" style="margin-bottom:1px" data-i18n="evol_title">Evolución semanal de pagos</div>
-        <div style="font-size:10px;color:#4b5563" data-i18n="evol_sub">Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado hasta esa semana</div>
+        <div class="section-title" id="evolTitle" style="margin-bottom:1px">Evolución semanal de pagos</div>
+        <div style="font-size:10px;color:#4b5563" data-i18n="evol_sub">Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado</div>
       </div>
-      <div id="typeFilterChip" class="filter-chip" style="display:none;flex-shrink:0;margin-left:12px"></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div id="typeFilterChip" class="filter-chip" style="display:none;flex-shrink:0"></div>
+        <div class="sw-group">
+          <button id="evol-btn-weekly" onclick="setEvolPeriod('weekly')" class="active" data-i18n="period_weekly">Semanal</button>
+          <button id="evol-btn-daily" onclick="setEvolPeriod('daily')" data-i18n="period_daily">Diario</button>
+        </div>
+      </div>
     </div>
     <div class="evol-scroll">
       <table class="evol-table" id="evolTable"></table>
@@ -457,6 +463,7 @@ var LANG = 'es';
 var CUR = 'CLP';
 var _typeFilter = null;
 var _mcPeriod = 'weekly';
+var _evolPeriod = 'weekly';
 var _page = 1;
 var _sortKey = 'pending';
 var _sortDir = -1;
@@ -1097,6 +1104,14 @@ function setMcPeriod(p){
   document.getElementById('mc-btn-daily').classList.toggle('active',p==='daily');
   renderMixedChart();
 }
+function setEvolPeriod(p){
+  _evolPeriod=p;
+  document.getElementById('evol-btn-weekly').classList.toggle('active',p==='weekly');
+  document.getElementById('evol-btn-daily').classList.toggle('active',p==='daily');
+  var title=document.getElementById('evolTitle');
+  if(title)title.textContent=p==='daily'?'Evolución diaria de pagos':'Evolución semanal de pagos';
+  renderEvolTable();
+}
 
 function renderMixedChart(){
   // Active drivers only — fired shown separately in Despedidos section
@@ -1207,10 +1222,16 @@ function renderEvolTable(){
   var activeSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
 
+  function evolLabel(d){
+    if(_evolPeriod==='daily')return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    return getWeekKey(d);
+  }
+
   srcBills.forEach(function(b){
     var drv=normalizeName(b.driver);
     if(!activeSet[drv])return;
-    var d=parseDate(b.createdAt);var wk=getWeekKey(d);if(!wk)return;
+    var d=parseDate(b.createdAt);if(!d)return;
+    var wk=evolLabel(d);if(!wk)return;
     if(!chargeMap[wk]){chargeMap[wk]={};weekDates[wk]=d;}
     chargeMap[wk][drv]=(chargeMap[wk][drv]||0)+parseAmt(b.amount);
     driverSet[drv]=true;
@@ -1220,7 +1241,8 @@ function renderEvolTable(){
   srcPayments.forEach(function(p){
     var drv=normalizeName(p.driver);
     if(!activeSet[drv])return;
-    var d=new Date(p.date);var wk=getWeekKey(d);if(!wk)return;
+    var d=new Date(p.date);if(!d||isNaN(d))return;
+    var wk=evolLabel(d);if(!wk)return;
     if(!payMap[wk])payMap[wk]={};
     if(!weekDates[wk])weekDates[wk]=d;
     payMap[wk][drv]=(payMap[wk][drv]||0)+p.amount;
@@ -1233,7 +1255,7 @@ function renderEvolTable(){
   Object.keys(payMap).forEach(function(w){allWeekSet[w]=true;});
   var allWeeks=Object.keys(allWeekSet).sort(function(a,b){
     var da=weekDates[a]||new Date(0),db=weekDates[b]||new Date(0);return da-db;
-  }).slice(-8);
+  }).slice(_evolPeriod==='daily'?-14:-8);
 
   var allDrivers=Object.keys(driverSet);
   if(!allWeeks.length||!allDrivers.length){
