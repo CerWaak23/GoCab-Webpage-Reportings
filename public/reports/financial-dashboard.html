@@ -664,8 +664,9 @@ function deltaHtml(val, isPercent) {
 }
 
 // ── Data Parsing ──────────────────────────────────────────────────────────────
-function parseRows(raw) {
+function parseRows(raw, hyperlinks) {
   if (!raw || raw.length < 2) return [];
+  hyperlinks = hyperlinks || [];
 
   // Find Table 2 header row (contains "payment status" or "month period")
   var headerIdx = 0;
@@ -697,7 +698,8 @@ function parseRows(raw) {
   var iDocLink = ci(['document link','doc link','link','comprobante']);
   var iDocNum  = ci(['document number','doc number','numero documento','number']);
 
-  return raw.slice(headerIdx + 1).map(function(r) {
+  return raw.slice(headerIdx + 1).map(function(r, idx) {
+    var hRow = hyperlinks[headerIdx + 1 + idx] || [];
     var dateStr = iFecha >= 0 ? String(r[iFecha]||'') : '';
     // Prefer Month Period column (human-set, unambiguous); fall back to date parsing
     var monthKey = (iMes >= 0 && r[iMes]) ? englishMonthToYYYYMM(String(r[iMes])) : null;
@@ -706,6 +708,9 @@ function parseRows(raw) {
     var _ts = 0;
     if (dateStr) { var _pd = new Date(dateStr); if (!isNaN(_pd)) _ts = _pd.getTime(); }
     if (!_ts && monthKey) _ts = new Date(monthKey+'-01').getTime();
+    // Document link: prefer embedded hyperlink URL over plain text value
+    var docLinkText = iDocLink>=0 ? String(r[iDocLink]||'').trim() : '';
+    var docLinkUrl  = iDocLink>=0 ? (hRow[iDocLink] || '') : '';
     return {
       date:     dateStr,
       month:    monthKey || '',
@@ -717,7 +722,7 @@ function parseRows(raw) {
       status:   iEstado>=0  ? String(r[iEstado]||'')  : '',
       entity:   iEntidad>=0 ? String(r[iEntidad]||'') : '',
       bank:     iBanco>=0   ? String(r[iBanco]||'')   : '',
-      docLink:  iDocLink>=0 ? String(r[iDocLink]||'').trim() : '',
+      docLink:  docLinkUrl || docLinkText,   // real URL if available, else filename
       docNum:   iDocNum>=0  ? String(r[iDocNum]||'').trim()  : '',
     };
   }).filter(function(r){ return r.month && (r.cashIn > 0 || r.cashOut > 0); });
@@ -742,7 +747,7 @@ async function loadData() {
     ]);
     var sheetJson = await sheetRes.json();
     if (sheetJson.error) { showError(sheetJson.error); return; }
-    RAW = parseRows(sheetJson.rows || []);
+    RAW = parseRows(sheetJson.rows || [], sheetJson.hyperlinks || []);
 
     SUMUP = {};
     SUMUP_RETIROS = 0;
