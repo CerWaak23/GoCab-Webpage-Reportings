@@ -14,16 +14,35 @@ function getAuth() {
   });
 }
 
-// Parse "$285,79" → 285.79
+// Parse value from XLSX cell → CLP number
+// Handles: JS number (285.79), "$285,79" string, "28579" string
 function parseValor(val) {
-  if (!val) return 0;
-  const n = parseFloat(String(val).replace(/\$/g, '').replace(/\./g, '').replace(',', '.').trim());
+  if (val === null || val === undefined || val === '') return 0;
+  // XLSX often returns numbers directly — use as-is
+  if (typeof val === 'number') return val;
+  const s = String(val).trim();
+  // Remove $ symbol; only remove dots that look like thousand separators
+  // (dot followed by exactly 3 digits); replace comma decimal with period
+  const cleaned = s
+    .replace(/\$/g, '')
+    .replace(/\.(?=\d{3}(?:[,\s]|$))/g, '')  // thousand-sep dots
+    .replace(',', '.');
+  const n = parseFloat(cleaned);
   return isNaN(n) ? 0 : n;
 }
 
-// Parse "27-02-2026 18:25" (DD-MM-YYYY HH:MM) → Date
+// Parse date from XLSX cell → Date
+// Handles: Excel serial number (46080.768…), "27-02-2026 18:25" string, JS Date
 function parseFecha(s) {
   if (!s) return null;
+  // Already a JS Date (e.g. if XLSX was read with cellDates:true)
+  if (s instanceof Date) return isNaN(s) ? null : s;
+  // Numeric Excel serial date (e.g. 46080.768)
+  const num = typeof s === 'number' ? s : parseFloat(String(s));
+  if (!isNaN(num) && num > 40000 && num < 60000) {
+    // Excel epoch offset: serial 25569 = 1970-01-01 UTC
+    return new Date((num - 25569) * 86400 * 1000);
+  }
   const str = String(s).trim();
   // DD-MM-YYYY HH:MM or DD-MM-YYYY
   const m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
@@ -63,7 +82,6 @@ export async function GET() {
     // byPatente[normPlate] = { [weekKey]: totalCLP, _rawPlate }
     const byPatente = {};
     const weekDates = {}; // weekKey → Date (for sorting)
-    const _debug = []; // temporary: header info per file
 
     for (const file of files) {
       const name = file.name.toLowerCase();
@@ -97,14 +115,6 @@ export async function GET() {
         }
       }
       const header = headerIdx === -1 ? [] : rows[headerIdx].map(h => String(h).toLowerCase().trim());
-      _debug.push({
-        file: file.name,
-        headerIdx,
-        header: header.slice(0, 20),
-        row0: (rows[0] || []).slice(0, 10).map(String),
-        row14: (rows[14] || []).slice(0, 10).map(String),
-        totalRows: rows.length,
-      });
 
       if (headerIdx === -1) continue;
 
@@ -159,7 +169,6 @@ export async function GET() {
       allWeeks,
       totalByPatente,
       sources: files.map(f => f.name),
-      _debug,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
