@@ -170,6 +170,22 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .dq-item strong{color:#fbbf24}
 .dq-dismiss{background:none;border:none;color:#6b7280;cursor:pointer;font-size:16px;line-height:1;padding:0;flex-shrink:0;margin-top:-2px}
 .dq-dismiss:hover{color:#9ca3af}
+
+/* Tolls pivot table — mirrors evol-table style */
+.pivot-scroll{overflow-x:auto;margin-top:4px}
+.pivot-table{border-collapse:collapse;font-size:11px;white-space:nowrap;width:100%}
+.pivot-table th{background:#0f1623;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:6px 10px;border:1px solid #1a2030;text-align:right;white-space:nowrap}
+.pivot-table th:first-child{text-align:left;position:sticky;left:0;z-index:2;background:#0f1623;min-width:140px}
+.pivot-table td{padding:5px 10px;border:1px solid #1a2030;text-align:right;white-space:nowrap;vertical-align:middle}
+.pivot-table td:first-child{text-align:left;position:sticky;left:0;background:#111827;z-index:1;min-width:140px}
+.pivot-table tr:hover td{background:#0d1420}
+.pivot-table tr:hover td:first-child{background:#0d1420}
+.pivot-table tfoot td{background:#0f1a2a!important;font-weight:700;color:#f9fafb;border:1px solid #1a2030}
+.pivot-table tfoot td:first-child{background:#0f1a2a!important;position:sticky;left:0;z-index:1}
+.pivot-table .p-zero{color:#374151}
+.pivot-table .p-tot{font-weight:700}
+.p-name{font-weight:600;font-size:11px;color:#d1d5db;white-space:nowrap}
+.p-plate{font-size:10px;color:#6b7280;margin-top:1px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1361,30 +1377,31 @@ function renderTollsSection(){
   weeks.forEach(function(wk){colTotals[wk]=rows.reduce(function(s,r){return s+(r.data[wk]||0);},0);});
   var grandTotal=rows.reduce(function(s,r){return s+r.total;},0);
 
-  var html='<table class="pivot-table" style="min-width:600px"><thead><tr>'
-    +'<th>'+t('tolls_col_conductor')+'</th>'
-    +'<th>'+t('tolls_col_plate')+'</th>';
+  var html='<div class="pivot-scroll"><table class="pivot-table"><thead><tr>'
+    +'<th>'+t('tolls_col_conductor')+'</th>';
   weeks.forEach(function(wk){html+='<th>'+esc(wk)+'</th>';});
-  html+='<th class="tot">'+t('tolls_col_total')+'</th></tr></thead><tbody>';
+  html+='<th class="p-tot">'+t('tolls_col_total')+'</th></tr></thead><tbody>';
 
   rows.forEach(function(r){
-    html+='<tr><td style="font-weight:600">'+esc(r.conductor)+'</td>'
-      +'<td style="color:#9ca3af;font-size:11px">'+esc(r.display)+'</td>';
+    html+='<tr><td>'
+      +'<div class="p-name">'+esc(r.conductor)+'</div>'
+      +'<div class="p-plate">'+esc(r.display)+'</div>'
+      +'</td>';
     weeks.forEach(function(wk){
       var v=r.data[wk]||0;
-      if(v>0) html+='<td style="color:#fbbf24;white-space:nowrap">'+fmtShort(v)+'</td>';
-      else    html+='<td class="zero">—</td>';
+      if(v>0) html+='<td style="color:#fbbf24">'+fmtShort(v)+'</td>';
+      else    html+='<td class="p-zero">—</td>';
     });
-    html+='<td class="tot" style="color:#fbbf24;font-weight:700;white-space:nowrap">'+fmtAmt(r.total)+'</td></tr>';
+    html+='<td class="p-tot" style="color:#fbbf24">'+fmtAmt(r.total)+'</td></tr>';
   });
 
-  // Totals row
-  html+='<tr><td class="tot" colspan="2" style="font-weight:700">'+t('tolls_col_total')+'</td>';
+  // Totals footer row
+  html+='</tbody><tfoot><tr><td class="p-tot">'+t('tolls_col_total')+'</td>';
   weeks.forEach(function(wk){
-    html+='<td class="tot" style="white-space:nowrap">'+(colTotals[wk]>0?fmtShort(colTotals[wk]):'—')+'</td>';
+    html+='<td class="p-tot">'+(colTotals[wk]>0?fmtShort(colTotals[wk]):'—')+'</td>';
   });
-  html+='<td class="tot" style="font-weight:700;white-space:nowrap">'+fmtAmt(grandTotal)+'</td></tr>';
-  html+='</tbody></table>';
+  html+='<td class="p-tot">'+fmtAmt(grandTotal)+'</td></tr></tfoot>';
+  html+='</table></div>';
 
   wrap.innerHTML=html;
 }
