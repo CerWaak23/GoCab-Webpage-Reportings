@@ -249,6 +249,30 @@ a{color:inherit;text-decoration:none}
     </div>
   </div>
 
+  <!-- SECCIÓN: Detalle de Ingresos -->
+  <div class="card" style="margin-top:14px">
+    <div class="section-title">
+      <span data-i18n="sec_ingresos_det">Detalle de Ingresos</span>
+      <span class="meta-chip" data-i18n="sec_ingresos_det_meta">Más reciente primero · excluye transferencias internas</span>
+    </div>
+    <div class="txn-scroll">
+      <table class="txn-table">
+        <thead>
+          <tr>
+            <th data-i18n="col_fecha">Fecha</th>
+            <th data-i18n="col_mes">Mes</th>
+            <th data-i18n="col_proveedor">Proveedor</th>
+            <th data-i18n="col_desc">Descripción</th>
+            <th style="text-align:right" data-i18n="col_ingreso">Ingreso</th>
+            <th data-i18n="col_estado">Estado</th>
+            <th data-i18n="col_doc">Comprobante</th>
+          </tr>
+        </thead>
+        <tbody id="incomeBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- SECCIÓN: Top egresos -->
   <div class="card" style="margin-bottom:14px">
     <div class="section-title" data-i18n="sec_top_egresos">Top egresos por proveedor</div>
@@ -292,6 +316,7 @@ a{color:inherit;text-decoration:none}
             <th data-i18n="col_fecha">Fecha</th><th data-i18n="col_mes">Mes</th><th data-i18n="col_proveedor">Proveedor</th><th data-i18n="col_desc">Descripción</th>
             <th style="text-align:right" data-i18n="col_ingreso">Ingreso</th><th style="text-align:right" data-i18n="col_egreso">Egreso</th>
             <th data-i18n="col_estado">Estado</th><th data-i18n="col_entidad">Entidad</th><th data-i18n="col_banco">Banco</th>
+            <th data-i18n="col_doc">Comprobante</th>
           </tr>
         </thead>
         <tbody id="txnBody"></tbody>
@@ -351,6 +376,9 @@ var T = {
     flt_clear:'Limpiar',
     col_fecha:'Fecha', col_mes:'Mes', col_proveedor:'Proveedor', col_desc:'Descripción',
     col_ingreso:'Ingreso', col_egreso:'Egreso', col_estado:'Estado', col_entidad:'Entidad', col_banco:'Banco',
+    col_doc:'Comprobante',
+    sec_ingresos_det:'Detalle de Ingresos',
+    sec_ingresos_det_meta:'Más reciente primero · excluye transferencias internas',
     btn_prev:'Anterior', btn_next:'Siguiente',
     kpi_total_ingresos:'Total Ingresos', kpi_total_egresos:'Total Egresos',
     kpi_cobertura:'Cobertura', kpi_burn_earn:'Burn / Earn',
@@ -420,6 +448,9 @@ var T = {
     flt_clear:'Clear',
     col_fecha:'Date', col_mes:'Month', col_proveedor:'Supplier', col_desc:'Description',
     col_ingreso:'Income', col_egreso:'Expense', col_estado:'Status', col_entidad:'Entity', col_banco:'Bank',
+    col_doc:'Receipt',
+    sec_ingresos_det:'Income Detail',
+    sec_ingresos_det_meta:'Most recent first · excludes internal transfers',
     btn_prev:'Previous', btn_next:'Next',
     kpi_total_ingresos:'Total Income', kpi_total_egresos:'Total Expenses',
     kpi_cobertura:'Coverage', kpi_burn_earn:'Burn / Earn',
@@ -489,6 +520,9 @@ var T = {
     flt_clear:'Очистить',
     col_fecha:'Дата', col_mes:'Месяц', col_proveedor:'Поставщик', col_desc:'Описание',
     col_ingreso:'Доход', col_egreso:'Расход', col_estado:'Статус', col_entidad:'Организация', col_banco:'Банк',
+    col_doc:'Квитанция',
+    sec_ingresos_det:'Детализация доходов',
+    sec_ingresos_det_meta:'Сначала последние · без внутренних переводов',
     btn_prev:'Назад', btn_next:'Вперёд',
     kpi_total_ingresos:'Общий доход', kpi_total_egresos:'Общие расходы',
     kpi_cobertura:'Покрытие', kpi_burn_earn:'Burn / Earn',
@@ -660,15 +694,22 @@ function parseRows(raw) {
   var iEstado  = ci(['payment status','estado','status']);
   var iEntidad = ci(['payment entity','entidad','entity']);
   var iBanco   = ci(['payment bank','banco','bank']);
+  var iDocLink = ci(['document link','doc link','link','comprobante']);
+  var iDocNum  = ci(['document number','doc number','numero documento','number']);
 
   return raw.slice(headerIdx + 1).map(function(r) {
     var dateStr = iFecha >= 0 ? String(r[iFecha]||'') : '';
     // Prefer Month Period column (human-set, unambiguous); fall back to date parsing
     var monthKey = (iMes >= 0 && r[iMes]) ? englishMonthToYYYYMM(String(r[iMes])) : null;
     if (!monthKey) monthKey = dateStr ? dateToYYYYMM(dateStr) : null;
+    // Store a sortable timestamp from the date string
+    var _ts = 0;
+    if (dateStr) { var _pd = new Date(dateStr); if (!isNaN(_pd)) _ts = _pd.getTime(); }
+    if (!_ts && monthKey) _ts = new Date(monthKey+'-01').getTime();
     return {
       date:     dateStr,
       month:    monthKey || '',
+      _ts:      _ts,
       supplier: iProv>=0    ? String(r[iProv]||'')    : '',
       desc:     iDesc>=0    ? String(r[iDesc]||'')    : '',
       cashIn:   iIngreso>=0 ? parseAmt(r[iIngreso])   : 0,
@@ -676,6 +717,8 @@ function parseRows(raw) {
       status:   iEstado>=0  ? String(r[iEstado]||'')  : '',
       entity:   iEntidad>=0 ? String(r[iEntidad]||'') : '',
       bank:     iBanco>=0   ? String(r[iBanco]||'')   : '',
+      docLink:  iDocLink>=0 ? String(r[iDocLink]||'').trim() : '',
+      docNum:   iDocNum>=0  ? String(r[iDocNum]||'').trim()  : '',
     };
   }).filter(function(r){ return r.month && (r.cashIn > 0 || r.cashOut > 0); });
 }
@@ -1120,6 +1163,31 @@ function renderPivotTables() {
   _renderPivot('variableTable',  varr.slice(0,25), bs, allM);
 }
 
+// ── Income Table ──────────────────────────────────────────────────────────────
+function renderIncomeTable() {
+  var tbody = document.getElementById('incomeBody'); if (!tbody) return;
+  // Income rows: cashIn > 0, exclude Internal (SumUp→Bank transfers)
+  var rows = RAW
+    .filter(function(r){ return r.cashIn > 0 && r.status !== 'Internal'; })
+    .sort(function(a,b){ return b._ts - a._ts; });
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#4b5563;padding:24px">'+t('txn_sin_res')+'</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(function(r){
+    return '<tr>'
+      +'<td>'+esc2(r.date)+'</td>'
+      +'<td style="white-space:nowrap">'+esc2(yyyymmToLabel(r.month))+'</td>'
+      +'<td>'+esc2(r.supplier)+'</td>'
+      +'<td style="color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc2(r.desc)+'">'+esc2(r.desc)+'</td>'
+      +'<td class="amt-in">'+fmtAmt(r.cashIn)+'</td>'
+      +'<td><span class="badge '+statusCls(r.status)+'">'+esc2(r.status)+'</span></td>'
+      +'<td>'+docLinkHtml(r)+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
 // ── Transaction Table ─────────────────────────────────────────────────────────
 function statusCls(s) {
   switch(s) {
@@ -1131,16 +1199,32 @@ function statusCls(s) {
   }
 }
 
+function docLinkHtml(r) {
+  if (!r.docLink) return '<span style="color:#374151">—</span>';
+  var label = r.docNum || r.docLink;
+  // Truncate long labels
+  var short = label.length > 22 ? label.slice(0,20)+'…' : label;
+  if (r.docLink.indexOf('http') === 0) {
+    return '<a href="'+esc2(r.docLink)+'" target="_blank" rel="noopener" '
+      +'style="color:#60a5fa;font-size:11px;text-decoration:none" title="'+esc2(label)+'">'
+      +'🔗 '+esc2(short)+'</a>';
+  }
+  // Plain filename — show as greyed label with title
+  return '<span style="color:#6b7280;font-size:11px" title="'+esc2(label)+'">📄 '+esc2(short)+'</span>';
+}
+
 function renderTxnTable(rows) {
-  var total=rows.length;
+  // Sort newest first
+  var sorted = rows.slice().sort(function(a,b){ return b._ts - a._ts; });
+  var total=sorted.length;
   var pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
   if(_page>pages)_page=pages;
   var start=(_page-1)*PAGE_SIZE;
-  var slice=rows.slice(start,start+PAGE_SIZE);
+  var slice=sorted.slice(start,start+PAGE_SIZE);
   var tbody=document.getElementById('txnBody'); if(!tbody) return;
 
   if(!slice.length){
-    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#4b5563;padding:24px">'+t('txn_sin_res')+'</td></tr>';
+    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:#4b5563;padding:24px">'+t('txn_sin_res')+'</td></tr>';
   } else {
     tbody.innerHTML=slice.map(function(r){
       var bankHtml = isIntl(r)
@@ -1150,12 +1234,13 @@ function renderTxnTable(rows) {
         +'<td>'+esc2(r.date)+'</td>'
         +'<td style="white-space:nowrap">'+esc2(yyyymmToLabel(r.month))+'</td>'
         +'<td>'+esc2(r.supplier)+'</td>'
-        +'<td style="color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc2(r.desc)+'">'+esc2(r.desc)+'</td>'
+        +'<td style="color:#6b7280;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc2(r.desc)+'">'+esc2(r.desc)+'</td>'
         +'<td class="'+(r.cashIn>0?'amt-in':'amt-zero')+'">'+(r.cashIn>0?fmtAmt(r.cashIn):'')+'</td>'
         +'<td class="'+(r.cashOut>0?'amt-out':'amt-zero')+'">'+(r.cashOut>0?fmtAmt(r.cashOut):'')+'</td>'
         +'<td><span class="badge '+statusCls(r.status)+'">'+esc2(r.status)+'</span></td>'
         +'<td style="color:#6b7280">'+esc2(r.entity)+'</td>'
         +'<td>'+bankHtml+'</td>'
+        +'<td>'+docLinkHtml(r)+'</td>'
         +'</tr>';
     }).join('');
   }
@@ -1331,6 +1416,7 @@ function renderAll(){
   renderCovChart();
   renderOpChart();
   renderIncomeDonut();
+  renderIncomeTable();
   renderBarChart();
   renderPivotTables();
   renderTxnTable(getFiltered());
