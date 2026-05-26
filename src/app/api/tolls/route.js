@@ -58,7 +58,7 @@ function getWeekKey(d) {
   const wn = Math.floor((d - epoch) / msPerWeek);
   const weekStart = new Date(epoch.getTime() + wn * msPerWeek);
   const mn = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `W${weekStart.getDate()}/${mn[weekStart.getMonth()]}`;
+  return `${weekStart.getDate()} ${mn[weekStart.getMonth()]}`;
 }
 
 // Normalize plate for comparison: uppercase, no dashes/spaces

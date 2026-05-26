@@ -651,7 +651,7 @@ function getWeekKey(d){
   var wn=Math.floor((d-epoch)/msPerWeek);
   var weekStart=new Date(epoch.getTime()+wn*msPerWeek);
   var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return 'W'+weekStart.getDate()+'/'+mn[weekStart.getMonth()];
+  return weekStart.getDate()+' '+mn[weekStart.getMonth()];
 }
 
 // Normalize a license plate: uppercase, remove dashes and spaces
