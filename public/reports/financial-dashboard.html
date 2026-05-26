@@ -265,7 +265,6 @@ a{color:inherit;text-decoration:none}
             <th data-i18n="col_desc">Descripción</th>
             <th style="text-align:right" data-i18n="col_ingreso">Ingreso</th>
             <th data-i18n="col_estado">Estado</th>
-            <th data-i18n="col_doc">Comprobante</th>
           </tr>
         </thead>
         <tbody id="incomeBody"></tbody>
@@ -316,7 +315,6 @@ a{color:inherit;text-decoration:none}
             <th data-i18n="col_fecha">Fecha</th><th data-i18n="col_mes">Mes</th><th data-i18n="col_proveedor">Proveedor</th><th data-i18n="col_desc">Descripción</th>
             <th style="text-align:right" data-i18n="col_ingreso">Ingreso</th><th style="text-align:right" data-i18n="col_egreso">Egreso</th>
             <th data-i18n="col_estado">Estado</th><th data-i18n="col_entidad">Entidad</th><th data-i18n="col_banco">Banco</th>
-            <th data-i18n="col_doc">Comprobante</th>
           </tr>
         </thead>
         <tbody id="txnBody"></tbody>
@@ -1188,7 +1186,6 @@ function renderIncomeTable() {
       +'<td style="color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc2(r.desc)+'">'+esc2(r.desc)+'</td>'
       +'<td class="amt-in">'+fmtAmt(r.cashIn)+'</td>'
       +'<td><span class="badge '+statusCls(r.status)+'">'+esc2(r.status)+'</span></td>'
-      +'<td>'+docLinkHtml(r)+'</td>'
       +'</tr>';
   }).join('');
 }
@@ -1204,19 +1201,6 @@ function statusCls(s) {
   }
 }
 
-function docLinkHtml(r) {
-  if (!r.docLink) return '<span style="color:#374151">—</span>';
-  var label = r.docNum || r.docLink;
-  // Truncate long labels
-  var short = label.length > 22 ? label.slice(0,20)+'…' : label;
-  if (r.docLink.indexOf('http') === 0) {
-    return '<a href="'+esc2(r.docLink)+'" target="_blank" rel="noopener" '
-      +'style="color:#60a5fa;font-size:11px;text-decoration:none" title="'+esc2(label)+'">'
-      +'🔗 '+esc2(short)+'</a>';
-  }
-  // Plain filename — show as greyed label with title
-  return '<span style="color:#6b7280;font-size:11px" title="'+esc2(label)+'">📄 '+esc2(short)+'</span>';
-}
 
 function renderTxnTable(rows) {
   // Sort newest first
@@ -1229,7 +1213,7 @@ function renderTxnTable(rows) {
   var tbody=document.getElementById('txnBody'); if(!tbody) return;
 
   if(!slice.length){
-    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:#4b5563;padding:24px">'+t('txn_sin_res')+'</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#4b5563;padding:24px">'+t('txn_sin_res')+'</td></tr>';
   } else {
     tbody.innerHTML=slice.map(function(r){
       var bankHtml = isIntl(r)
@@ -1245,7 +1229,6 @@ function renderTxnTable(rows) {
         +'<td><span class="badge '+statusCls(r.status)+'">'+esc2(r.status)+'</span></td>'
         +'<td style="color:#6b7280">'+esc2(r.entity)+'</td>'
         +'<td>'+bankHtml+'</td>'
-        +'<td>'+docLinkHtml(r)+'</td>'
         +'</tr>';
     }).join('');
   }
