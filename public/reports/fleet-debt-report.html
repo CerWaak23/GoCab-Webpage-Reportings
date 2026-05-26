@@ -1138,6 +1138,20 @@ function renderMixedChart(){
     buckets[label].paid+=p.amount;
   });
 
+  // Anchor every file-upload date on the X axis even when paidAmount didn't change.
+  // This way the chart always extends to the latest upload date with a visible point.
+  SNAPSHOTS.forEach(function(snap){
+    var d=new Date(snap.date);if(!d||isNaN(d))return;
+    var label;
+    if(_mcPeriod==='daily'){
+      label=d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    } else {
+      label=getWeekKey(d);
+    }
+    if(!buckets[label])buckets[label]={charged:0,paid:0,_date:d};
+    else if(d>buckets[label]._date)buckets[label]._date=d;
+  });
+
   var labels=Object.keys(buckets).sort(function(a,b){return buckets[a]._date-buckets[b]._date;});
   var chargedArr=[],paidArr=[],balanceArr=[];
   var running=0;
