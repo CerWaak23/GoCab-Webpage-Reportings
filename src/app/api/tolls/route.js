@@ -132,6 +132,11 @@ export async function GET() {
 
       if (iPatente === -1 || iValor === -1 || iFecha === -1) continue;
 
+      // Per-file accumulator — prevents double-counting when files are cumulative
+      // (e.g. "Mayo Recurrente" contains all passages since Jan, not just May)
+      const fileAccum = {};
+      const fileRawPlate = {};
+
       for (let i = headerIdx + 1; i < rows.length; i++) {
         const row = rows[i];
         const rawPlate = String(row[iPatente] || '').trim();
@@ -147,11 +152,21 @@ export async function GET() {
         const wk = fecha ? getWeekKey(fecha) : null;
         if (!wk) continue;
 
-        if (!byPatente[plate]) byPatente[plate] = { _rawPlate: rawPlate };
-        byPatente[plate][wk] = (byPatente[plate][wk] || 0) + valor;
+        if (!fileAccum[plate]) { fileAccum[plate] = {}; fileRawPlate[plate] = rawPlate; }
+        fileAccum[plate][wk] = (fileAccum[plate][wk] || 0) + valor;
 
         if (!weekDates[wk]) weekDates[wk] = fecha;
         else if (fecha < weekDates[wk]) weekDates[wk] = fecha;
+      }
+
+      // Merge into global byPatente: take the max across files for each plate+week.
+      // If files are cumulative, the newest (largest) file wins per period.
+      // If files are period-specific, there is no overlap and max == the value.
+      for (const [plate, wkMap] of Object.entries(fileAccum)) {
+        if (!byPatente[plate]) byPatente[plate] = { _rawPlate: fileRawPlate[plate] };
+        for (const [wk, val] of Object.entries(wkMap)) {
+          byPatente[plate][wk] = Math.max(byPatente[plate][wk] || 0, val);
+        }
       }
     }
 
