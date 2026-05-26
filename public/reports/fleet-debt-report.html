@@ -1104,6 +1104,8 @@ function renderMixedChart(){
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
 
   var buckets={};
+
+  // Charges bucketed by bill createdAt date
   BILLS.forEach(function(b){
     if(!b.createdAt)return;
     var d=parseDate(b.createdAt);if(!d)return;
@@ -1117,7 +1119,23 @@ function renderMixedChart(){
     }
     if(!buckets[label])buckets[label]={charged:0,paid:0,_date:d};
     buckets[label].charged+=parseAmt(b.amount);
-    buckets[label].paid+=parseAmt(b.paidAmount);
+  });
+
+  // Payments bucketed by actual payment date (file upload date = when paidAmount delta was detected).
+  // This is the same approach as the evolution table, so both charts stay in sync.
+  PAYMENT_EVENTS.forEach(function(p){
+    var drvKey=normalizeName(p.driver);
+    if(!activeSet[drvKey])return;
+    var d=new Date(p.date);if(!d||isNaN(d))return;
+    var label;
+    if(_mcPeriod==='daily'){
+      label=d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    } else {
+      label=getWeekKey(d);
+    }
+    if(!buckets[label])buckets[label]={charged:0,paid:0,_date:d};
+    else if(d>buckets[label]._date)buckets[label]._date=d; // keep latest date for sort stability
+    buckets[label].paid+=p.amount;
   });
 
   var labels=Object.keys(buckets).sort(function(a,b){return buckets[a]._date-buckets[b]._date;});
