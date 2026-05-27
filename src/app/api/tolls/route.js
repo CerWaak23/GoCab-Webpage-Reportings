@@ -36,7 +36,8 @@ function parseFecha(s) {
     return new Date((num - 25569) * 86400 * 1000);
   }
   const str = String(s).trim();
-  const m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  // DD-MM-YYYY or DD/MM/YYYY, optional HH:MM or HH:MM:SS
+  const m = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::\d{2})?)?/);
   if (!m) return null;
   return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
 }
@@ -92,7 +93,9 @@ export async function GET() {
       } else {
         const wb = XLSX.read(buffer, { type: 'buffer' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        // raw:false → returns formatted cell strings (e.g. "719,04") instead of
+        // raw internal integers (71904 centavos). parseValor handles Chilean comma-decimal.
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
       }
 
       // Find header row
