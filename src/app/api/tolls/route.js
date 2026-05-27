@@ -82,6 +82,7 @@ export async function GET() {
     // byPatente[normPlate] = { [weekKey]: totalCLP, _rawPlate }
     const byPatente = {};
     const weekDates = {}; // weekKey → Date (for sorting)
+    const _debugFiles = []; // temporary debug — remove after investigation
 
     for (const file of files) {
       const name = file.name.toLowerCase();
@@ -133,9 +134,10 @@ export async function GET() {
       if (iPatente === -1 || iValor === -1 || iFecha === -1) continue;
 
       // Per-file accumulator — prevents double-counting when files are cumulative
-      // (e.g. "Mayo Recurrente" contains all passages since Jan, not just May)
       const fileAccum = {};
       const fileRawPlate = {};
+      const fileRowCounts = {}; // plate → row count in this file
+      const fileSampleVals = {}; // plate → first 5 valor values seen
 
       for (let i = headerIdx + 1; i < rows.length; i++) {
         const row = rows[i];
@@ -152,16 +154,30 @@ export async function GET() {
         const wk = fecha ? getWeekKey(fecha) : null;
         if (!wk) continue;
 
-        if (!fileAccum[plate]) { fileAccum[plate] = {}; fileRawPlate[plate] = rawPlate; }
+        if (!fileAccum[plate]) { fileAccum[plate] = {}; fileRawPlate[plate] = rawPlate; fileRowCounts[plate] = 0; fileSampleVals[plate] = []; }
         fileAccum[plate][wk] = (fileAccum[plate][wk] || 0) + valor;
+        fileRowCounts[plate]++;
+        if (fileSampleVals[plate].length < 5) fileSampleVals[plate].push(valor);
 
         if (!weekDates[wk]) weekDates[wk] = fecha;
         else if (fecha < weekDates[wk]) weekDates[wk] = fecha;
       }
 
+      // Collect debug info for this file
+      _debugFiles.push({
+        file: file.name,
+        header: header.slice(0, 12), // first 12 headers
+        iPatente, iValor, iFecha,
+        perPlate: Object.fromEntries(
+          Object.entries(fileAccum).map(([p, wks]) => [p, {
+            rows: fileRowCounts[p],
+            sampleValues: fileSampleVals[p],
+            weekSums: wks,
+          }])
+        ),
+      });
+
       // Merge into global byPatente: take the max across files for each plate+week.
-      // If files are cumulative, the newest (largest) file wins per period.
-      // If files are period-specific, there is no overlap and max == the value.
       for (const [plate, wkMap] of Object.entries(fileAccum)) {
         if (!byPatente[plate]) byPatente[plate] = { _rawPlate: fileRawPlate[plate] };
         for (const [wk, val] of Object.entries(wkMap)) {
@@ -184,6 +200,7 @@ export async function GET() {
       allWeeks,
       totalByPatente,
       sources: files.map(f => f.name),
+      _debug: _debugFiles,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
