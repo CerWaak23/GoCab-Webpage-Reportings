@@ -15,14 +15,10 @@ function getAuth() {
 }
 
 // Parse value from XLSX cell → CLP number
-// Handles: JS number (285.79), "$285,79" string, "28579" string
 function parseValor(val) {
   if (val === null || val === undefined || val === '') return 0;
-  // XLSX often returns numbers directly — use as-is
   if (typeof val === 'number') return val;
   const s = String(val).trim();
-  // Remove $ symbol; only remove dots that look like thousand separators
-  // (dot followed by exactly 3 digits); replace comma decimal with period
   const cleaned = s
     .replace(/\$/g, '')
     .replace(/\.(?=\d{3}(?:[,\s]|$))/g, '')  // thousand-sep dots
@@ -32,25 +28,19 @@ function parseValor(val) {
 }
 
 // Parse date from XLSX cell → Date
-// Handles: Excel serial number (46080.768…), "27-02-2026 18:25" string, JS Date
 function parseFecha(s) {
   if (!s) return null;
-  // Already a JS Date (e.g. if XLSX was read with cellDates:true)
   if (s instanceof Date) return isNaN(s) ? null : s;
-  // Numeric Excel serial date (e.g. 46080.768)
   const num = typeof s === 'number' ? s : parseFloat(String(s));
   if (!isNaN(num) && num > 40000 && num < 60000) {
-    // Excel epoch offset: serial 25569 = 1970-01-01 UTC
     return new Date((num - 25569) * 86400 * 1000);
   }
   const str = String(s).trim();
-  // DD-MM-YYYY HH:MM or DD-MM-YYYY
   const m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
   if (!m) return null;
   return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
 }
 
-// Same week-key logic as fleet-debt-report.html (Monday-based, e.g. "W22/Mar")
 function getWeekKey(d) {
   if (!d || isNaN(d)) return null;
   const epoch = new Date('2020-01-06'); // known Monday
@@ -61,7 +51,6 @@ function getWeekKey(d) {
   return `${weekStart.getUTCDate()} ${mn[weekStart.getUTCMonth()]}`;
 }
 
-// Normalize plate for comparison: uppercase, no dashes/spaces
 function normPlate(s) {
   return String(s || '').toUpperCase().replace(/[-\s]/g, '').trim();
 }
@@ -79,10 +68,10 @@ export async function GET() {
 
     const files = listRes.data.files || [];
 
-    // byPatente[normPlate] = { [weekKey]: totalCLP, _rawPlate }
     const byPatente = {};
-    const weekDates = {}; // weekKey → Date (for sorting)
-    const _debugFiles = []; // temporary debug — remove after investigation
+    const weekDates = {};
+    const txnSet = new Set();   // dedup key → skip duplicate rows across cumulative files
+    const transactions = [];    // individual toll transactions for drill-down
 
     for (const file of files) {
       const name = file.name.toLowerCase();
@@ -106,7 +95,7 @@ export async function GET() {
         rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       }
 
-      // Find header row: contains "Patente" or "Móvil"
+      // Find header row
       let headerIdx = -1;
       for (let i = 0; i < Math.min(rows.length, 20); i++) {
         const joined = rows[i].map(c => String(c).toLowerCase()).join('|');
@@ -115,9 +104,9 @@ export async function GET() {
           break;
         }
       }
-      const header = headerIdx === -1 ? [] : rows[headerIdx].map(h => String(h).toLowerCase().trim());
-
       if (headerIdx === -1) continue;
+
+      const header = rows[headerIdx].map(h => String(h).toLowerCase().trim());
 
       const ci = (names) => {
         for (const n of names) {
@@ -127,17 +116,17 @@ export async function GET() {
         return -1;
       };
 
-      const iPatente = ci(['patente', 'móvil', 'movil', 'placa']);
-      const iValor   = ci(['valor', 'monto', 'importe', 'cobro']);
-      const iFecha   = ci(['fecha inicial', 'fecha inicio', 'fecha']);
+      const iPatente   = ci(['patente', 'móvil', 'movil', 'placa']);
+      const iValor     = ci(['valor', 'monto', 'importe', 'cobro']);
+      const iFecha     = ci(['fecha inicial', 'fecha inicio', 'fecha']);
+      const iAutopista = ci(['autopista']);
+      const iPortico   = ci(['pórtico', 'portico', 'portal']);
+      const iTipoTarifa= ci(['tipo tarifa', 'tipo de tarifa', 'tarifa']);
 
       if (iPatente === -1 || iValor === -1 || iFecha === -1) continue;
 
-      // Per-file accumulator — prevents double-counting when files are cumulative
       const fileAccum = {};
       const fileRawPlate = {};
-      const fileRowCounts = {}; // plate → row count in this file
-      const fileSampleVals = {}; // plate → first 5 valor values seen
 
       for (let i = headerIdx + 1; i < rows.length; i++) {
         const row = rows[i];
@@ -154,30 +143,30 @@ export async function GET() {
         const wk = fecha ? getWeekKey(fecha) : null;
         if (!wk) continue;
 
-        if (!fileAccum[plate]) { fileAccum[plate] = {}; fileRawPlate[plate] = rawPlate; fileRowCounts[plate] = 0; fileSampleVals[plate] = []; }
+        if (!fileAccum[plate]) { fileAccum[plate] = {}; fileRawPlate[plate] = rawPlate; }
         fileAccum[plate][wk] = (fileAccum[plate][wk] || 0) + valor;
-        fileRowCounts[plate]++;
-        if (fileSampleVals[plate].length < 5) fileSampleVals[plate].push(valor);
 
         if (!weekDates[wk]) weekDates[wk] = fecha;
         else if (fecha < weekDates[wk]) weekDates[wk] = fecha;
+
+        // Individual transaction — deduplicate across cumulative files by
+        // key = plate + raw date cell + autopista + portico + valor
+        const rawFecha = String(row[iFecha]);
+        const autopista  = iAutopista  >= 0 ? String(row[iAutopista]  || '').trim() : '';
+        const portico    = iPortico    >= 0 ? String(row[iPortico]    || '').trim() : '';
+        const tipoTarifa = iTipoTarifa >= 0 ? String(row[iTipoTarifa] || '').trim() : '';
+        const txnKey = `${plate}|${rawFecha}|${autopista}|${portico}|${valor}`;
+
+        if (!txnSet.has(txnKey)) {
+          txnSet.add(txnKey);
+          const fechaStr = fecha
+            ? `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}-${String(fecha.getUTCDate()).padStart(2,'0')}`
+            : null;
+          transactions.push({ plate, rawPlate, wk, fechaStr, autopista, portico, tipoTarifa, valor });
+        }
       }
 
-      // Collect debug info for this file
-      _debugFiles.push({
-        file: file.name,
-        header: header.slice(0, 12), // first 12 headers
-        iPatente, iValor, iFecha,
-        perPlate: Object.fromEntries(
-          Object.entries(fileAccum).map(([p, wks]) => [p, {
-            rows: fileRowCounts[p],
-            sampleValues: fileSampleVals[p],
-            weekSums: wks,
-          }])
-        ),
-      });
-
-      // Merge into global byPatente: take the max across files for each plate+week.
+      // Merge into global byPatente: take max across files (handles cumulative exports)
       for (const [plate, wkMap] of Object.entries(fileAccum)) {
         if (!byPatente[plate]) byPatente[plate] = { _rawPlate: fileRawPlate[plate] };
         for (const [wk, val] of Object.entries(wkMap)) {
@@ -186,10 +175,8 @@ export async function GET() {
       }
     }
 
-    // Sort weeks chronologically
     const allWeeks = Object.keys(weekDates).sort((a, b) => weekDates[a] - weekDates[b]);
 
-    // Compute total per plate
     const totalByPatente = {};
     for (const [plate, data] of Object.entries(byPatente)) {
       totalByPatente[plate] = allWeeks.reduce((s, wk) => s + (data[wk] || 0), 0);
@@ -199,8 +186,8 @@ export async function GET() {
       byPatente,
       allWeeks,
       totalByPatente,
+      transactions,
       sources: files.map(f => f.name),
-      _debug: _debugFiles,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });

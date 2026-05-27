@@ -430,6 +430,30 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       </div>
     </div>
     <div id="tollsTableWrap" class="pivot-scroll"></div>
+
+    <!-- Drill-down detail panel -->
+    <div id="tollsDetail" style="display:none;margin-top:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div id="tollsDetailTitle" style="font-size:12px;font-weight:700;color:#fbbf24"></div>
+          <div id="tollsDetailSub" style="font-size:10px;color:#6b7280;margin-top:2px"></div>
+        </div>
+        <button onclick="closeTollsDetail()" style="background:none;border:1px solid #374151;color:#6b7280;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer">✕ Cerrar</button>
+      </div>
+      <div class="pivot-scroll">
+        <table class="pivot-table" id="tollsDetailTable">
+          <thead><tr>
+            <th style="text-align:left">Fecha</th>
+            <th style="text-align:left">Semana</th>
+            <th style="text-align:left">Autopista</th>
+            <th style="text-align:left">Pórtico</th>
+            <th style="text-align:left">Tipo</th>
+            <th>Valor CLP</th>
+          </tr></thead>
+          <tbody id="tollsDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- Data quality warning panel (hidden until warnings exist) -->
@@ -454,9 +478,11 @@ var BILLS = [];
 var PAYMENT_EVENTS = [];
 var SNAPSHOTS = [];
 var DRIVERS = [];
-var TOLLS = null;          // { byPatente, allWeeks, totalByPatente }
+var TOLLS = null;          // { byPatente, allWeeks, totalByPatente, transactions }
 var FLEET_PLATE_MAP = {};  // normPlate → { conductorDisplay, conductorNorm }
 var _tollsFilter = '';     // driver name search string
+var _tollsDetailPlate = null;  // currently selected plate for drill-down
+var _tollsDetailWk = null;     // currently selected week (null = all weeks)
 var FILTERED = [];
 var FLEET_NAMES = []; // normalized names from fleet control sheet
 var LANG = 'es';
@@ -1437,16 +1463,20 @@ function renderTollsSection(){
   html+='<th class="p-tot">'+t('tolls_col_total')+'</th></tr></thead><tbody>';
 
   rows.forEach(function(r){
-    html+='<tr><td>'
-      +'<div class="p-name">'+esc(r.conductor)+'</div>'
+    var isSelPlate=_tollsDetailPlate===r.plate;
+    var rowBg=isSelPlate&&!_tollsDetailWk?'background:#1a1200;':'';
+    html+='<tr><td style="cursor:pointer;'+rowBg+'" onclick="openTollsDetail(\''+r.plate+'\',null)">'
+      +'<div class="p-name" style="'+(isSelPlate&&!_tollsDetailWk?'color:#fbbf24':'')+'">'+esc(r.conductor)+'</div>'
       +'<div class="p-plate">'+esc(r.display)+'</div>'
       +'</td>';
     weeks.forEach(function(wk){
       var v=r.data[wk]||0;
-      if(v>0) html+='<td style="color:#fbbf24">'+fmtShort(v)+'</td>';
+      var isSel=isSelPlate&&_tollsDetailWk===wk;
+      var bg=isSel?'background:#1a1200;':'';
+      if(v>0) html+='<td style="color:#fbbf24;cursor:pointer;'+bg+'" onclick="openTollsDetail(\''+r.plate+'\',\''+wk+'\')">'+fmtShort(v)+'</td>';
       else    html+='<td class="p-zero">—</td>';
     });
-    html+='<td class="p-tot" style="color:#fbbf24">'+fmtAmt(r.total)+'</td></tr>';
+    html+='<td class="p-tot" style="color:#fbbf24;cursor:pointer;" onclick="openTollsDetail(\''+r.plate+'\',null)">'+fmtAmt(r.total)+'</td></tr>';
   });
 
   // Totals footer row
@@ -1458,6 +1488,68 @@ function renderTollsSection(){
   html+='</table></div>';
 
   wrap.innerHTML=html;
+}
+
+function openTollsDetail(plate, wk){
+  // Toggle off if same selection clicked again
+  if(_tollsDetailPlate===plate&&_tollsDetailWk===wk){
+    closeTollsDetail();return;
+  }
+  _tollsDetailPlate=plate;
+  _tollsDetailWk=wk;
+  renderTollsDetail();
+  renderTollsSection(); // re-render pivot to show highlight
+}
+
+function closeTollsDetail(){
+  _tollsDetailPlate=null;_tollsDetailWk=null;
+  document.getElementById('tollsDetail').style.display='none';
+  renderTollsSection();
+}
+
+function renderTollsDetail(){
+  var detail=document.getElementById('tollsDetail');
+  var body=document.getElementById('tollsDetailBody');
+  var title=document.getElementById('tollsDetailTitle');
+  var sub=document.getElementById('tollsDetailSub');
+  if(!detail||!body||!TOLLS||!TOLLS.transactions)return;
+
+  var fleet=FLEET_PLATE_MAP[_tollsDetailPlate];
+  var conductorName=fleet?fleet.conductorDisplay:_tollsDetailPlate;
+
+  var txns=TOLLS.transactions.filter(function(t){
+    return t.plate===_tollsDetailPlate&&(_tollsDetailWk?t.wk===_tollsDetailWk:true);
+  });
+
+  // Sort newest first
+  txns=txns.slice().sort(function(a,b){
+    if(!a.fechaStr&&!b.fechaStr)return 0;
+    if(!a.fechaStr)return 1;
+    if(!b.fechaStr)return -1;
+    return b.fechaStr.localeCompare(a.fechaStr);
+  });
+
+  var totalVal=txns.reduce(function(s,t){return s+t.valor;},0);
+  title.textContent=conductorName+(_tollsDetailWk?' — Semana '+_tollsDetailWk:'');
+  sub.textContent=txns.length+' transacciones · Total: '+fmtAmt(totalVal);
+
+  var html='';
+  txns.forEach(function(t){
+    var dateLabel=t.fechaStr
+      ?new Date(t.fechaStr+'T12:00:00Z').toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'})
+      :'—';
+    html+='<tr>'
+      +'<td style="text-align:left;white-space:nowrap">'+esc(dateLabel)+'</td>'
+      +'<td style="text-align:left;white-space:nowrap;color:#6b7280">'+esc(t.wk||'—')+'</td>'
+      +'<td style="text-align:left">'+esc(t.autopista||'—')+'</td>'
+      +'<td style="text-align:left;color:#9ca3af">'+esc(t.portico||'—')+'</td>'
+      +'<td style="text-align:left;color:#6b7280">'+esc(t.tipoTarifa||'—')+'</td>'
+      +'<td style="color:#fbbf24">'+fmtAmt(t.valor)+'</td>'
+      +'</tr>';
+  });
+  body.innerHTML=html||'<tr><td colspan="6" style="color:#4b5563;padding:12px">Sin transacciones</td></tr>';
+  detail.style.display='';
+  detail.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function exportTollsExcel(){
