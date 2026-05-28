@@ -89,6 +89,7 @@ async function fetchTolls() {
     const weekDates = {};
     const txnSet = new Set();   // dedup key → skip duplicate rows across cumulative files
     const transactions = [];    // individual toll transactions for drill-down
+    const fileHeaders = [];     // debug: column headers found in each file
     const startTime = Date.now();
 
     for (const file of files) {
@@ -148,9 +149,12 @@ async function fetchTolls() {
       const iPatente   = ci(['patente', 'móvil', 'movil', 'placa']);
       const iValor     = ci(['valor', 'monto', 'importe', 'cobro']);
       const iFecha     = ci(['fecha inicial', 'fecha inicio', 'fecha']);
-      const iAutopista = ci(['autopista']);
-      const iPortico   = ci(['pórtico', 'portico', 'portal']);
-      const iTipoTarifa= ci(['tipo tarifa', 'tipo de tarifa', 'tarifa']);
+      const iAutopista = ci(['autopista', 'ruta', 'vía', 'via']);
+      const iPortico   = ci(['pórtico', 'portico', 'portal', 'plaza de cobro', 'plaza', 'peaje', 'estación', 'estacion', 'punto de cobro', 'punto', 'acceso', 'nombre de p', 'nombre p', 'cabina']);
+      const iTipoTarifa= ci(['tipo tarifa', 'tipo de tarifa', 'tarifa', 'categoría', 'categoria', 'clase', 'tipo de veh']);
+
+      // Record headers for debugging (helps identify pórtico column name)
+      fileHeaders.push({ file: file.name, headers: header, iPatente, iValor, iFecha, iAutopista, iPortico, iTipoTarifa });
 
       if (iPatente === -1 || iValor === -1 || iFecha === -1) continue;
 
@@ -184,13 +188,16 @@ async function fetchTolls() {
         if (!weekDates[wk]) weekDates[wk] = fecha;
         else if (fecha < weekDates[wk]) weekDates[wk] = fecha;
 
-        // Individual transaction — deduplicate across cumulative files by
-        // key = plate + raw date cell + autopista + portico + valor
-        const rawFecha = String(row[iFecha]);
+        // Individual transaction — deduplicate across cumulative files.
+        // Use normalized fechaStr (YYYY-MM-DD) so the same date serialized
+        // differently across file exports still maps to the same key.
         const autopista  = iAutopista  >= 0 ? String(row[iAutopista]  || '').trim() : '';
         const portico    = iPortico    >= 0 ? String(row[iPortico]    || '').trim() : '';
         const tipoTarifa = iTipoTarifa >= 0 ? String(row[iTipoTarifa] || '').trim() : '';
-        const txnKey = `${plate}|${rawFecha}|${autopista}|${portico}|${valor}`;
+        const fechaKey = fecha
+          ? `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}-${String(fecha.getUTCDate()).padStart(2,'0')}`
+          : String(row[iFecha]);
+        const txnKey = `${plate}|${fechaKey}|${autopista}|${valor}`;
 
         if (!txnSet.has(txnKey)) {
           txnSet.add(txnKey);
@@ -217,10 +224,10 @@ async function fetchTolls() {
       totalByPatente[plate] = allWeeks.reduce((s, wk) => s + (data[wk] || 0), 0);
     }
 
-    return { byPatente, allWeeks, totalByPatente, transactions, sources: files.map(f => f.name) };
+    return { byPatente, allWeeks, totalByPatente, transactions, fileHeaders, sources: files.map(f => f.name) };
 }
 
-const EMPTY_TOLLS = { byPatente: {}, allWeeks: [], totalByPatente: {}, transactions: [], sources: [] };
+const EMPTY_TOLLS = { byPatente: {}, allWeeks: [], totalByPatente: {}, transactions: [], fileHeaders: [], sources: [] };
 
 export async function GET() {
   try {
