@@ -760,12 +760,10 @@ async function loadData(){
     // Load tolls if available
     if(results[2].ok){
       TOLLS=await results[2].json().catch(function(){return null;});
-      // Debug: log file headers to help identify pórtico column name
+      // Debug: log column index detection per file
       if(TOLLS&&TOLLS.fileHeaders&&TOLLS.fileHeaders.length){
-        console.log('[Tolls] Column headers found in files:');
         TOLLS.fileHeaders.forEach(function(f){
-          console.log('  '+f.file+': ['+f.headers.join(' | ')+']');
-          console.log('    → iPatente='+f.iPatente+' iValor='+f.iValor+' iFecha='+f.iFecha+' iAutopista='+f.iAutopista+' iPortico='+f.iPortico+' iTipoTarifa='+f.iTipoTarifa);
+          console.log('[Tolls] '+f.file+' → iPatente='+f.iPatente+' iValor='+f.iValor+' iFecha='+f.iFecha+' iAutopista='+f.iAutopista+' iPortico='+f.iPortico+' iTipoTarifa='+f.iTipoTarifa);
         });
       }
     }
