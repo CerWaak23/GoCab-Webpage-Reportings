@@ -1572,6 +1572,21 @@ function renderTollsDetail(){
       +'</tr>';
   });
   body.innerHTML=html||'<tr><td colspan="7" style="color:#4b5563;padding:12px">Sin transacciones</td></tr>';
+
+  // Totals footer
+  var tbl=document.getElementById('tollsDetailTable');
+  if(tbl){
+    var existFoot=tbl.querySelector('tfoot');
+    if(existFoot)existFoot.remove();
+    if(txns.length){
+      var foot=document.createElement('tfoot');
+      foot.innerHTML='<tr style="border-top:1px solid #374151">'
+        +'<td colspan="6" style="text-align:right;padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">TOTAL</td>'
+        +'<td style="color:#fbbf24;font-weight:700;font-size:13px;text-align:right;padding:6px 8px">'+fmtAmt(totalVal)+'</td>'
+        +'</tr>';
+      tbl.appendChild(foot);
+    }
+  }
 }
 
 function exportTollsExcel(){
