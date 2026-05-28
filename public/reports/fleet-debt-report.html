@@ -728,7 +728,7 @@ async function loadData(){
     var results=await Promise.all([
       fetch('/api/bills'),
       fetch('/api/fleet'),
-      fetch('/api/tolls').catch(function(){return {ok:false};})
+      (function(){var ac=typeof AbortController!=='undefined'?new AbortController():null;var t=ac?setTimeout(function(){ac.abort();},25000):null;return fetch('/api/tolls',ac?{signal:ac.signal}:{}).then(function(r){if(t)clearTimeout(t);return r;}).catch(function(){if(t)clearTimeout(t);return{ok:false};});})()
     ]);
     var billsJson=await results[0].json();
     var fleetJson=await results[1].json();

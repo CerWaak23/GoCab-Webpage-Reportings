@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'; // never cache — always fetch latest from Drive
+
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
@@ -56,8 +58,22 @@ function normPlate(s) {
   return String(s || '').toUpperCase().replace(/[-\s]/g, '').trim();
 }
 
-export async function GET() {
-  try {
+// Wraps a promise with a hard wall-clock timeout; resolves (not rejects) with
+// `fallback` when the timer fires, so callers always get a value.
+function withTimeout(promise, ms, fallback) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      console.warn(`[tolls] Hard timeout after ${ms} ms`);
+      resolve(fallback);
+    }, ms);
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); resolve(fallback); }
+    );
+  });
+}
+
+async function fetchTolls() {
     const auth = getAuth();
     const drive = google.drive({ version: 'v3', auth });
 
@@ -73,15 +89,27 @@ export async function GET() {
     const weekDates = {};
     const txnSet = new Set();   // dedup key → skip duplicate rows across cumulative files
     const transactions = [];    // individual toll transactions for drill-down
+    const startTime = Date.now();
 
     for (const file of files) {
+      // Stop processing if we've already spent 20 s — return whatever we have
+      if (Date.now() - startTime > 20000) {
+        console.warn('[tolls] 20 s budget reached; returning partial data');
+        break;
+      }
       const name = file.name.toLowerCase();
       if (!name.endsWith('.xls') && !name.endsWith('.xlsx') && !name.endsWith('.csv')) continue;
 
-      const fileRes = await drive.files.get(
-        { fileId: file.id, alt: 'media' },
-        { responseType: 'arraybuffer' }
-      );
+      let fileRes;
+      try {
+        fileRes = await drive.files.get(
+          { fileId: file.id, alt: 'media' },
+          { responseType: 'arraybuffer' }
+        );
+      } catch (fileErr) {
+        console.warn(`[tolls] Skipping ${file.name}: ${fileErr.message}`);
+        continue;
+      }
       const buffer = Buffer.from(fileRes.data);
 
       let rows;
@@ -93,16 +121,14 @@ export async function GET() {
       } else {
         const wb = XLSX.read(buffer, { type: 'buffer' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        // raw:false → returns formatted cell strings (e.g. "719,04") instead of
-        // raw internal integers (71904 centavos). parseValor handles Chilean comma-decimal.
-        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       }
 
       // Find header row
       let headerIdx = -1;
       for (let i = 0; i < Math.min(rows.length, 20); i++) {
         const joined = rows[i].map(c => String(c).toLowerCase()).join('|');
-        if (joined.includes('patente') || joined.includes('móvil')) {
+        if (joined.includes('patente') || joined.includes('movil') || joined.includes('móvil')) {
           headerIdx = i;
           break;
         }
@@ -139,7 +165,13 @@ export async function GET() {
         const plate = normPlate(rawPlate);
         if (!plate) continue;
 
-        const valor = parseValor(row[iValor]);
+        const rawValor = row[iValor];
+        // Chilean toll files store values as integer centavos (e.g. 71904 = $719.04 CLP).
+        // Detect by checking if it's a whole integer and divide by 100.
+        // Float values (e.g. 719.04) mean the file already uses pesos — leave them alone.
+        const valor = typeof rawValor === 'number' && Number.isInteger(rawValor) && rawValor > 0
+          ? rawValor / 100
+          : parseValor(rawValor);
         if (valor <= 0) continue;
 
         const fecha = parseFecha(row[iFecha]);
@@ -185,13 +217,15 @@ export async function GET() {
       totalByPatente[plate] = allWeeks.reduce((s, wk) => s + (data[wk] || 0), 0);
     }
 
-    return NextResponse.json({
-      byPatente,
-      allWeeks,
-      totalByPatente,
-      transactions,
-      sources: files.map(f => f.name),
-    });
+    return { byPatente, allWeeks, totalByPatente, transactions, sources: files.map(f => f.name) };
+}
+
+const EMPTY_TOLLS = { byPatente: {}, allWeeks: [], totalByPatente: {}, transactions: [], sources: [] };
+
+export async function GET() {
+  try {
+    const data = await withTimeout(fetchTolls(), 22000, EMPTY_TOLLS);
+    return NextResponse.json(data);
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

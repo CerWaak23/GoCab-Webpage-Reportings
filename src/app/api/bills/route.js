@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'; // never cache — always fetch latest from Drive
+
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
@@ -212,7 +214,7 @@ export async function GET() {
       snapshots,
       dataWarnings,
       sources: files.map((f) => f.name),
-    });
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
