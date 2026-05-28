@@ -150,7 +150,8 @@ async function fetchTolls() {
       const iValor     = ci(['valor', 'monto', 'importe', 'cobro']);
       const iFecha     = ci(['fecha inicial', 'fecha inicio', 'fecha']);
       const iAutopista = ci(['autopista', 'ruta', 'vía', 'via']);
-      const iPortico   = ci(['pórtico', 'portico', 'portal', 'plaza de cobro', 'plaza', 'peaje', 'estación', 'estacion', 'punto de cobro', 'punto', 'acceso', 'nombre de p', 'nombre p', 'cabina']);
+      // 'rtico' matches "P?rtico" (Windows-1252 encoded XLS read by XLSX.js with replacement char)
+      const iPortico   = ci(['pórtico', 'portico', 'rtico', 'portal', 'plaza de cobro', 'plaza', 'peaje', 'estación', 'estacion', 'punto de cobro', 'punto', 'acceso', 'cabina']);
       const iTipoTarifa= ci(['tipo tarifa', 'tipo de tarifa', 'tarifa', 'categoría', 'categoria', 'clase', 'tipo de veh']);
 
       // Record headers for debugging (helps identify pórtico column name)
@@ -188,16 +189,14 @@ async function fetchTolls() {
         if (!weekDates[wk]) weekDates[wk] = fecha;
         else if (fecha < weekDates[wk]) weekDates[wk] = fecha;
 
-        // Individual transaction — deduplicate across cumulative files.
-        // Use normalized fechaStr (YYYY-MM-DD) so the same date serialized
-        // differently across file exports still maps to the same key.
+        // Individual transaction — deduplicate using the raw date serial (includes
+        // fractional time, e.g. 46080.76752...) so every pass at a different hour
+        // gets its own entry. Pórtico is now included since we fixed the column lookup.
+        const rawFechaStr = String(row[iFecha]);
         const autopista  = iAutopista  >= 0 ? String(row[iAutopista]  || '').trim() : '';
         const portico    = iPortico    >= 0 ? String(row[iPortico]    || '').trim() : '';
         const tipoTarifa = iTipoTarifa >= 0 ? String(row[iTipoTarifa] || '').trim() : '';
-        const fechaKey = fecha
-          ? `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}-${String(fecha.getUTCDate()).padStart(2,'0')}`
-          : String(row[iFecha]);
-        const txnKey = `${plate}|${fechaKey}|${autopista}|${valor}`;
+        const txnKey = `${plate}|${rawFechaStr}|${autopista}|${portico}|${valor}`;
 
         if (!txnSet.has(txnKey)) {
           txnSet.add(txnKey);
