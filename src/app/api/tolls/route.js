@@ -144,6 +144,20 @@ async function fetchTolls() {
   const transactions = [];
   const fileHeaders  = [];
 
+  // String dictionaries — store each unique autopista/portico/tipoTarifa once
+  // and use its index in every transaction object.  Reduces JSON payload from
+  // ~12 MB to ~2-3 MB because long pórtico strings repeat constantly.
+  const autopistaDict  = [];  // index → string
+  const autopistaIdx   = {};  // string → index
+  const porticoDict    = [];
+  const porticoIdx     = {};
+  const tipoTarifaDict = [];
+  const tipoTarifaIdx  = {};
+  const intern = (dict, map, val) => {
+    if (!(val in map)) { map[val] = dict.length; dict.push(val); }
+    return map[val];
+  };
+
   for (const { file, buffer } of downloads) {
     if (!buffer) continue;
 
@@ -221,7 +235,13 @@ async function fetchTolls() {
         const fechaStr = fecha
           ? `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}-${String(fecha.getUTCDate()).padStart(2,'0')}`
           : null;
-        transactions.push({ plate, rawPlate, wk, fechaStr, autopista, portico, tipoTarifa, valor });
+        // Store indices instead of full strings → 5-8x smaller JSON payload
+        transactions.push({
+          plate, wk, fechaStr, valor,
+          ai: intern(autopistaDict,  autopistaIdx,  autopista),
+          pi: intern(porticoDict,    porticoIdx,    portico),
+          ti: intern(tipoTarifaDict, tipoTarifaIdx, tipoTarifa),
+        });
       }
     }
 
@@ -241,7 +261,14 @@ async function fetchTolls() {
     totalByPatente[plate] = allWeeks.reduce((s, wk) => s + (data[wk] || 0), 0);
   }
 
-  const result = { byPatente, allWeeks, totalByPatente, transactions, fileHeaders, sources: files.map(f => f.name) };
+  const result = {
+    byPatente, allWeeks, totalByPatente,
+    transactions, fileHeaders,
+    autopistas: autopistaDict,   // lookup arrays for transaction indices
+    porticos:   porticoDict,
+    tipoTarifas: tipoTarifaDict,
+    sources: files.map(f => f.name),
+  };
 
   // 5. Store in cache
   _cacheKey  = newKey;
@@ -251,7 +278,7 @@ async function fetchTolls() {
   return result;
 }
 
-const EMPTY_TOLLS = { byPatente: {}, allWeeks: [], totalByPatente: {}, transactions: [], fileHeaders: [], sources: [] };
+const EMPTY_TOLLS = { byPatente: {}, allWeeks: [], totalByPatente: {}, transactions: [], fileHeaders: [], autopistas: [], porticos: [], tipoTarifas: [], sources: [] };
 
 export async function GET() {
   try {

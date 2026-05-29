@@ -489,9 +489,10 @@ var SNAPSHOTS = [];
 var DRIVERS = [];
 var TOLLS = null;          // { byPatente, allWeeks, totalByPatente, transactions }
 var FLEET_PLATE_MAP = {};  // normPlate → { conductorDisplay, conductorNorm }
-var _tollsFilter = '';     // driver name search string
+var _tollsFilter = '';         // driver name search string
 var _tollsDetailPlate = null;  // currently selected plate for drill-down
 var _tollsDetailWk = null;     // currently selected week (null = all weeks)
+var _tollsDetailPage = 0;      // pagination page (300 rows per page)
 var FILTERED = [];
 var FLEET_NAMES = []; // normalized names from fleet control sheet
 var LANG = 'es';
@@ -1515,15 +1516,23 @@ function openTollsDetail(plate, wk){
   }
   _tollsDetailPlate=plate;
   _tollsDetailWk=wk;
+  _tollsDetailPage=0;
   renderTollsDetail();
   renderTollsSection(); // re-render pivot to show highlight
 }
 
 function closeTollsDetail(){
-  _tollsDetailPlate=null;_tollsDetailWk=null;
+  _tollsDetailPlate=null;_tollsDetailWk=null;_tollsDetailPage=0;
   renderTollsDetail();
   renderTollsSection();
 }
+
+// Helper: expand index-encoded transaction fields to strings
+function txnAutopista(t){ return (TOLLS.autopistas&&t.ai!=null)?TOLLS.autopistas[t.ai]:(t.autopista||''); }
+function txnPortico(t){   return (TOLLS.porticos  &&t.pi!=null)?TOLLS.porticos[t.pi]  :(t.portico||''); }
+function txnTarifa(t){    return (TOLLS.tipoTarifas&&t.ti!=null)?TOLLS.tipoTarifas[t.ti]:(t.tipoTarifa||''); }
+
+var _DETAIL_PAGE_SIZE=300;
 
 function renderTollsDetail(){
   var body=document.getElementById('tollsDetailBody');
@@ -1532,17 +1541,31 @@ function renderTollsDetail(){
   var clearBtn=document.getElementById('tollsClearBtn');
   if(!body||!TOLLS||!TOLLS.transactions)return;
 
-  var isFiltered=!!_tollsDetailPlate;
-  var fleet=_tollsDetailPlate?FLEET_PLATE_MAP[_tollsDetailPlate]:null;
-  var conductorName=fleet?fleet.conductorDisplay:(_tollsDetailPlate||'');
+  var tbl=document.getElementById('tollsDetailTable');
+  var clearFoot=function(){if(tbl){var f=tbl.querySelector('tfoot');if(f)f.remove();}};
+
+  // ── No conductor selected → show placeholder, never render 44k rows ──
+  if(!_tollsDetailPlate){
+    title.textContent='Detalle de Transacciones';
+    sub.textContent='';
+    if(clearBtn)clearBtn.style.display='none';
+    body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:#4b5563;font-size:12px">'
+      +'← Selecciona un conductor de la tabla para ver sus transacciones</td></tr>';
+    clearFoot();
+    return;
+  }
+
+  // ── Conductor selected → filter + paginate ──
+  var fleet=FLEET_PLATE_MAP[_tollsDetailPlate];
+  var conductorName=fleet?fleet.conductorDisplay:_tollsDetailPlate;
 
   var txns=TOLLS.transactions.filter(function(t){
-    if(_tollsDetailPlate&&t.plate!==_tollsDetailPlate)return false;
+    if(t.plate!==_tollsDetailPlate)return false;
     if(_tollsDetailWk&&t.wk!==_tollsDetailWk)return false;
     return true;
   });
 
-  if(clearBtn)clearBtn.style.display=isFiltered?'':'none';
+  if(clearBtn)clearBtn.style.display='';
 
   // Sort newest first
   txns=txns.slice().sort(function(a,b){
@@ -1553,45 +1576,47 @@ function renderTollsDetail(){
   });
 
   var totalVal=txns.reduce(function(s,t){return s+t.valor;},0);
-  if(isFiltered){
-    title.textContent=conductorName+(_tollsDetailWk?' — Semana '+_tollsDetailWk:'— Todas las semanas');
-  } else {
-    title.textContent='Todas las transacciones';
-  }
-  sub.textContent=txns.length+' transacciones · Total: '+fmtAmt(totalVal);
+  title.textContent=conductorName+(_tollsDetailWk?' — Semana '+_tollsDetailWk:' — Todas las semanas');
+
+  // Pagination: show up to (_tollsDetailPage+1)*PAGE_SIZE rows
+  var showing=Math.min(txns.length,(_tollsDetailPage+1)*_DETAIL_PAGE_SIZE);
+  var remaining=txns.length-showing;
+  sub.textContent=(showing<txns.length?'Mostrando '+showing+' de ':'')+txns.length+' transacciones · Total: '+fmtAmt(totalVal);
 
   var html='';
-  txns.forEach(function(t){
+  txns.slice(0,showing).forEach(function(t){
     var dateLabel=t.fechaStr
       ?new Date(t.fechaStr+'T12:00:00Z').toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'})
       :'—';
     var fleetRow=FLEET_PLATE_MAP[t.plate];
-    var cname=fleetRow?fleetRow.conductorDisplay:(t.rawPlate||t.plate);
+    var cname=fleetRow?fleetRow.conductorDisplay:t.plate;
     html+='<tr>'
-      +'<td style="text-align:left;white-space:nowrap"><div class="p-name" style="font-size:11px">'+esc(cname)+'</div><div class="p-plate">'+esc(t.rawPlate||t.plate)+'</div></td>'
+      +'<td style="text-align:left;white-space:nowrap"><div class="p-name" style="font-size:11px">'+esc(cname)+'</div><div class="p-plate">'+esc(t.plate)+'</div></td>'
       +'<td style="text-align:left;white-space:nowrap">'+esc(dateLabel)+'</td>'
       +'<td style="text-align:left;white-space:nowrap;color:#6b7280">'+esc(t.wk||'—')+'</td>'
-      +'<td style="text-align:left">'+esc(t.autopista||'—')+'</td>'
-      +'<td style="text-align:left;color:#9ca3af">'+esc(t.portico||'—')+'</td>'
-      +'<td style="text-align:left;color:#6b7280">'+esc(t.tipoTarifa||'—')+'</td>'
-      +'<td style="color:#fbbf24">'+fmtAmt(t.valor)+'</td>'
+      +'<td style="text-align:left">'+esc(txnAutopista(t)||'—')+'</td>'
+      +'<td style="text-align:left;color:#9ca3af">'+esc(txnPortico(t)||'—')+'</td>'
+      +'<td style="text-align:left;color:#6b7280">'+esc(txnTarifa(t)||'—')+'</td>'
+      +'<td style="color:#fbbf24;text-align:right">'+fmtAmt(t.valor)+'</td>'
       +'</tr>';
   });
+  // "Ver más" button row if there are more rows
+  if(remaining>0){
+    html+='<tr><td colspan="7" style="text-align:center;padding:10px">'
+      +'<button onclick="_tollsDetailPage++;renderTollsDetail()" style="background:#1f2937;border:1px solid #374151;color:#9ca3af;border-radius:7px;padding:6px 20px;font-size:12px;cursor:pointer">'
+      +'Ver '+remaining+' más →</button></td></tr>';
+  }
   body.innerHTML=html||'<tr><td colspan="7" style="color:#4b5563;padding:12px">Sin transacciones</td></tr>';
 
   // Totals footer
-  var tbl=document.getElementById('tollsDetailTable');
-  if(tbl){
-    var existFoot=tbl.querySelector('tfoot');
-    if(existFoot)existFoot.remove();
-    if(txns.length){
-      var foot=document.createElement('tfoot');
-      foot.innerHTML='<tr style="border-top:1px solid #374151">'
-        +'<td colspan="6" style="text-align:right;padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">TOTAL</td>'
-        +'<td style="color:#fbbf24;font-weight:700;font-size:13px;text-align:right;padding:6px 8px">'+fmtAmt(totalVal)+'</td>'
-        +'</tr>';
-      tbl.appendChild(foot);
-    }
+  clearFoot();
+  if(txns.length&&tbl){
+    var foot=document.createElement('tfoot');
+    foot.innerHTML='<tr style="border-top:1px solid #374151">'
+      +'<td colspan="6" style="text-align:right;padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">TOTAL</td>'
+      +'<td style="color:#fbbf24;font-weight:700;font-size:13px;text-align:right;padding:6px 8px">'+fmtAmt(totalVal)+'</td>'
+      +'</tr>';
+    tbl.appendChild(foot);
   }
 }
 
@@ -1614,15 +1639,15 @@ function exportTollsExcel(){
   var sheetData=[header];
   txns.forEach(function(t){
     var fleetRow=FLEET_PLATE_MAP[t.plate];
-    var cname=fleetRow?fleetRow.conductorDisplay:(t.rawPlate||t.plate);
+    var cname=fleetRow?fleetRow.conductorDisplay:t.plate;
     sheetData.push([
       cname,
-      t.rawPlate||t.plate,
+      t.plate,
       t.fechaStr||'',
       t.wk||'',
-      t.autopista||'',
-      t.portico||'',
-      t.tipoTarifa||'',
+      txnAutopista(t)||'',
+      txnPortico(t)||'',
+      txnTarifa(t)||'',
       t.valor
     ]);
   });
