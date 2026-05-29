@@ -68,14 +68,14 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .toggle-btn:hover:not(.active){border-color:#4b5563;color:#e2e8f0}
 
 /* Evolution heat-map */
-.evol-scroll{overflow-x:auto;margin-top:4px}
+.evol-scroll{overflow-x:auto;overflow-y:auto;max-height:560px;margin-top:4px}
 .evol-table{border-collapse:collapse;font-size:11px;min-width:600px;white-space:nowrap}
-.evol-table th{background:#0f1623;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border:1px solid #1a2030;text-align:right;white-space:nowrap}
-.evol-table th:first-child{text-align:left;position:sticky;left:0;z-index:1;background:#0f1623}
+.evol-table th{position:sticky;top:0;z-index:2;background:#0f1623;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;border:1px solid #1a2030;text-align:right;white-space:nowrap}
+.evol-table th:first-child{text-align:left;position:sticky;left:0;top:0;z-index:3;background:#0f1623}
 .evol-table td{padding:6px 10px;border:1px solid #1a2030;text-align:right;white-space:nowrap}
 .evol-table td:first-child{text-align:left;font-weight:500;color:#d1d5db;position:sticky;left:0;background:#111827;z-index:1}
-.evol-table tfoot td{background:#0f1a2a!important;font-weight:700;color:#f9fafb;border:1px solid #1a2030}
-.evol-table tfoot td:first-child{background:#0f1a2a!important;position:sticky;left:0;z-index:1}
+.evol-table tfoot td{position:sticky;bottom:0;z-index:2;background:#0f1a2a!important;font-weight:700;color:#f9fafb;border:1px solid #1a2030}
+.evol-table tfoot td:first-child{position:sticky;left:0;bottom:0;z-index:3;background:#0f1a2a!important}
 .cell-hi{background:#0d2218!important;color:#34d399}
 .cell-mid{background:#0d1c12!important;color:#6ee7b7}
 .cell-lo{background:#0a1510!important;color:#4b9062}
@@ -1299,7 +1299,7 @@ function renderEvolTable(){
   Object.keys(payMap).forEach(function(w){allWeekSet[w]=true;});
   var allWeeks=Object.keys(allWeekSet).sort(function(a,b){
     var da=weekDates[a]||new Date(0),db=weekDates[b]||new Date(0);return da-db;
-  }).slice(_evolPeriod==='daily'?-14:-8);
+  }); // no slice — show all weeks (horizontal scroll handles overflow)
 
   var allDrivers=Object.keys(driverSet);
   if(!allWeeks.length||!allDrivers.length){
@@ -1308,7 +1308,7 @@ function renderEvolTable(){
 
   // Sort drivers by current pending descending (matches KPI card order)
   allDrivers.sort(function(a,b){return (driverPending[b]||0)-(driverPending[a]||0);});
-  var topDrivers=allDrivers.slice(0,15);
+  var topDrivers=allDrivers; // all drivers — vertical scroll handles overflow
 
   var maxCharge=0;
   topDrivers.forEach(function(drv){allWeeks.forEach(function(w){
