@@ -1356,19 +1356,27 @@ function renderEvolTable(){
   topDrivers.forEach(function(drv){
     var pending=driverPending[drv]||0;
     html+='<tr><td>'+esc(drv)+'</td>';
-    // running starts at 0 and accumulates charges minus payments as detected
-    // by the system.  This gives a clear trend: if yesterday was $6K and
-    // today $8K was charged, the cell shows $14K; if then $1K was paid, $13K.
-    // The PENDIENTE ACTUAL column always shows the authoritative bills-based
-    // balance — it is the source of truth regardless of running.
-    var running=0;
+    // Back-calculate starting balance: running ends at `pending` by construction
+    // (running_start + periodChange = pending_start - periodChange + periodChange = pending).
+    // When running < 0 in intermediate weeks it means untracked pre-period payments
+    // exist; we show "—" for the accumulator in those cells (no fake $0) and let it
+    // appear naturally once the running turns positive.  Last cell = pending always.
+    var periodChange=allWeeks.reduce(function(s,w){
+      return s+(chargeMap[w]&&chargeMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);
+    },0);
+    var running=pending-periodChange;
     allWeeks.forEach(function(w){
       var charge=chargeMap[w]&&chargeMap[w][drv]||0;
       var pay=payMap[w]&&payMap[w][drv]||0;
       running+=charge-pay;
       var hasActivity=charge>0||pay>0;
+      // Only show the accumulated number when it is ≥ 0 (meaningful balance).
+      // Negative means history before the first file upload is missing — show "—".
+      var accHtml=running>=0
+        ?'<div class="evol-cell-acc">'+fmtShort(running)+'</div>'
+        :'<div class="evol-cell-acc" style="color:#374151;font-size:9px">—</div>';
       if(!hasActivity){
-        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div><div class="evol-cell-acc" style="color:#374151">'+fmtShort(Math.max(0,running))+'</div></td>';
+        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div>'+accHtml+'</td>';
         return;
       }
       var pct=maxCharge>0?charge/maxCharge:0;
@@ -1376,9 +1384,9 @@ function renderEvolTable(){
       html+='<td class="'+bgCls+'" style="text-align:right;background:'+(pay>0&&charge===0?'#0a1f12':'')+'">';
       if(charge>0)html+='<div class="evol-cell-new">+'+fmtShort(charge)+'</div>';
       if(pay>0)html+='<div style="font-size:10px;color:#34d399;font-weight:500;line-height:1.3">−'+fmtShort(pay)+'</div>';
-      html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,running))+'</div>';
-      html+='</td>';
+      html+=accHtml+'</td>';
     });
+    // PENDIENTE ACTUAL = running at the last week = pending (by construction above)
     if(pending<=0){
       html+='<td style="text-align:right"><span style="color:#34d399;font-weight:700;font-size:13px">$0 ✓</span></td>';
     } else {
@@ -1388,7 +1396,14 @@ function renderEvolTable(){
   });
 
   html+='</tbody><tfoot><tr><td>'+t('evol_total')+'</td>';
-  var grandRunning=0;
+  var grandTotalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
+  var grandPeriodChange=0;
+  allWeeks.forEach(function(w){
+    var c=0,p=0;
+    topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
+    grandPeriodChange+=c-p;
+  });
+  var grandRunning=grandTotalPending-grandPeriodChange;
   allWeeks.forEach(function(w){
     var c=0,p=0;
     topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
@@ -1396,9 +1411,11 @@ function renderEvolTable(){
     html+='<td style="text-align:right">';
     if(c>0)html+='<div class="evol-cell-new" style="color:#fbbf24">+'+fmtShort(c)+'</div>';
     if(p>0)html+='<div style="font-size:10px;color:#34d399;font-weight:600;line-height:1.3">−'+fmtShort(p)+'</div>';
-    html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
+    html+=(grandRunning>=0
+      ?'<div class="evol-cell-acc">'+fmtShort(grandRunning)+'</div>'
+      :'<div class="evol-cell-acc" style="color:#374151;font-size:9px">—</div>')+'</td>';
   });
-  var totalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
+  var totalPending=grandTotalPending;
   html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(totalPending)+'</td></tr></tfoot>';
   tbl.innerHTML=html;
 }
