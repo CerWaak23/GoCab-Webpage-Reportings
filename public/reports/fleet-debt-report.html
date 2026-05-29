@@ -1370,13 +1370,15 @@ function renderEvolTable(){
       var pay=payMap[w]&&payMap[w][drv]||0;
       running+=charge-pay;
       var hasActivity=charge>0||pay>0;
-      // Only show the accumulated number when it is ≥ 0 (meaningful balance).
-      // Negative means history before the first file upload is missing — show "—".
-      var accHtml=running>=0
-        ?'<div class="evol-cell-acc">'+fmtShort(running)+'</div>'
-        :'<div class="evol-cell-acc" style="color:#374151;font-size:9px">—</div>';
+      // Always show a balance in the accumulator line:
+      //   running ≥ 0  → actual value
+      //   running < 0  → $0 (pre-period payments not captured; back-calc in progress)
+      // Reserve "—" only for inactive cells (no charge, no payment).
+      var accVal=fmtShort(Math.max(0,running));
+      var accHtml='<div class="evol-cell-acc">'+accVal+'</div>';
       if(!hasActivity){
-        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div>'+accHtml+'</td>';
+        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div>'
+          +(running>=0?accHtml:'')+'</td>';
         return;
       }
       var pct=maxCharge>0?charge/maxCharge:0;
@@ -1411,9 +1413,7 @@ function renderEvolTable(){
     html+='<td style="text-align:right">';
     if(c>0)html+='<div class="evol-cell-new" style="color:#fbbf24">+'+fmtShort(c)+'</div>';
     if(p>0)html+='<div style="font-size:10px;color:#34d399;font-weight:600;line-height:1.3">−'+fmtShort(p)+'</div>';
-    html+=(grandRunning>=0
-      ?'<div class="evol-cell-acc">'+fmtShort(grandRunning)+'</div>'
-      :'<div class="evol-cell-acc" style="color:#374151;font-size:9px">—</div>')+'</td>';
+    html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
   });
   var totalPending=grandTotalPending;
   html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(totalPending)+'</td></tr></tfoot>';
