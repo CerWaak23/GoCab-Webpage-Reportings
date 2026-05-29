@@ -173,16 +173,23 @@ export async function GET() {
             });
           }
         } else if (newPaid > 0) {
-          // First appearance with a non-zero paidAmount → synthetic initial payment
+          // First appearance with a non-zero paidAmount → synthetic initial payment.
+          // IMPORTANT: only emit when the bill has a createdAt date.  Without a date
+          // the charge is excluded from chargeMap (parseDate returns null), so emitting
+          // a payment at file.modifiedTime would create an orphan deduction that pulls
+          // the running below driverPending.  Both charge and payment must be absent
+          // together to keep the two maps consistent.
           const createdAt = iDate >= 0 ? String(row[iDate] || '').trim() : '';
-          paymentEvents.push({
-            reference: ref,
-            driver: newDriver,
-            vehicle: newVehicle,
-            amount: newPaid,
-            date: createdAt || file.modifiedTime, // prefer bill date, fall back to upload date
-            type: newType,
-          });
+          if (createdAt) {
+            paymentEvents.push({
+              reference: ref,
+              driver: newDriver,
+              vehicle: newVehicle,
+              amount: newPaid,
+              date: createdAt, // raw format — parseDate() in the frontend handles dd/mm/yyyy
+              type: newType,
+            });
+          }
         }
 
         billsMap.set(ref, {
