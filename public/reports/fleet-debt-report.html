@@ -1353,27 +1353,15 @@ function renderEvolTable(){
   html+='<th style="background:#1e2a42;color:#93c5fd;text-align:right">'+pendingLabel.replace(' ','<br>')+'</th>';
   html+='</tr></thead><tbody>';
 
-  // Pre-compute grand totals for the footer running initializer
-  var grandTotalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
-  var grandPeriodChange=0;
-  allWeeks.forEach(function(w){
-    var c=0,p=0;
-    topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
-    grandPeriodChange+=c-p;
-  });
-
   topDrivers.forEach(function(drv){
     var pending=driverPending[drv]||0;
     html+='<tr><td>'+esc(drv)+'</td>';
-    // Back-calculate the pre-period starting balance so the last column
-    // always converges exactly to the bills-based pending figure.
-    // IMPORTANT: do NOT clamp running to 0 — clamping breaks convergence when
-    // periodChange > pending (bills paid before the visible window push running
-    // below zero temporarily). Clamp only the *display*, not the variable.
-    var periodChange=allWeeks.reduce(function(s,w){
-      return s+(chargeMap[w]&&chargeMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);
-    },0);
-    var running=pending-periodChange; // exact math; last col = pending always
+    // running starts at 0 and accumulates charges minus payments as detected
+    // by the system.  This gives a clear trend: if yesterday was $6K and
+    // today $8K was charged, the cell shows $14K; if then $1K was paid, $13K.
+    // The PENDIENTE ACTUAL column always shows the authoritative bills-based
+    // balance — it is the source of truth regardless of running.
+    var running=0;
     allWeeks.forEach(function(w){
       var charge=chargeMap[w]&&chargeMap[w][drv]||0;
       var pay=payMap[w]&&payMap[w][drv]||0;
@@ -1400,7 +1388,7 @@ function renderEvolTable(){
   });
 
   html+='</tbody><tfoot><tr><td>'+t('evol_total')+'</td>';
-  var grandRunning=grandTotalPending-grandPeriodChange; // same exact-math approach
+  var grandRunning=0;
   allWeeks.forEach(function(w){
     var c=0,p=0;
     topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
