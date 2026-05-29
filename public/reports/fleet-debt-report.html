@@ -1185,7 +1185,7 @@ function renderMixedChart(){
   PAYMENT_EVENTS.forEach(function(p){
     var drvKey=normalizeName(p.driver);
     if(!activeSet[drvKey])return;
-    var d=new Date(p.date);if(!d||isNaN(d))return;
+    var d=parseDate(p.date);if(!d||isNaN(d))return;
     var label;
     if(_mcPeriod==='daily'){
       label=d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
@@ -1301,7 +1301,7 @@ function renderEvolTable(){
   srcPayments.forEach(function(p){
     var drv=normalizeName(p.driver);
     if(!activeSet[drv])return;
-    var d=new Date(p.date);if(!d||isNaN(d))return;
+    var d=parseDate(p.date);if(!d||isNaN(d))return; // parseDate handles dd/mm/yyyy and ISO
     var wk=evolLabel(d);if(!wk)return;
     if(!payMap[wk])payMap[wk]={};
     if(!weekDates[wk])weekDates[wk]=d;
