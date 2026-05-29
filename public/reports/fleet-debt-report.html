@@ -1260,11 +1260,36 @@ function renderEvolTable(){
   // chargeMap[wk][drv] = total new charges that week
   // payMap[wk][drv]    = total payments that week
   var chargeMap={};var payMap={};var weekDates={};var driverSet={};
-  var driverPending={};
 
   // Active drivers only — fired shown separately in Despedidos section
   var activeSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
+
+  // ── Authoritative pending per driver ────────────────────────────────────────
+  // Compute at DRIVER level (sum all amounts, sum all paid, then subtract) so it
+  // matches the KPI cards exactly.  Per-bill max(0,...) is wrong when any bill is
+  // overpaid: it inflates the total vs. the driver-level KPI figure.
+  // When no type filter: use the already-built DRIVERS array (includes all bills,
+  //   even those without a createdAt date).
+  // When type filter: sum gross amounts from srcBills at driver level.
+  var driverPending={};
+  if(!_typeFilter){
+    // No filter — use authoritative driver pending (matches KPI card 1-to-1)
+    DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){
+      driverPending[d.driver]=d.pending||0;
+    });
+  } else {
+    // Type filter — compute from filtered bills at driver level
+    var _grossAmt={},_grossPaid={};
+    srcBills.forEach(function(b){
+      var drv=normalizeName(b.driver);if(!activeSet[drv])return;
+      _grossAmt[drv]=(_grossAmt[drv]||0)+parseAmt(b.amount);
+      _grossPaid[drv]=(_grossPaid[drv]||0)+parseAmt(b.paidAmount);
+    });
+    Object.keys(_grossAmt).forEach(function(drv){
+      driverPending[drv]=Math.max(0,(_grossAmt[drv]||0)-(_grossPaid[drv]||0));
+    });
+  }
 
   function evolLabel(d){
     if(_evolPeriod==='daily')return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
@@ -1279,7 +1304,6 @@ function renderEvolTable(){
     if(!chargeMap[wk]){chargeMap[wk]={};weekDates[wk]=d;}
     chargeMap[wk][drv]=(chargeMap[wk][drv]||0)+parseAmt(b.amount);
     driverSet[drv]=true;
-    driverPending[drv]=(driverPending[drv]||0)+Math.max(0,parseAmt(b.amount)-parseAmt(b.paidAmount));
   });
 
   srcPayments.forEach(function(p){
@@ -1292,6 +1316,14 @@ function renderEvolTable(){
     payMap[wk][drv]=(payMap[wk][drv]||0)+p.amount;
     driverSet[drv]=true;
   });
+
+  // When no type filter, ensure every active driver with pending appears in the
+  // table even if all their bills lack a createdAt date (no chargeMap entry).
+  if(!_typeFilter){
+    DRIVERS.filter(function(d){return d.isActive&&d.pending>0;}).forEach(function(d){
+      driverSet[d.driver]=true;
+    });
+  }
 
   // All weeks from both charges and payments, sorted, take last 8
   var allWeekSet={};
