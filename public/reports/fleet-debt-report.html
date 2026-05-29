@@ -1265,31 +1265,24 @@ function renderEvolTable(){
   var activeSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
 
-  // ── Authoritative pending per driver ────────────────────────────────────────
-  // Compute at DRIVER level (sum all amounts, sum all paid, then subtract) so it
-  // matches the KPI cards exactly.  Per-bill max(0,...) is wrong when any bill is
-  // overpaid: it inflates the total vs. the driver-level KPI figure.
-  // When no type filter: use the already-built DRIVERS array (includes all bills,
-  //   even those without a createdAt date).
-  // When type filter: sum gross amounts from srcBills at driver level.
+  // ── driverPending: driver-level gross aggregation (consistent with chargeMap) ──
+  // The bills API now emits synthetic payment events for bills that appear
+  // pre-paid on first upload, so sum(payMap) == sum(bill.paidAmount) for every
+  // dated bill.  This means running=0 start converges to driverPending naturally
+  // without any back-calculation.  We compute pending from srcBills (date-filtered,
+  // type-filtered) at driver level to stay in sync with chargeMap and payMap.
+  var _grossAmt={},_grossPaid={};
+  srcBills.forEach(function(b){
+    var drv=normalizeName(b.driver);if(!activeSet[drv])return;
+    var d=parseDate(b.createdAt);if(!d)return; // only dated bills, same as chargeMap
+    _grossAmt[drv]=(_grossAmt[drv]||0)+parseAmt(b.amount);
+    _grossPaid[drv]=(_grossPaid[drv]||0)+parseAmt(b.paidAmount);
+    driverSet[drv]=true;
+  });
   var driverPending={};
-  if(!_typeFilter){
-    // No filter — use authoritative driver pending (matches KPI card 1-to-1)
-    DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){
-      driverPending[d.driver]=d.pending||0;
-    });
-  } else {
-    // Type filter — compute from filtered bills at driver level
-    var _grossAmt={},_grossPaid={};
-    srcBills.forEach(function(b){
-      var drv=normalizeName(b.driver);if(!activeSet[drv])return;
-      _grossAmt[drv]=(_grossAmt[drv]||0)+parseAmt(b.amount);
-      _grossPaid[drv]=(_grossPaid[drv]||0)+parseAmt(b.paidAmount);
-    });
-    Object.keys(_grossAmt).forEach(function(drv){
-      driverPending[drv]=Math.max(0,(_grossAmt[drv]||0)-(_grossPaid[drv]||0));
-    });
-  }
+  Object.keys(_grossAmt).forEach(function(drv){
+    driverPending[drv]=Math.max(0,(_grossAmt[drv]||0)-(_grossPaid[drv]||0));
+  });
 
   function evolLabel(d){
     if(_evolPeriod==='daily')return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
@@ -1303,7 +1296,6 @@ function renderEvolTable(){
     var wk=evolLabel(d);if(!wk)return;
     if(!chargeMap[wk]){chargeMap[wk]={};weekDates[wk]=d;}
     chargeMap[wk][drv]=(chargeMap[wk][drv]||0)+parseAmt(b.amount);
-    driverSet[drv]=true;
   });
 
   srcPayments.forEach(function(p){
@@ -1316,14 +1308,6 @@ function renderEvolTable(){
     payMap[wk][drv]=(payMap[wk][drv]||0)+p.amount;
     driverSet[drv]=true;
   });
-
-  // When no type filter, ensure every active driver with pending appears in the
-  // table even if all their bills lack a createdAt date (no chargeMap entry).
-  if(!_typeFilter){
-    DRIVERS.filter(function(d){return d.isActive&&d.pending>0;}).forEach(function(d){
-      driverSet[d.driver]=true;
-    });
-  }
 
   // All weeks from both charges and payments, sorted, take last 8
   var allWeekSet={};
@@ -1356,29 +1340,18 @@ function renderEvolTable(){
   topDrivers.forEach(function(drv){
     var pending=driverPending[drv]||0;
     html+='<tr><td>'+esc(drv)+'</td>';
-    // Back-calculate starting balance: running ends at `pending` by construction
-    // (running_start + periodChange = pending_start - periodChange + periodChange = pending).
-    // When running < 0 in intermediate weeks it means untracked pre-period payments
-    // exist; we show "—" for the accumulator in those cells (no fake $0) and let it
-    // appear naturally once the running turns positive.  Last cell = pending always.
-    var periodChange=allWeeks.reduce(function(s,w){
-      return s+(chargeMap[w]&&chargeMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);
-    },0);
-    var running=pending-periodChange;
+    // running starts at 0.  The bills API now emits synthetic payment events for
+    // bills that appear pre-paid on first upload, so sum(payMap) == sum(paidAmount)
+    // and the running converges to `pending` naturally — no back-calculation needed.
+    var running=0;
     allWeeks.forEach(function(w){
       var charge=chargeMap[w]&&chargeMap[w][drv]||0;
       var pay=payMap[w]&&payMap[w][drv]||0;
       running+=charge-pay;
       var hasActivity=charge>0||pay>0;
-      // Always show a balance in the accumulator line:
-      //   running ≥ 0  → actual value
-      //   running < 0  → $0 (pre-period payments not captured; back-calc in progress)
-      // Reserve "—" only for inactive cells (no charge, no payment).
-      var accVal=fmtShort(Math.max(0,running));
-      var accHtml='<div class="evol-cell-acc">'+accVal+'</div>';
+      var accHtml='<div class="evol-cell-acc">'+fmtShort(Math.max(0,running))+'</div>';
       if(!hasActivity){
-        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div>'
-          +(running>=0?accHtml:'')+'</td>';
+        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div>'+accHtml+'</td>';
         return;
       }
       var pct=maxCharge>0?charge/maxCharge:0;
@@ -1399,13 +1372,7 @@ function renderEvolTable(){
 
   html+='</tbody><tfoot><tr><td>'+t('evol_total')+'</td>';
   var grandTotalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
-  var grandPeriodChange=0;
-  allWeeks.forEach(function(w){
-    var c=0,p=0;
-    topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
-    grandPeriodChange+=c-p;
-  });
-  var grandRunning=grandTotalPending-grandPeriodChange;
+  var grandRunning=0;
   allWeeks.forEach(function(w){
     var c=0,p=0;
     topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});

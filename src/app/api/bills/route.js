@@ -154,7 +154,12 @@ export async function GET() {
         fileDataRows++;
         if (!rawDriver) fileEmptyDriverRows++;
 
-        // Detect payment: paidAmount increased vs previous version of this bill
+        // Detect payment: paidAmount increased vs previous version of this bill.
+        // Also capture "initial" payments: bills that appear for the first time
+        // already partly/fully paid have no prior state to diff against, so their
+        // paid amount was previously invisible to the payment-event stream.
+        // Fix: emit a synthetic event dated at the bill's own createdAt so the
+        // payment lands in the correct week in the evolution table.
         if (prev) {
           const delta = newPaid - prev.paidAmount;
           if (delta > 0) {
@@ -163,10 +168,21 @@ export async function GET() {
               driver: newDriver || prev.driver,
               vehicle: newVehicle || prev.vehicle,
               amount: delta,
-              date: file.modifiedTime, // ISO datetime of the file upload
+              date: file.modifiedTime,
               type: newType || prev.type,
             });
           }
+        } else if (newPaid > 0) {
+          // First appearance with a non-zero paidAmount → synthetic initial payment
+          const createdAt = iDate >= 0 ? String(row[iDate] || '').trim() : '';
+          paymentEvents.push({
+            reference: ref,
+            driver: newDriver,
+            vehicle: newVehicle,
+            amount: newPaid,
+            date: createdAt || file.modifiedTime, // prefer bill date, fall back to upload date
+            type: newType,
+          });
         }
 
         billsMap.set(ref, {
