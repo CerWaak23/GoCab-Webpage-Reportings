@@ -17,6 +17,9 @@
 .env.test.local
 .env.production.local
 
+# server-side disk cache (auto-generated, never commit)
+/.cache/
+
 # misc
 .DS_Store
 *.pem

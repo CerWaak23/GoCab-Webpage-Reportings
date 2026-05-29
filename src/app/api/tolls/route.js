@@ -3,16 +3,49 @@ export const dynamic = 'force-dynamic'; // never cache HTTP response — always 
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 const TOLLS_FOLDER_ID = '1rn3x_-ixgPqwvUzx6Tkqb0Pzjd6LT-xw';
 
+// ── Disk cache ─────────────────────────────────────────────────────────────────
+// Persists processed data across server restarts.  Only a lightweight Drive
+// metadata list is needed to decide whether the disk cache is still valid.
+const CACHE_DIR  = join(process.cwd(), '.cache');
+const CACHE_FILE = join(CACHE_DIR, 'tolls-cache.json');
+
 // ── In-memory cache ────────────────────────────────────────────────────────────
 // Key = joined "fileId:modifiedTime" for all files in the folder.
-// If the file list hasn't changed since last request, return the cached result
-// instantly (no downloads needed).  The cache lives as long as the serverless
-// function instance is warm (typically minutes to hours on Vercel).
-let _cacheKey = '';
-let _cacheData = null;
+// Populated either by a fresh Drive download OR by loading from disk.
+let _cacheKey    = '';
+let _cacheData   = null;
+let _diskLoaded  = false;  // true once we've attempted the disk-load (one-shot)
+
+function loadDiskCache() {
+  if (_diskLoaded) return;
+  _diskLoaded = true;
+  try {
+    const raw    = readFileSync(CACHE_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.key && parsed.data) {
+      _cacheKey  = parsed.key;
+      _cacheData = parsed.data;
+      console.log('[tolls] Loaded cache from disk');
+    }
+  } catch {
+    // File doesn't exist yet or is malformed — ignore, will build fresh
+  }
+}
+
+function saveDiskCache(key, data) {
+  try {
+    mkdirSync(CACHE_DIR, { recursive: true });
+    writeFileSync(CACHE_FILE, JSON.stringify({ key, data }), 'utf-8');
+    console.log('[tolls] Cache saved to disk');
+  } catch (e) {
+    console.warn('[tolls] Could not save cache to disk:', e.message);
+  }
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -95,10 +128,13 @@ function parseBuffer(name, buffer) {
 // ── Main fetch ─────────────────────────────────────────────────────────────────
 
 async function fetchTolls() {
+  // Try loading the disk cache on first call after a (re)start
+  loadDiskCache();
+
   const auth = getAuth();
   const drive = google.drive({ version: 'v3', auth });
 
-  // 1. List files
+  // 1. List files (lightweight metadata only — no file content downloaded)
   const listRes = await drive.files.list({
     q: `'${TOLLS_FOLDER_ID}' in parents and trashed=false`,
     fields: 'files(id,name,mimeType,modifiedTime)',
@@ -109,14 +145,15 @@ async function fetchTolls() {
     return n.endsWith('.xls') || n.endsWith('.xlsx') || n.endsWith('.csv');
   });
 
-  // 2. Check cache — if no files changed, return immediately
+  // 2. Build cache key from file IDs + modifiedTimes
+  //    If nothing changed since last load (memory or disk), return immediately.
   const newKey = files.map(f => `${f.id}:${f.modifiedTime}`).join('|');
   if (newKey && newKey === _cacheKey && _cacheData) {
-    console.log('[tolls] Cache hit — returning cached result');
+    console.log('[tolls] Cache hit — returning cached result (no Drive downloads)');
     return _cacheData;
   }
 
-  // 3. Download ALL files in parallel
+  // 3. Something changed (or first ever run) → download ALL files in parallel
   console.log(`[tolls] Downloading ${files.length} file(s) in parallel…`);
   const t0 = Date.now();
 
@@ -270,10 +307,13 @@ async function fetchTolls() {
     sources: files.map(f => f.name),
   };
 
-  // 5. Store in cache
+  // 5. Update in-memory cache and persist to disk so restarts stay fast
   _cacheKey  = newKey;
   _cacheData = result;
   console.log(`[tolls] Processed ${transactions.length} transactions in ${Date.now() - t0} ms — cache updated`);
+
+  // Save to disk asynchronously (don't block the response)
+  setImmediate(() => saveDiskCache(newKey, result));
 
   return result;
 }
