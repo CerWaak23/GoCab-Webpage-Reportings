@@ -280,10 +280,34 @@ async function fetchTolls() {
 
 const EMPTY_TOLLS = { byPatente: {}, allWeeks: [], totalByPatente: {}, transactions: [], fileHeaders: [], autopistas: [], porticos: [], tipoTarifas: [], sources: [] };
 
-export async function GET() {
+export async function GET(request) {
   try {
     const data = await withTimeout(fetchTolls(), 55000, EMPTY_TOLLS);
-    return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
+
+    // ?plate=XXXX  →  return only that plate's transactions + lookup arrays
+    // Used by the detail panel when a conductor is clicked (lazy load).
+    const plate = request.nextUrl?.searchParams?.get('plate');
+    if (plate) {
+      const p = normPlate(plate);
+      const txns = data.transactions.filter(t => t.plate === p);
+      return NextResponse.json({
+        transactions: txns,
+        autopistas:   data.autopistas,
+        porticos:     data.porticos,
+        tipoTarifas:  data.tipoTarifas,
+      }, { headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    // Default  →  pivot data only; NO transactions sent to browser.
+    // Transactions are fetched on demand (see ?plate= above) so the
+    // initial page load stays small and doesn't crash low-RAM machines.
+    return NextResponse.json({
+      byPatente:      data.byPatente,
+      allWeeks:       data.allWeeks,
+      totalByPatente: data.totalByPatente,
+      sources:        data.sources,
+    }, { headers: { 'Cache-Control': 'no-store' } });
+
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
