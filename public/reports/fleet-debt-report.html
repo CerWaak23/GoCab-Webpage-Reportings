@@ -1333,22 +1333,22 @@ function renderEvolTable(){
   topDrivers.forEach(function(drv){
     var pending=driverPending[drv]||0;
     html+='<tr><td>'+esc(drv)+'</td>';
-    // Compute total change over the visible period so we can back-calculate
-    // the pre-period starting balance. This guarantees that by the last
-    // visible column, running === pending (bills-based authoritative value).
+    // Back-calculate the pre-period starting balance so the last column
+    // always converges exactly to the bills-based pending figure.
+    // IMPORTANT: do NOT clamp running to 0 — clamping breaks convergence when
+    // periodChange > pending (bills paid before the visible window push running
+    // below zero temporarily). Clamp only the *display*, not the variable.
     var periodChange=allWeeks.reduce(function(s,w){
       return s+(chargeMap[w]&&chargeMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);
     },0);
-    // If period change > pending (e.g. cancelled bills inflated charges),
-    // cap at 0 to avoid showing a negative starting balance.
-    var running=Math.max(0,pending-periodChange);
+    var running=pending-periodChange; // exact math; last col = pending always
     allWeeks.forEach(function(w){
       var charge=chargeMap[w]&&chargeMap[w][drv]||0;
       var pay=payMap[w]&&payMap[w][drv]||0;
       running+=charge-pay;
       var hasActivity=charge>0||pay>0;
       if(!hasActivity){
-        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div><div class="evol-cell-acc" style="color:#374151">'+fmtShort(running)+'</div></td>';
+        html+='<td class="cell-zero" style="text-align:right"><div style="color:#374151;font-size:10px">—</div><div class="evol-cell-acc" style="color:#374151">'+fmtShort(Math.max(0,running))+'</div></td>';
         return;
       }
       var pct=maxCharge>0?charge/maxCharge:0;
@@ -1356,7 +1356,7 @@ function renderEvolTable(){
       html+='<td class="'+bgCls+'" style="text-align:right;background:'+(pay>0&&charge===0?'#0a1f12':'')+'">';
       if(charge>0)html+='<div class="evol-cell-new">+'+fmtShort(charge)+'</div>';
       if(pay>0)html+='<div style="font-size:10px;color:#34d399;font-weight:500;line-height:1.3">−'+fmtShort(pay)+'</div>';
-      html+='<div class="evol-cell-acc">'+fmtShort(running)+'</div>';
+      html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,running))+'</div>';
       html+='</td>';
     });
     if(pending<=0){
@@ -1368,7 +1368,7 @@ function renderEvolTable(){
   });
 
   html+='</tbody><tfoot><tr><td>'+t('evol_total')+'</td>';
-  var grandRunning=Math.max(0,grandTotalPending-grandPeriodChange);
+  var grandRunning=grandTotalPending-grandPeriodChange; // same exact-math approach
   allWeeks.forEach(function(w){
     var c=0,p=0;
     topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
@@ -1376,7 +1376,7 @@ function renderEvolTable(){
     html+='<td style="text-align:right">';
     if(c>0)html+='<div class="evol-cell-new" style="color:#fbbf24">+'+fmtShort(c)+'</div>';
     if(p>0)html+='<div style="font-size:10px;color:#34d399;font-weight:600;line-height:1.3">−'+fmtShort(p)+'</div>';
-    html+='<div class="evol-cell-acc">'+fmtShort(grandRunning)+'</div></td>';
+    html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
   });
   var totalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
   html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(totalPending)+'</td></tr></tfoot>';
