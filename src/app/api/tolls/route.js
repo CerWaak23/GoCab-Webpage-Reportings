@@ -79,6 +79,10 @@ function parseFecha(s) {
     return new Date((num - 25569) * 86400 * 1000);
   }
   const str = String(s).trim();
+  // ISO datetime: YYYY-MM-DD HH:MM:SS (new mayo-2026 format)
+  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::\d{2})?)?/);
+  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3], +(iso[4] || 0), +(iso[5] || 0));
+  // Chilean dd/mm/yyyy or dd-mm-yyyy
   const m = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::\d{2})?)?/);
   if (!m) return null;
   return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
@@ -224,13 +228,21 @@ async function fetchTolls() {
 
     const iPatente    = ci(['patente', 'móvil', 'movil', 'placa']);
     const iValor      = ci(['valor', 'monto', 'importe', 'cobro']);
-    const iFecha      = ci(['fecha inicial', 'fecha inicio', 'fecha']);
-    const iAutopista  = ci(['autopista', 'ruta', 'vía', 'via']);
+    const iFecha      = ci(['fecha inicial', 'fecha inicio', 'fecha_entrada', 'fecha']);
+    // Prefer exact 'autopista' column over 'tipo_autopista' (new format has both)
+    const iAutopista  = (() => {
+      const exact = header.findIndex(h => h === 'autopista');
+      return exact !== -1 ? exact : ci(['autopista', 'ruta', 'vía', 'via']);
+    })();
     // 'rtico' matches "P?rtico" (Windows-1252 XLS decoded by XLSX.js → U+FFFD char)
     const iPortico    = ci(['pórtico', 'portico', 'rtico', 'portal', 'plaza de cobro', 'plaza', 'peaje', 'estación', 'estacion', 'cabina']);
     const iTipoTarifa = ci(['tipo tarifa', 'tipo de tarifa', 'tarifa', 'categoría', 'categoria', 'clase', 'tipo de veh']);
 
-    fileHeaders.push({ file: file.name, iPatente, iValor, iFecha, iAutopista, iPortico, iTipoTarifa });
+    // Old Rpt_Porticos format: column named exactly 'valor' → integers are centavos (28579 = $285.79)
+    // New mayo-2026 format: column named 'valor_cobro' → integers are already pesos (421 = $421)
+    const valorInCentavos = iValor >= 0 && header[iValor] === 'valor';
+
+    fileHeaders.push({ file: file.name, iPatente, iValor, iFecha, iAutopista, iPortico, iTipoTarifa, valorInCentavos });
     if (iPatente === -1 || iValor === -1 || iFecha === -1) continue;
 
     const fileAccum   = {};
@@ -244,9 +256,9 @@ async function fetchTolls() {
       if (!plate) continue;
 
       const rawValor = row[iValor];
-      // Chilean toll files store amounts as integer centavos (28579 = $285.79 CLP)
+      // Old format: large integer centavos → divide by 100. New format: direct pesos.
       const valor = typeof rawValor === 'number' && Number.isInteger(rawValor) && rawValor > 0
-        ? rawValor / 100
+        ? (valorInCentavos ? rawValor / 100 : rawValor)
         : parseValor(rawValor);
       if (valor <= 0) continue;
 
@@ -298,8 +310,16 @@ async function fetchTolls() {
     totalByPatente[plate] = allWeeks.reduce((s, wk) => s + (data[wk] || 0), 0);
   }
 
+  // Monthly aggregate (YYYY-MM) for the financial dashboard recurring-expenses table
+  const totalByMonth = {};
+  for (const txn of transactions) {
+    if (!txn.fechaStr) continue;
+    const monthKey = txn.fechaStr.substring(0, 7); // "2026-05"
+    totalByMonth[monthKey] = (totalByMonth[monthKey] || 0) + txn.valor;
+  }
+
   const result = {
-    byPatente, allWeeks, totalByPatente,
+    byPatente, allWeeks, totalByPatente, totalByMonth,
     transactions, fileHeaders,
     autopistas: autopistaDict,   // lookup arrays for transaction indices
     porticos:   porticoDict,
@@ -345,6 +365,7 @@ export async function GET(request) {
       byPatente:      data.byPatente,
       allWeeks:       data.allWeeks,
       totalByPatente: data.totalByPatente,
+      totalByMonth:   data.totalByMonth || {},
       sources:        data.sources,
     }, { headers: { 'Cache-Control': 'no-store' } });
 

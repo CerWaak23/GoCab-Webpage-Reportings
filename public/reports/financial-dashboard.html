@@ -340,6 +340,7 @@ var PAGE_SIZE = 50;
 var RAW   = [];   // parsed sheet rows
 var SUMUP = {};          // {mes: {bruto,comision,neto,transacciones}}
 var SUMUP_RETIROS = 0;   // total withdrawn from SumUp to bank
+var TOLLS_BY_MONTH = {}; // {YYYY-MM: totalCLP} — pórticos/TAG monthly totals
 var LANG  = 'es';
 
 var T = {
@@ -409,6 +410,7 @@ var T = {
     sumup_archivos:'archivos', sumup_sin_archivos:'sin archivos',
     chart_eg_op:'Egresos operativos', chart_sumup_neto:'SumUp neto',
     chart_sumup_neto_m:'SumUp neto mensual', chart_eg_op2:'Egresos Op.',
+    chart_sumup_comis:'Comisión SumUp',
     chart_capital:'Capital del Holding', chart_indrive:'Indrive subsidio',
     chart_egresos:'Egresos', chart_del_total:'del total',
     pivot_total:'Total',
@@ -481,6 +483,7 @@ var T = {
     sumup_archivos:'files', sumup_sin_archivos:'no files',
     chart_eg_op:'Operational expenses', chart_sumup_neto:'SumUp net',
     chart_sumup_neto_m:'SumUp net monthly', chart_eg_op2:'Op. Expenses',
+    chart_sumup_comis:'SumUp commission',
     chart_capital:'Holding Capital', chart_indrive:'Indrive subsidy',
     chart_egresos:'Expenses', chart_del_total:'of total',
     pivot_total:'Total',
@@ -553,6 +556,7 @@ var T = {
     sumup_archivos:'файлов', sumup_sin_archivos:'нет файлов',
     chart_eg_op:'Операционные расходы', chart_sumup_neto:'SumUp нетто',
     chart_sumup_neto_m:'SumUp нетто в месяц', chart_eg_op2:'Опер. расходы',
+    chart_sumup_comis:'Комиссия SumUp',
     chart_capital:'Капитал холдинга', chart_indrive:'Субсидия Indrive',
     chart_egresos:'Расходы', chart_del_total:'от итога',
     pivot_total:'Итого',
@@ -628,6 +632,7 @@ function getMesesOrdenados() {
   RAW.forEach(function(r){if(r.month)set[r.month]=1;});
   return sortMonths(Object.keys(set));
 }
+
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmtAmt(v) {
@@ -730,18 +735,21 @@ function parseRows(raw, hyperlinks) {
 function isIntl(r) { return r.bank === 'International'; }
 
 // ── Domain helpers ────────────────────────────────────────────────────────────
+// Suppliers that represent capital expenditure (car purchases) — not operating expenses
+var CAPEX_SUPPLIERS = ['bruno fritsch', 'kaufmann', 'kaufman'];
 function isCapEx(r) {
-  return r.supplier === 'Bruno Fritsch' &&
-    (r.desc.indexOf('CHASSIS')!==-1 || r.cashOut > 5000000);
+  var sup = (r.supplier || '').toLowerCase();
+  return CAPEX_SUPPLIERS.some(function(c){ return sup.indexOf(c) !== -1; });
 }
 
 // ── Data Loading ──────────────────────────────────────────────────────────────
 async function loadData() {
   show('loadingWrap');
   try {
-    var [sheetRes, sumupRes] = await Promise.all([
+    var [sheetRes, sumupRes, tollsRes] = await Promise.all([
       fetch('/api/sheets/'+SHEET_ID+'?range=Invoices'),
-      fetch('/api/sumup').catch(function(){ return {ok:false}; })
+      fetch('/api/sumup').catch(function(){ return {ok:false}; }),
+      fetch('/api/tolls').catch(function(){ return {ok:false}; }),
     ]);
     var sheetJson = await sheetRes.json();
     if (sheetJson.error) { showError(sheetJson.error); return; }
@@ -757,6 +765,12 @@ async function loadData() {
       if (meta) meta.textContent = sumupJson.sources && sumupJson.sources.length
         ? sumupJson.sources.length+' '+t('sumup_archivos')
         : t('sumup_sin_archivos');
+    }
+
+    TOLLS_BY_MONTH = {};
+    if (tollsRes.ok) {
+      var tollsJson = await tollsRes.json().catch(function(){ return {}; });
+      TOLLS_BY_MONTH = tollsJson.totalByMonth || {};
     }
 
     buildFilters();
@@ -1015,18 +1029,36 @@ function renderOpChart() {
     return;
   }
   var meses = sortMonths(Object.keys(SUMUP));
-  var data  = meses.map(function(m){ var v=(SUMUP[m]||{}).neto||0; return CUR==='USD'?v/USD_RATE:v; });
+  var dataNeto   = meses.map(function(m){ var v=(SUMUP[m]||{}).neto||0;     return CUR==='USD'?v/USD_RATE:v; });
+  var dataComis  = meses.map(function(m){ var v=(SUMUP[m]||{}).comision||0; return CUR==='USD'?v/USD_RATE:v; });
 
   _opChart = new Chart(document.getElementById('opChart'),{
     type:'line',
-    data:{labels:meses.map(yyyymmToLabel),datasets:[{
-      label:t('chart_sumup_neto_m'),data:data,
-      borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',
-      tension:.3,pointRadius:5,pointBackgroundColor:'#60a5fa',pointBorderColor:'#0a0d14',pointBorderWidth:2,fill:true,
-    }]},
+    data:{labels:meses.map(yyyymmToLabel),datasets:[
+      {
+        label:t('chart_sumup_neto_m'),data:dataNeto,
+        borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)',
+        tension:.3,pointRadius:5,pointBackgroundColor:'#60a5fa',pointBorderColor:'#0a0d14',pointBorderWidth:2,fill:true,
+      },
+      {
+        label:t('chart_sumup_comis'),data:dataComis,
+        borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.06)',
+        tension:.3,pointRadius:5,pointBackgroundColor:'#f87171',pointBorderColor:'#0a0d14',pointBorderWidth:2,
+        borderDash:[5,3],fill:false,
+      },
+    ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:function(ctx){ return ' '+fmtAmt(CUR==='USD'?ctx.raw*USD_RATE:ctx.raw); }}}},
+      plugins:{
+        legend:{
+          display:true,
+          labels:{color:CHART_TEXT,font:{size:11},boxWidth:14,padding:16,
+            usePointStyle:true,pointStyle:'line'},
+        },
+        tooltip:{callbacks:{label:function(ctx){
+          var raw = CUR==='USD' ? ctx.raw*USD_RATE : ctx.raw;
+          return '  '+ctx.dataset.label+': '+fmtAmt(raw);
+        }}},
+      },
       scales:{
         x:{ticks:{color:CHART_TEXT,font:{size:10}},grid:{display:false}},
         y:{ticks:{color:CHART_TEXT,font:{size:10},callback:function(v){ return fmtShort(CUR==='USD'?v*USD_RATE:v); }},grid:{color:CHART_GRID},beginAtZero:true},
@@ -1101,7 +1133,10 @@ function renderIncomeDonut() {
 function renderBarChart() {
   if (_barChart) { _barChart.destroy(); _barChart=null; }
   var bs={};
-  RAW.forEach(function(r){ if(r.cashOut>0 && r.status!=='Pending') bs[r.supplier]=(bs[r.supplier]||0)+r.cashOut; });
+  RAW.forEach(function(r){ if(r.cashOut>0 && r.status!=='Pending' && !isCapEx(r)) bs[r.supplier]=(bs[r.supplier]||0)+r.cashOut; });
+  // Add pórticos as an aggregated entry
+  var tollTotal = Object.keys(TOLLS_BY_MONTH).reduce(function(s,m){ return s+(TOLLS_BY_MONTH[m]||0); },0);
+  if (tollTotal > 0) bs['Pórticos (TAG)'] = (bs['Pórticos (TAG)']||0) + tollTotal;
   var top = Object.keys(bs).sort(function(a,b){return bs[b]-bs[a];}).slice(0,10);
   var vals= top.map(function(s){ return CUR==='USD'?bs[s]/USD_RATE:bs[s]; });
 
@@ -1122,7 +1157,8 @@ function renderBarChart() {
 // ── Pivot Tables ──────────────────────────────────────────────────────────────
 function buildPivotData() {
   var bs={};
-  RAW.filter(function(r){ return r.cashOut>0 && r.status!=='Pending'; })
+  // Exclude CapEx (car purchases) — they're capital, not operating expenses
+  RAW.filter(function(r){ return r.cashOut>0 && r.status!=='Pending' && !isCapEx(r); })
     .forEach(function(r){
       if(!r.supplier)return;
       if(!bs[r.supplier])bs[r.supplier]={total:0,bm:{},mcount:0};
@@ -1131,6 +1167,14 @@ function buildPivotData() {
       bs[r.supplier].bm[r.month]+=r.cashOut;
     });
   return {bs:bs, allM:getMesesOrdenados()};
+}
+
+function getMesesConTolls() {
+  // All months from RAW + toll months
+  var set={};
+  RAW.forEach(function(r){if(r.month)set[r.month]=1;});
+  Object.keys(TOLLS_BY_MONTH).forEach(function(m){if(TOLLS_BY_MONTH[m]>0)set[m]=1;});
+  return sortMonths(Object.keys(set));
 }
 
 function _renderPivot(tableId, suppliers, bs, allM) {
@@ -1157,7 +1201,22 @@ function _renderPivot(tableId, suppliers, bs, allM) {
 }
 
 function renderPivotTables() {
-  var pd=buildPivotData(); var bs=pd.bs; var allM=pd.allM;
+  var pd=buildPivotData(); var bs=pd.bs;
+  var allM=getMesesConTolls(); // includes toll months
+
+  // Inject pórticos (TAG) as a synthetic recurring row
+  var tollMonths=Object.keys(TOLLS_BY_MONTH).filter(function(m){return TOLLS_BY_MONTH[m]>0;});
+  if(tollMonths.length>0){
+    var TOLL_KEY='Pórticos (TAG)';
+    bs[TOLL_KEY]={total:0,bm:{},mcount:0,_isTolls:true};
+    tollMonths.forEach(function(m){
+      var v=TOLLS_BY_MONTH[m];
+      bs[TOLL_KEY].total+=v;
+      bs[TOLL_KEY].bm[m]=v;
+      bs[TOLL_KEY].mcount++;
+    });
+  }
+
   var rec=[], varr=[];
   Object.keys(bs).sort(function(a,b){return bs[b].total-bs[a].total;}).forEach(function(s){
     if(bs[s].mcount>=2) rec.push(s); else varr.push(s);

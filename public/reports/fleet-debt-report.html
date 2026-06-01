@@ -1322,8 +1322,14 @@ function renderEvolTable(){
     tbl.innerHTML='<tbody><tr><td style="color:#374151;padding:12px">Sin datos de fechas</td></tr></tbody>';return;
   }
 
-  // Sort drivers by current pending descending (matches KPI card order)
-  allDrivers.sort(function(a,b){return (driverPending[b]||0)-(driverPending[a]||0);});
+  // Pre-compute final running per driver so sort order matches the PENDIENTE ACTUAL column
+  var driverFinalRunning={};
+  allDrivers.forEach(function(drv){
+    var r=0;
+    allWeeks.forEach(function(w){r+=(chargeMap[w]&&chargeMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);});
+    driverFinalRunning[drv]=Math.max(0,r);
+  });
+  allDrivers.sort(function(a,b){return driverFinalRunning[b]-driverFinalRunning[a];});
   var topDrivers=allDrivers; // all drivers — vertical scroll handles overflow
 
   var maxCharge=0;
@@ -1338,7 +1344,6 @@ function renderEvolTable(){
   html+='</tr></thead><tbody>';
 
   topDrivers.forEach(function(drv){
-    var pending=driverPending[drv]||0;
     html+='<tr><td>'+esc(drv)+'</td>';
     // running starts at 0.  The bills API now emits synthetic payment events for
     // bills that appear pre-paid on first upload, so sum(payMap) == sum(paidAmount)
@@ -1361,11 +1366,12 @@ function renderEvolTable(){
       if(pay>0)html+='<div style="font-size:10px;color:#34d399;font-weight:500;line-height:1.3">−'+fmtShort(pay)+'</div>';
       html+=accHtml+'</td>';
     });
-    // PENDIENTE ACTUAL = running at the last week = pending (by construction above)
-    if(pending<=0){
+    // PENDIENTE ACTUAL = accumulated running at the last visible date (no bills-system formula)
+    var finalRunning=Math.max(0,running);
+    if(finalRunning<=0){
       html+='<td style="text-align:right"><span style="color:#34d399;font-weight:700;font-size:13px">$0 ✓</span></td>';
     } else {
-      html+='<td style="text-align:right"><span style="background:#3b0a0a;border:1px solid #7f1d1d55;color:#fca5a5;border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block">'+fmtShort(pending)+'</span></td>';
+      html+='<td style="text-align:right"><span style="background:#3b0a0a;border:1px solid #7f1d1d55;color:#fca5a5;border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block">'+fmtShort(finalRunning)+'</span></td>';
     }
     html+='</tr>';
   });
@@ -1382,8 +1388,7 @@ function renderEvolTable(){
     if(p>0)html+='<div style="font-size:10px;color:#34d399;font-weight:600;line-height:1.3">−'+fmtShort(p)+'</div>';
     html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
   });
-  var totalPending=grandTotalPending;
-  html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(totalPending)+'</td></tr></tfoot>';
+  html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(Math.max(0,grandRunning))+'</td></tr></tfoot>';
   tbl.innerHTML=html;
 }
 
