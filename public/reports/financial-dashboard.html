@@ -1292,6 +1292,18 @@ function renderTxnTable(rows) {
     }).join('');
   }
 
+  // Total row — sums ALL filtered rows (not just current page)
+  var totalIn  = sorted.reduce(function(s,r){ return s+(r.cashIn||0); },0);
+  var totalOut = sorted.reduce(function(s,r){ return s+(r.cashOut||0); },0);
+  if(sorted.length>0){
+    tbody.innerHTML += '<tr style="border-top:2px solid #374151;background:#0f1623">'
+      +'<td colspan="4" style="font-weight:700;color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Total ('+total+' resultados)</td>'
+      +'<td class="amt-in" style="font-weight:700;font-size:13px">'+(totalIn>0?fmtAmt(totalIn):'')+'</td>'
+      +'<td class="amt-out" style="font-weight:700;font-size:13px">'+(totalOut>0?fmtAmt(totalOut):'')+'</td>'
+      +'<td colspan="3"></td>'
+      +'</tr>';
+  }
+
   var info=pages>1?(start+1)+'-'+Math.min(start+PAGE_SIZE,total)+' '+t('pag_de')+' '+total+' '+t('pag_resultados')
                   :total+' '+t('pag_resultados');
   var pi=document.getElementById('pageInfo'); if(pi) pi.textContent=info;
