@@ -458,6 +458,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <thead><tr>
           <th style="text-align:left;min-width:130px">Conductor</th>
           <th style="text-align:left">Fecha</th>
+          <th style="text-align:left">Hora</th>
           <th style="text-align:left">Semana</th>
           <th style="text-align:left">Autopista</th>
           <th style="text-align:left">Pórtico</th>
@@ -1615,7 +1616,7 @@ function renderTollsDetail(){
     title.textContent='Detalle de Transacciones';
     sub.textContent='';
     if(clearBtn)clearBtn.style.display='none';
-    body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:#4b5563;font-size:12px">'
+    body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:#4b5563;font-size:12px">'
       +'← Selecciona un conductor de la tabla para ver sus transacciones</td></tr>';
     clearFoot();return;
   }
@@ -1628,7 +1629,7 @@ function renderTollsDetail(){
   // ── Loading state ─────────────────────────────────────────────────────────
   if(_plateDetailLoading){
     sub.textContent='Cargando...';
-    body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#6b7280;font-size:12px">'
+    body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#6b7280;font-size:12px">'
       +'<span style="animation:spin 1s linear infinite;display:inline-block">⟳</span> Cargando transacciones…</td></tr>';
     clearFoot();return;
   }
@@ -1642,7 +1643,10 @@ function renderTollsDetail(){
     if(!a.fechaStr&&!b.fechaStr)return 0;
     if(!a.fechaStr)return 1;
     if(!b.fechaStr)return -1;
-    return b.fechaStr.localeCompare(a.fechaStr);
+    var cmp=b.fechaStr.localeCompare(a.fechaStr);
+    if(cmp!==0)return cmp;
+    // Same date → sort by time descending
+    return (b.horaStr||'').localeCompare(a.horaStr||'');
   });
 
   var totalVal=txns.reduce(function(s,t){return s+t.valor;},0);
@@ -1659,6 +1663,7 @@ function renderTollsDetail(){
     html+='<tr>'
       +'<td style="text-align:left;white-space:nowrap"><div class="p-name" style="font-size:11px">'+esc(cname)+'</div><div class="p-plate">'+esc(t.plate)+'</div></td>'
       +'<td style="text-align:left;white-space:nowrap">'+esc(dateLabel)+'</td>'
+      +'<td style="text-align:left;white-space:nowrap;color:#93c5fd;font-variant-numeric:tabular-nums">'+esc(t.horaStr||'—')+'</td>'
       +'<td style="text-align:left;white-space:nowrap;color:#6b7280">'+esc(t.wk||'—')+'</td>'
       +'<td style="text-align:left">'+esc(txnAutopista(t,detail)||'—')+'</td>'
       +'<td style="text-align:left;color:#9ca3af">'+esc(txnPortico(t,detail)||'—')+'</td>'
@@ -1667,17 +1672,17 @@ function renderTollsDetail(){
       +'</tr>';
   });
   if(remaining>0){
-    html+='<tr><td colspan="7" style="text-align:center;padding:10px">'
+    html+='<tr><td colspan="8" style="text-align:center;padding:10px">'
       +'<button onclick="_tollsDetailPage++;renderTollsDetail()" style="background:#1f2937;border:1px solid #374151;color:#9ca3af;border-radius:7px;padding:6px 20px;font-size:12px;cursor:pointer">'
       +'Ver '+remaining+' más →</button></td></tr>';
   }
-  body.innerHTML=html||'<tr><td colspan="7" style="color:#4b5563;padding:12px">Sin transacciones para este conductor</td></tr>';
+  body.innerHTML=html||'<tr><td colspan="8" style="color:#4b5563;padding:12px">Sin transacciones para este conductor</td></tr>';
 
   clearFoot();
   if(txns.length&&tbl){
     var foot=document.createElement('tfoot');
     foot.innerHTML='<tr style="border-top:1px solid #374151">'
-      +'<td colspan="6" style="text-align:right;padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">TOTAL</td>'
+      +'<td colspan="7" style="text-align:right;padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">TOTAL</td>'
       +'<td style="color:#fbbf24;font-weight:700;font-size:13px;text-align:right;padding:6px 8px">'+fmtAmt(totalVal)+'</td>'
       +'</tr>';
     tbl.appendChild(foot);

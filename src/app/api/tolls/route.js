@@ -289,9 +289,22 @@ async function fetchTolls() {
         const fechaStr = fecha
           ? `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}-${String(fecha.getUTCDate()).padStart(2,'0')}`
           : null;
+        // Extract time-of-day: from ISO string (HH:MM) or Excel serial fractional part
+        let horaStr = null;
+        const rawFval = row[iFecha];
+        if (typeof rawFval === 'string') {
+          const tm = rawFval.match(/[T\s](\d{2}):(\d{2})/);
+          if (tm) horaStr = `${tm[1]}:${tm[2]}`;
+        } else if (typeof rawFval === 'number' && rawFval % 1 !== 0) {
+          const frac = rawFval % 1;
+          const totalMin = Math.round(frac * 1440);
+          const hh = Math.floor(totalMin / 60);
+          const mm = totalMin % 60;
+          horaStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+        }
         // Store indices instead of full strings → 5-8x smaller JSON payload
         transactions.push({
-          plate, wk, fechaStr, valor,
+          plate, wk, fechaStr, horaStr, valor,
           ai: intern(autopistaDict,  autopistaIdx,  autopista),
           pi: intern(porticoDict,    porticoIdx,    portico),
           ti: intern(tipoTarifaDict, tipoTarifaIdx, tipoTarifa),
