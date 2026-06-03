@@ -352,8 +352,17 @@ async function fetchTolls() {
     totalByMonth[monthKey] = (totalByMonth[monthKey] || 0) + txn.valor;
   }
 
+  // Day-level totals per plate: byPatenteFecha[plate]["YYYY-MM-DD"] = amount
+  // Used by frontend to compute exact amounts for partial first weeks
+  const byPatenteFecha = {};
+  for (const txn of transactions) {
+    if (!txn.fechaStr || !txn.plate) continue;
+    if (!byPatenteFecha[txn.plate]) byPatenteFecha[txn.plate] = {};
+    byPatenteFecha[txn.plate][txn.fechaStr] = (byPatenteFecha[txn.plate][txn.fechaStr] || 0) + txn.valor;
+  }
+
   const result = {
-    byPatente, allWeeks, weekStartDates, totalByPatente, totalByMonth,
+    byPatente, allWeeks, weekStartDates, byPatenteFecha, totalByPatente, totalByMonth,
     transactions, fileHeaders,
     autopistas: autopistaDict,   // lookup arrays for transaction indices
     porticos:   porticoDict,
@@ -399,6 +408,7 @@ export async function GET(request) {
       byPatente:      data.byPatente,
       allWeeks:       data.allWeeks,
       weekStartDates: data.weekStartDates || {},
+      byPatenteFecha: data.byPatenteFecha || {},
       totalByPatente: data.totalByPatente,
       totalByMonth:   data.totalByMonth || {},
       sources:        data.sources,

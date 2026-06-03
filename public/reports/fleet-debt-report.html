@@ -1496,13 +1496,11 @@ function _buildTollsRows(){
     var fi=fleet.fechaInicioStr; // "YYYY-MM-DD" or null
 
     // Split weeks into "assigned to this driver" vs "prior (otro conductor)"
-    // A week is "assigned" if its THURSDAY END date >= driver start date.
-    // Partial first weeks (weekStart < fi <= weekEnd) are marked so the pivot cell
-    // shows a "parcial" label. The detail uses exact day-level filter so it shows
-    // only the conductor's real transactions within that partial week.
+    // For partial first weeks (weekStart < fi <= weekEnd), use day-level data
+    // (byPatenteFecha) to compute the exact amount for this conductor only.
     var assignedData={};  // same shape as data but only assigned weeks
-    var partialWeeks=[];  // weeks where conductor started mid-week
     var priorTotal=0;
+    var bpf=(TOLLS.byPatenteFecha||{})[normP]||{}; // day-level totals for this plate
     weeks.forEach(function(wk){
       var v=data[wk]||0;
       if(!v)return;
@@ -1510,8 +1508,17 @@ function _buildTollsRows(){
       var wstart=(wsd[wk]&&wsd[wk].start)||null;
       var wend=(wsd[wk]&&wsd[wk].end)||null;
       if(wend&&wend>=fi){
-        assignedData[wk]=v;
-        if(wstart&&wstart<fi)partialWeeks.push(wk); // conductor started mid-week
+        if(wstart&&wstart<fi){
+          // Partial first week: sum only days >= fi using day-level data
+          var exactAmt=0;
+          var d=new Date(fi+'T00:00:00Z');
+          var dEnd=new Date(wend+'T00:00:00Z');
+          while(d<=dEnd){var ds=d.toISOString().slice(0,10);exactAmt+=bpf[ds]||0;d=new Date(d.getTime()+86400000);}
+          assignedData[wk]=exactAmt;
+          priorTotal+=v-exactAmt; // prior portion of this week
+        } else {
+          assignedData[wk]=v; // full week assigned
+        }
       } else {
         priorTotal+=v; // entirely before start date
       }
@@ -1520,7 +1527,7 @@ function _buildTollsRows(){
     var total=weeks.reduce(function(s,wk){return s+(assignedData[wk]||0);},0);
     if(total<=0&&priorTotal<=0)return;
     rows.push({plate:normP,display:data._rawPlate||normP,conductor:fleet.conductorDisplay,
-               data:assignedData,total:total,priorTotal:priorTotal,partialWeeks:partialWeeks,fechaInicioStr:fi});
+               data:assignedData,total:total,priorTotal:priorTotal,fechaInicioStr:fi});
   });
   rows.sort(function(a,b){return b.total-a.total;});
   return rows;
@@ -1579,12 +1586,8 @@ function renderTollsSection(){
       var v=r.data[wk]||0;
       var isSel=isSelPlate&&_tollsDetailWk===wk;
       var bg=isSel?'background:#1a1200;':'';
-      var isPartial=r.partialWeeks&&r.partialWeeks.indexOf(wk)!==-1;
       if(v>0){
-        html+='<td style="color:#fbbf24;cursor:pointer;'+bg+'" onclick="openTollsDetail(\''+r.plate+'\',\''+wk+'\')">';
-        html+=fmtShort(v);
-        if(isPartial)html+='<div style="font-size:9px;color:#f59e0b;line-height:1.2">parcial</div>';
-        html+='</td>';
+        html+='<td style="color:#fbbf24;cursor:pointer;'+bg+'" onclick="openTollsDetail(\''+r.plate+'\',\''+wk+'\')">'+fmtShort(v)+'</td>';
       } else {
         html+='<td class="p-zero">—</td>';
       }
