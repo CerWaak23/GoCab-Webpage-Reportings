@@ -1754,10 +1754,50 @@ function renderTollsDetail(){
 }
 
 function exportTollsExcel(){
-  if(!_tollsDetailPlate)return; // need a conductor selected
+  var wb=XLSX.utils.book_new();
+  var date=new Date().toISOString().slice(0,10);
+
+  // ── If no conductor selected → export full pivot table ───────────────────
+  if(!_tollsDetailPlate){
+    var allRows=_buildTollsRows();
+    if(!allRows.length)return;
+    var weeks=TOLLS.allWeeks||[];
+    // Header row: Conductor, Patente, Inicio, [weeks...], Total, Anterior
+    var pivotHeader=['Conductor','Patente','Fecha Inicio'].concat(weeks).concat(['TOTAL','Anterior (otro conductor)']);
+    var sheetData=[pivotHeader];
+    allRows.forEach(function(r){
+      var fi=r.fechaInicioStr||'';
+      var row=[r.conductor,r.display,fi];
+      weeks.forEach(function(wk){row.push(r.data[wk]||0);});
+      row.push(r.total);
+      row.push(r.priorTotal||0);
+      sheetData.push(row);
+    });
+    // Totals footer
+    var footRow=['TOTAL','',''];
+    weeks.forEach(function(wk){
+      footRow.push(allRows.reduce(function(s,r){return s+(r.data[wk]||0);},0));
+    });
+    footRow.push(allRows.reduce(function(s,r){return s+r.total;},0));
+    footRow.push(allRows.reduce(function(s,r){return s+(r.priorTotal||0);},0));
+    sheetData.push(footRow);
+
+    var ws=XLSX.utils.aoa_to_sheet(sheetData);
+    var colWidths=[{wch:24},{wch:10},{wch:12}];
+    weeks.forEach(function(){colWidths.push({wch:11});});
+    colWidths.push({wch:13},{wch:22});
+    ws['!cols']=colWidths;
+    XLSX.utils.book_append_sheet(wb,ws,'Pivot Pórticos');
+    XLSX.writeFile(wb,'GoCab_Porticos_Pivot_'+date+'.xlsx');
+    return;
+  }
+
+  // ── Conductor selected → export that conductor's transaction detail ───────
   var detail=_plateDetailCache[_tollsDetailPlate]||{};
+  var fi=FLEET_PLATE_MAP[_tollsDetailPlate]?FLEET_PLATE_MAP[_tollsDetailPlate].fechaInicioStr:null;
   var txns=(detail.transactions||[]).filter(function(t){
     if(_tollsDetailWk&&t.wk!==_tollsDetailWk)return false;
+    if(fi&&t.fechaStr&&t.fechaStr<fi)return false;
     return true;
   }).slice().sort(function(a,b){
     if(!a.fechaStr||!b.fechaStr)return 0;
@@ -1767,7 +1807,7 @@ function exportTollsExcel(){
   if(!txns.length)return;
 
   var fleetRow=FLEET_PLATE_MAP[_tollsDetailPlate];
-  var header=['Conductor','Patente','Fecha','Semana','Autopista','Pórtico','Tipo Tarifa','Valor CLP'];
+  var header=['Conductor','Patente','Fecha','Hora','Semana','Autopista','Pórtico','Tipo Tarifa','Valor CLP'];
   var sheetData=[header];
   txns.forEach(function(t){
     var cname=fleetRow?fleetRow.conductorDisplay:t.plate;
@@ -1775,6 +1815,7 @@ function exportTollsExcel(){
       cname,
       t.plate,
       t.fechaStr||'',
+      t.horaStr||'',
       t.wk||'',
       txnAutopista(t,detail)||'',
       txnPortico(t,detail)||'',
@@ -1783,11 +1824,10 @@ function exportTollsExcel(){
     ]);
   });
 
-  var wb=XLSX.utils.book_new();
   var ws=XLSX.utils.aoa_to_sheet(sheetData);
-  ws['!cols']=[{wch:24},{wch:10},{wch:12},{wch:10},{wch:22},{wch:14},{wch:14},{wch:12}];
+  ws['!cols']=[{wch:24},{wch:10},{wch:12},{wch:8},{wch:12},{wch:22},{wch:14},{wch:14},{wch:12}];
   XLSX.utils.book_append_sheet(wb,ws,'Detalle Pórticos');
-  XLSX.writeFile(wb,'GoCab_Porticos_Detalle_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  XLSX.writeFile(wb,'GoCab_Porticos_Detalle_'+date+'.xlsx');
 }
 
 function renderAll(){
