@@ -929,6 +929,28 @@ function renderKPIs(){
     if(bd&&bd>=weekAgo){weekCharged+=parseAmt(b.amount);weekPaid+=parseAmt(b.paidAmount);}
   });
 
+  // ── Running-based active pending (same method as renderEvolTable PENDIENTE ACTUAL) ──
+  // This matches the evolution table's PENDIENTE ACTUAL footer total exactly.
+  var _kpiActiveSet={};
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){_kpiActiveSet[d.driver]=true;});
+  var _kpiCharges={},_kpiPays={};
+  BILLS.forEach(function(b){
+    var drv=normalizeName(b.driver);
+    if(!_kpiActiveSet[drv])return;
+    var dt=parseDate(b.createdAt);if(!dt)return; // dated bills only, same as chargeMap
+    _kpiCharges[drv]=(_kpiCharges[drv]||0)+parseAmt(b.amount);
+  });
+  PAYMENT_EVENTS.forEach(function(p){
+    var drv=normalizeName(p.driver);
+    if(!_kpiActiveSet[drv])return;
+    _kpiPays[drv]=(_kpiPays[drv]||0)+p.amount;
+  });
+  var runningActivePending=0,runningActiveWithDebtCnt=0;
+  Object.keys(_kpiActiveSet).forEach(function(drv){
+    var r=(_kpiCharges[drv]||0)-(_kpiPays[drv]||0);
+    if(r>0){runningActivePending+=r;runningActiveWithDebtCnt++;}
+  });
+
   var totalPct=totalCharged>0?Math.round(totalPaid/totalCharged*100):0;
   var activePct=activeCharged>0?Math.round(activePaid/activeCharged*100):0;
   var weekPct=weekCharged>0?Math.round(weekPaid/weekCharged*100):0;
@@ -944,14 +966,14 @@ function renderKPIs(){
   setText('kpiChargedSub',t('kpi_sub_active_only'));
   setText('kpiPaid',fmtAmt(activePaid));
   setText('kpiPaidSub',t('kpi_sub_collected'));
-  setText('kpiPending',fmtAmt(activePending));
-  setText('kpiPendingSub',activeWithDebt.length+' '+t('kpi_active_with_balance'));
+  setText('kpiPending',fmtAmt(runningActivePending));
+  setText('kpiPendingSub',runningActiveWithDebtCnt+' '+t('kpi_active_with_balance'));
 
   // Row 2: active-only breakdown
   setText('kpiOpenBills',activeDrv);
   setText('kpiOpenBillsSub',activeWithDebt.length+' '+t('kpi_with_pending'));
-  setText('kpiActivePending',fmtAmt(activePending));
-  setText('kpiActivePendingSub',activeWithDebt.length+' '+t('kpi_active_with_debt'));
+  setText('kpiActivePending',fmtAmt(runningActivePending));
+  setText('kpiActivePendingSub',runningActiveWithDebtCnt+' '+t('kpi_active_with_debt'));
   setText('kpiFiredDebt',activePct+'%');
   setText('kpiFiredDebtSub',fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
 
