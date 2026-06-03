@@ -1496,28 +1496,31 @@ function _buildTollsRows(){
     var fi=fleet.fechaInicioStr; // "YYYY-MM-DD" or null
 
     // Split weeks into "assigned to this driver" vs "prior (otro conductor)"
-    // A week is "assigned" only if its FRIDAY START date >= driver start date.
-    // Partial first weeks (start < fi <= end) go entirely to "prior" in the pivot
-    // because we can't split weekly aggregates. The detail view uses exact day-level
-    // filtering so the partial first week IS visible there.
+    // A week is "assigned" if its THURSDAY END date >= driver start date.
+    // Partial first weeks (weekStart < fi <= weekEnd) are marked so the pivot cell
+    // shows a "parcial" label. The detail uses exact day-level filter so it shows
+    // only the conductor's real transactions within that partial week.
     var assignedData={};  // same shape as data but only assigned weeks
+    var partialWeeks=[];  // weeks where conductor started mid-week
     var priorTotal=0;
     weeks.forEach(function(wk){
       var v=data[wk]||0;
       if(!v)return;
       if(!fi){assignedData[wk]=v;return;} // no start date → include all
       var wstart=(wsd[wk]&&wsd[wk].start)||null;
-      if(wstart&&wstart>=fi){
+      var wend=(wsd[wk]&&wsd[wk].end)||null;
+      if(wend&&wend>=fi){
         assignedData[wk]=v;
+        if(wstart&&wstart<fi)partialWeeks.push(wk); // conductor started mid-week
       } else {
-        priorTotal+=v;
+        priorTotal+=v; // entirely before start date
       }
     });
 
     var total=weeks.reduce(function(s,wk){return s+(assignedData[wk]||0);},0);
     if(total<=0&&priorTotal<=0)return;
     rows.push({plate:normP,display:data._rawPlate||normP,conductor:fleet.conductorDisplay,
-               data:assignedData,total:total,priorTotal:priorTotal,fechaInicioStr:fi});
+               data:assignedData,total:total,priorTotal:priorTotal,partialWeeks:partialWeeks,fechaInicioStr:fi});
   });
   rows.sort(function(a,b){return b.total-a.total;});
   return rows;
@@ -1576,8 +1579,15 @@ function renderTollsSection(){
       var v=r.data[wk]||0;
       var isSel=isSelPlate&&_tollsDetailWk===wk;
       var bg=isSel?'background:#1a1200;':'';
-      if(v>0) html+='<td style="color:#fbbf24;cursor:pointer;'+bg+'" onclick="openTollsDetail(\''+r.plate+'\',\''+wk+'\')">'+fmtShort(v)+'</td>';
-      else    html+='<td class="p-zero">—</td>';
+      var isPartial=r.partialWeeks&&r.partialWeeks.indexOf(wk)!==-1;
+      if(v>0){
+        html+='<td style="color:#fbbf24;cursor:pointer;'+bg+'" onclick="openTollsDetail(\''+r.plate+'\',\''+wk+'\')">';
+        html+=fmtShort(v);
+        if(isPartial)html+='<div style="font-size:9px;color:#f59e0b;line-height:1.2">parcial</div>';
+        html+='</td>';
+      } else {
+        html+='<td class="p-zero">—</td>';
+      }
     });
     // TOTAL cell: show assigned total + optional "prior" note in gray
     var totCell='<td class="p-tot" style="cursor:pointer;" onclick="openTollsDetail(\''+r.plate+'\',null)">'
