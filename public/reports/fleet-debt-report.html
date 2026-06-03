@@ -1496,15 +1496,18 @@ function _buildTollsRows(){
     var fi=fleet.fechaInicioStr; // "YYYY-MM-DD" or null
 
     // Split weeks into "assigned to this driver" vs "prior (otro conductor)"
-    // A week is "assigned" if its Thursday end date >= driver start date (catches partial first week)
+    // A week is "assigned" only if its FRIDAY START date >= driver start date.
+    // Partial first weeks (start < fi <= end) go entirely to "prior" in the pivot
+    // because we can't split weekly aggregates. The detail view uses exact day-level
+    // filtering so the partial first week IS visible there.
     var assignedData={};  // same shape as data but only assigned weeks
     var priorTotal=0;
     weeks.forEach(function(wk){
       var v=data[wk]||0;
       if(!v)return;
       if(!fi){assignedData[wk]=v;return;} // no start date → include all
-      var wend=(wsd[wk]&&wsd[wk].end)||null;
-      if(wend&&wend>=fi){
+      var wstart=(wsd[wk]&&wsd[wk].start)||null;
+      if(wstart&&wstart>=fi){
         assignedData[wk]=v;
       } else {
         priorTotal+=v;
@@ -1675,24 +1678,14 @@ function renderTollsDetail(){
   var detail=_plateDetailCache[_tollsDetailPlate]||{};
   var fi=fleet?fleet.fechaInicioStr:null; // "YYYY-MM-DD" start date for this conductor
 
-  // Build the same "assigned weeks" set used by the pivot (_buildTollsRows)
-  // so totals in detail always match what the pivot cell shows.
-  var wsd=TOLLS?(TOLLS.weekStartDates||{}):{};
-  var assignedWeeks=null; // null = include all
-  if(fi){
-    assignedWeeks=new Set();
-    (TOLLS?TOLLS.allWeeks:[]).forEach(function(wk){
-      var wend=(wsd[wk]&&wsd[wk].end)||null;
-      if(!wend||wend>=fi)assignedWeeks.add(wk);
-    });
-  }
-
   var allTxns=(detail.transactions||[]);
-  // Split into assigned weeks vs prior weeks (same boundary as pivot)
-  var priorTxns=assignedWeeks?allTxns.filter(function(t){return!assignedWeeks.has(t.wk);}):[];
+  // Filter by exact day: exclude transactions before the conductor's start date.
+  // Note: the pivot uses weekStart >= fi (conservative, full weeks only), so the
+  // detail total may be slightly higher for the partial first week — that's expected.
+  var priorTxns=fi?allTxns.filter(function(t){return t.fechaStr&&t.fechaStr<fi;}):[];
   var txns=allTxns.filter(function(t){
     if(_tollsDetailWk&&t.wk!==_tollsDetailWk)return false;
-    if(assignedWeeks&&!assignedWeeks.has(t.wk))return false; // exclude prior weeks (same as pivot)
+    if(fi&&t.fechaStr&&t.fechaStr<fi)return false; // exclude pre-start-date transactions
     return true;
   }).slice().sort(function(a,b){
     if(!a.fechaStr&&!b.fechaStr)return 0;
