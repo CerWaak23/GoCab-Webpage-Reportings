@@ -1674,12 +1674,25 @@ function renderTollsDetail(){
   // ── Render transactions from cache ────────────────────────────────────────
   var detail=_plateDetailCache[_tollsDetailPlate]||{};
   var fi=fleet?fleet.fechaInicioStr:null; // "YYYY-MM-DD" start date for this conductor
+
+  // Build the same "assigned weeks" set used by the pivot (_buildTollsRows)
+  // so totals in detail always match what the pivot cell shows.
+  var wsd=TOLLS?(TOLLS.weekStartDates||{}):{};
+  var assignedWeeks=null; // null = include all
+  if(fi){
+    assignedWeeks=new Set();
+    (TOLLS?TOLLS.allWeeks:[]).forEach(function(wk){
+      var wend=(wsd[wk]&&wsd[wk].end)||null;
+      if(!wend||wend>=fi)assignedWeeks.add(wk);
+    });
+  }
+
   var allTxns=(detail.transactions||[]);
-  // Split into assigned (>= conductor start) and prior (< start)
-  var priorTxns=fi?allTxns.filter(function(t){return t.fechaStr&&t.fechaStr<fi;}):[];
+  // Split into assigned weeks vs prior weeks (same boundary as pivot)
+  var priorTxns=assignedWeeks?allTxns.filter(function(t){return!assignedWeeks.has(t.wk);}):[];
   var txns=allTxns.filter(function(t){
     if(_tollsDetailWk&&t.wk!==_tollsDetailWk)return false;
-    if(fi&&t.fechaStr&&t.fechaStr<fi)return false; // exclude pre-start-date
+    if(assignedWeeks&&!assignedWeeks.has(t.wk))return false; // exclude prior weeks (same as pivot)
     return true;
   }).slice().sort(function(a,b){
     if(!a.fechaStr&&!b.fechaStr)return 0;
