@@ -755,14 +755,20 @@ async function loadData(){
     SNAPSHOTS=billsJson.snapshots||[];
     var fleetDrivers=fleetJson.drivers||[];
     FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
-    // Build plate → driver map for tolls join
+    // Build plate → driver map for tolls join (includes fechaInicio for date filtering)
     FLEET_PLATE_MAP={};
     fleetDrivers.forEach(function(d){
       var plate=normPlate(d.patente);
       if(!plate)return;
+      // Parse fechaInicio (d/m/yyyy or dd/mm/yyyy) → YYYY-MM-DD string for easy comparison
+      var fi=String(d.fechaInicio||'').trim();
+      var fiStr=null;
+      var fim=fi.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if(fim)fiStr=fim[3]+'-'+fim[2].padStart(2,'0')+'-'+fim[1].padStart(2,'0');
       FLEET_PLATE_MAP[plate]={
         conductorDisplay: d.conductor,
-        conductorNorm: normalizeName(d.conductor)
+        conductorNorm: normalizeName(d.conductor),
+        fechaInicioStr: fiStr  // "YYYY-MM-DD" or null
       };
     });
     // Load tolls if available
@@ -1481,14 +1487,34 @@ function applyI18n(){
 function _buildTollsRows(){
   if(!TOLLS||!TOLLS.byPatente||!TOLLS.allWeeks||!TOLLS.allWeeks.length)return[];
   var weeks=TOLLS.allWeeks;
+  var wsd=TOLLS.weekStartDates||{}; // { "22-28 May": { start:"2026-05-22", end:"2026-05-28" } }
   var rows=[];
   Object.keys(TOLLS.byPatente).forEach(function(normP){
     var fleet=FLEET_PLATE_MAP[normP];
     if(!fleet)return;
     var data=TOLLS.byPatente[normP];
-    var total=weeks.reduce(function(s,wk){return s+(data[wk]||0);},0);
-    if(total<=0)return;
-    rows.push({plate:normP,display:data._rawPlate||normP,conductor:fleet.conductorDisplay,data:data,total:total});
+    var fi=fleet.fechaInicioStr; // "YYYY-MM-DD" or null
+
+    // Split weeks into "assigned to this driver" vs "prior (otro conductor)"
+    // A week is "assigned" if its Thursday end date >= driver start date (catches partial first week)
+    var assignedData={};  // same shape as data but only assigned weeks
+    var priorTotal=0;
+    weeks.forEach(function(wk){
+      var v=data[wk]||0;
+      if(!v)return;
+      if(!fi){assignedData[wk]=v;return;} // no start date → include all
+      var wend=(wsd[wk]&&wsd[wk].end)||null;
+      if(wend&&wend>=fi){
+        assignedData[wk]=v;
+      } else {
+        priorTotal+=v;
+      }
+    });
+
+    var total=weeks.reduce(function(s,wk){return s+(assignedData[wk]||0);},0);
+    if(total<=0&&priorTotal<=0)return;
+    rows.push({plate:normP,display:data._rawPlate||normP,conductor:fleet.conductorDisplay,
+               data:assignedData,total:total,priorTotal:priorTotal,fechaInicioStr:fi});
   });
   rows.sort(function(a,b){return b.total-a.total;});
   return rows;
@@ -1550,15 +1576,26 @@ function renderTollsSection(){
       if(v>0) html+='<td style="color:#fbbf24;cursor:pointer;'+bg+'" onclick="openTollsDetail(\''+r.plate+'\',\''+wk+'\')">'+fmtShort(v)+'</td>';
       else    html+='<td class="p-zero">—</td>';
     });
-    html+='<td class="p-tot" style="color:#fbbf24;cursor:pointer;" onclick="openTollsDetail(\''+r.plate+'\',null)">'+fmtAmt(r.total)+'</td></tr>';
+    // TOTAL cell: show assigned total + optional "prior" note in gray
+    var totCell='<td class="p-tot" style="cursor:pointer;" onclick="openTollsDetail(\''+r.plate+'\',null)">'
+      +'<span style="color:#fbbf24;font-weight:700">'+fmtAmt(r.total)+'</span>';
+    if(r.priorTotal>0){
+      totCell+='<div style="font-size:10px;color:#6b7280;margin-top:2px" title="Cobros de conductor anterior para esta patente">+'+fmtShort(r.priorTotal)+' ant.</div>';
+    }
+    totCell+='</td>';
+    html+=totCell+'</tr>';
   });
 
-  // Totals footer row
+  // Totals footer row (only assigned totals)
+  var grandPrior=rows.reduce(function(s,r){return s+(r.priorTotal||0);},0);
   html+='</tbody><tfoot><tr><td class="p-tot">'+t('tolls_col_total')+'</td>';
   weeks.forEach(function(wk){
     html+='<td class="p-tot">'+(colTotals[wk]>0?fmtShort(colTotals[wk]):'—')+'</td>';
   });
-  html+='<td class="p-tot">'+fmtAmt(grandTotal)+'</td></tr></tfoot>';
+  var footTotCell='<td class="p-tot"><span style="color:#fbbf24">'+fmtAmt(grandTotal)+'</span>';
+  if(grandPrior>0)footTotCell+='<div style="font-size:10px;color:#6b7280;margin-top:2px">+'+fmtShort(grandPrior)+' ant.</div>';
+  footTotCell+='</td>';
+  html+=footTotCell+'</tr></tfoot>';
   html+='</table></div>';
 
   wrap.innerHTML=html;
@@ -1636,8 +1673,13 @@ function renderTollsDetail(){
 
   // ── Render transactions from cache ────────────────────────────────────────
   var detail=_plateDetailCache[_tollsDetailPlate]||{};
-  var txns=(detail.transactions||[]).filter(function(t){
+  var fi=fleet?fleet.fechaInicioStr:null; // "YYYY-MM-DD" start date for this conductor
+  var allTxns=(detail.transactions||[]);
+  // Split into assigned (>= conductor start) and prior (< start)
+  var priorTxns=fi?allTxns.filter(function(t){return t.fechaStr&&t.fechaStr<fi;}):[];
+  var txns=allTxns.filter(function(t){
     if(_tollsDetailWk&&t.wk!==_tollsDetailWk)return false;
+    if(fi&&t.fechaStr&&t.fechaStr<fi)return false; // exclude pre-start-date
     return true;
   }).slice().sort(function(a,b){
     if(!a.fechaStr&&!b.fechaStr)return 0;
@@ -1650,9 +1692,12 @@ function renderTollsDetail(){
   });
 
   var totalVal=txns.reduce(function(s,t){return s+t.valor;},0);
+  var priorVal=priorTxns.reduce(function(s,t){return s+t.valor;},0);
   var showing=Math.min(txns.length,(_tollsDetailPage+1)*_DETAIL_PAGE_SIZE);
   var remaining=txns.length-showing;
-  sub.textContent=(showing<txns.length?'Mostrando '+showing+' de ':'')+txns.length+' transacciones · Total: '+fmtAmt(totalVal);
+  var subTxt=(showing<txns.length?'Mostrando '+showing+' de ':'')+txns.length+' transacciones · Total: '+fmtAmt(totalVal);
+  if(priorVal>0)subTxt+=' · <span style="color:#6b7280">+'+fmtAmt(priorVal)+' de conductor anterior ('+priorTxns.length+' tx)</span>';
+  sub.innerHTML=subTxt;
 
   var html='';
   txns.slice(0,showing).forEach(function(t){

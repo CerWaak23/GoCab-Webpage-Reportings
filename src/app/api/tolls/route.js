@@ -323,6 +323,22 @@ async function fetchTolls() {
 
   const allWeeks = Object.keys(weekDates).sort((a, b) => weekDates[a] - weekDates[b]);
 
+  // weekStartDates: week label → YYYY-MM-DD string of the Friday that starts the week
+  // Used by the frontend to filter tolls by driver start date (per-plate reassignments)
+  const weekStartDates = {};
+  for (const [wk, d] of Object.entries(weekDates)) {
+    // weekDates[wk] = earliest fecha in that week; compute the actual Friday start
+    const epoch = new Date('2020-01-03');
+    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+    const wn = Math.floor((d - epoch) / msPerWeek);
+    const ws = new Date(epoch.getTime() + wn * msPerWeek); // Friday
+    const we = new Date(ws.getTime() + 6 * 24 * 60 * 60 * 1000); // Thursday
+    weekStartDates[wk] = {
+      start: `${ws.getUTCFullYear()}-${String(ws.getUTCMonth()+1).padStart(2,'0')}-${String(ws.getUTCDate()).padStart(2,'0')}`,
+      end:   `${we.getUTCFullYear()}-${String(we.getUTCMonth()+1).padStart(2,'0')}-${String(we.getUTCDate()).padStart(2,'0')}`,
+    };
+  }
+
   const totalByPatente = {};
   for (const [plate, data] of Object.entries(byPatente)) {
     totalByPatente[plate] = allWeeks.reduce((s, wk) => s + (data[wk] || 0), 0);
@@ -337,7 +353,7 @@ async function fetchTolls() {
   }
 
   const result = {
-    byPatente, allWeeks, totalByPatente, totalByMonth,
+    byPatente, allWeeks, weekStartDates, totalByPatente, totalByMonth,
     transactions, fileHeaders,
     autopistas: autopistaDict,   // lookup arrays for transaction indices
     porticos:   porticoDict,
@@ -382,6 +398,7 @@ export async function GET(request) {
     return NextResponse.json({
       byPatente:      data.byPatente,
       allWeeks:       data.allWeeks,
+      weekStartDates: data.weekStartDates || {},
       totalByPatente: data.totalByPatente,
       totalByMonth:   data.totalByMonth || {},
       sources:        data.sources,
