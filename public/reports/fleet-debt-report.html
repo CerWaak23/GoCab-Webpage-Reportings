@@ -1623,7 +1623,7 @@ function renderTollsDetail(){
   if(clearBtn)clearBtn.style.display='';
   var fleet=FLEET_PLATE_MAP[_tollsDetailPlate];
   var conductorName=fleet?fleet.conductorDisplay:_tollsDetailPlate;
-  title.textContent=conductorName+(_tollsDetailWk?' — Semana '+_tollsDetailWk:' — Todas las semanas');
+  title.textContent=conductorName+(_tollsDetailWk?' — '+_tollsDetailWk:' — Todas las semanas');
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if(_plateDetailLoading){

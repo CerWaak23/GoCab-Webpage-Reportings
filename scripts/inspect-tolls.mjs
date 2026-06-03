@@ -167,14 +167,14 @@ async function main() {
       const rawF = row[iF];
       let wk = null;
       const num2 = typeof rawF === 'number' ? rawF : parseFloat(String(rawF));
+      // Weeks run Friday 00:00 → Thursday 23:59 (epoch = Friday 3 Jan 2020)
+      const _mn = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const _ep = new Date('2020-01-03');
+      const _ms = 7 * 24 * 60 * 60 * 1000;
+      function _wkLabel(d){ const wn=Math.floor((d-_ep)/_ms); const ws=new Date(_ep.getTime()+wn*_ms); const we=new Date(ws.getTime()+6*24*60*60*1000); const sd=ws.getUTCDate(),sm=_mn[ws.getUTCMonth()],ed=we.getUTCDate(),em=_mn[we.getUTCMonth()]; return sm===em?`${sd}-${ed} ${sm}`:`${sd} ${sm}-${ed} ${em}`; }
       if (!isNaN(num2) && num2 > 40000 && num2 < 60000) {
         const d = new Date((num2 - 25569) * 86400 * 1000);
-        const epoch = new Date('2020-01-06');
-        const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-        const wn = Math.floor((d - epoch) / msPerWeek);
-        const ws = new Date(epoch.getTime() + wn * msPerWeek);
-        const mn = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        wk = `${ws.getUTCDate()} ${mn[ws.getUTCMonth()]}`;
+        wk = _wkLabel(d);
       } else {
         // ISO string: YYYY-MM-DD HH:MM:SS or dd/mm/yyyy
         const str = String(rawF || '').trim();
@@ -183,14 +183,7 @@ async function main() {
         let d = null;
         if (iso) d = new Date(+iso[1], +iso[2]-1, +iso[3], +(iso[4]||0), +(iso[5]||0));
         else if (dmy) d = new Date(+dmy[3], +dmy[2]-1, +dmy[1], +(dmy[4]||0), +(dmy[5]||0));
-        if (d && !isNaN(d)) {
-          const epoch = new Date('2020-01-06');
-          const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-          const wn = Math.floor((d - epoch) / msPerWeek);
-          const ws = new Date(epoch.getTime() + wn * msPerWeek);
-          const mn = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-          wk = `${ws.getUTCDate()} ${mn[ws.getUTCMonth()]}`;
-        }
+        if (d && !isNaN(d)) wk = _wkLabel(d);
       }
       if (!wk) { skippedDate++; continue; }
 

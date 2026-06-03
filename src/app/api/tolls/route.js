@@ -90,12 +90,17 @@ function parseFecha(s) {
 
 function getWeekKey(d) {
   if (!d || isNaN(d)) return null;
-  const epoch = new Date('2020-01-06');
+  // Weeks run Friday 00:00 → Thursday 23:59 (epoch = Friday 3 Jan 2020)
+  const epoch = new Date('2020-01-03');
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
   const wn = Math.floor((d - epoch) / msPerWeek);
-  const weekStart = new Date(epoch.getTime() + wn * msPerWeek);
+  const weekStart = new Date(epoch.getTime() + wn * msPerWeek);        // Friday
+  const weekEnd   = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000); // Thursday
   const mn = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${weekStart.getUTCDate()} ${mn[weekStart.getUTCMonth()]}`;
+  const sd = weekStart.getUTCDate(), sm = mn[weekStart.getUTCMonth()];
+  const ed = weekEnd.getUTCDate(),   em = mn[weekEnd.getUTCMonth()];
+  // Same month → "22-28 May" ; cross-month → "27 May-2 Jun"
+  return sm === em ? `${sd}-${ed} ${sm}` : `${sd} ${sm}-${ed} ${em}`;
 }
 
 function normPlate(s) {
