@@ -1217,9 +1217,18 @@ function renderPivotTables() {
     });
   }
 
+  // Suppliers that are always recurring regardless of how many months appear in data
+  function isAlwaysRecurring(s) {
+    var sl = (s || '').toLowerCase();
+    return sl.indexOf('salary') !== -1   // payroll
+        || sl.indexOf('salario') !== -1
+        || sl.indexOf('sueldo') !== -1
+        || s === 'Pórticos (TAG)';       // tolls — monthly by nature
+  }
+
   var rec=[], varr=[];
   Object.keys(bs).sort(function(a,b){return bs[b].total-bs[a].total;}).forEach(function(s){
-    if(bs[s].mcount>=2) rec.push(s); else varr.push(s);
+    if(bs[s].mcount>=2 || isAlwaysRecurring(s)) rec.push(s); else varr.push(s);
   });
   _renderPivot('recurringTable', rec.slice(0,25), bs, allM);
   _renderPivot('variableTable',  varr.slice(0,25), bs, allM);
