@@ -82,6 +82,7 @@ export async function GET() {
     const files = listRes.data.files || [];
     const sumupByMes = {};
     let totalRetiros = 0;
+    const retiroSet = new Set(); // dedup payout rows across overlapping file exports
 
     for (const file of files) {
       const name = file.name.toLowerCase();
@@ -123,11 +124,17 @@ export async function GET() {
           tipo.includes('deposito') || tipo.includes('transferencia')
         );
 
-        // Capture payout/withdrawal rows for SumUp balance calc
+        // Capture payout/withdrawal rows for SumUp balance calc (dedup by date+amount)
         if (isRetiro) {
           const brutoR = parseAmt(iGross >= 0 ? row[iGross] : 0);
           const netoR  = iNet >= 0 ? parseAmt(row[iNet]) : brutoR;
-          totalRetiros += Math.abs(brutoR || netoR);
+          const amt    = Math.abs(brutoR || netoR);
+          const dateR  = iDate >= 0 ? String(row[iDate] || '').trim() : '';
+          const retKey = `${dateR}|${amt}`;
+          if (!retiroSet.has(retKey)) {
+            retiroSet.add(retKey);
+            totalRetiros += amt;
+          }
           continue;
         }
 
