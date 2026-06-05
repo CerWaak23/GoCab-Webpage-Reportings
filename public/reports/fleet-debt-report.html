@@ -755,6 +755,7 @@ async function loadData(){
     SNAPSHOTS=billsJson.snapshots||[];
     var fleetDrivers=fleetJson.drivers||[];
     FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
+    console.log('[Fleet] Conductores activos en sheet ('+FLEET_NAMES.length+'):', FLEET_NAMES.join(' | '));
     // Build plate → driver map for tolls join (includes fechaInicio for date filtering)
     FLEET_PLATE_MAP={};
     fleetDrivers.forEach(function(d){
@@ -800,6 +801,11 @@ async function loadData(){
       dqPanel.style.display='none';
     }
     aggregateDrivers();
+    console.log('[Fleet] isActive por conductor:');
+    DRIVERS.forEach(function(d){
+      if(!d.isActive) console.log('  INACTIVO: '+d.driver);
+      else console.log('  activo:   '+d.driver);
+    });
     buildFilters();
     renderAll();
     show('mainWrap');
