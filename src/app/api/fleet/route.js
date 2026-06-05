@@ -39,7 +39,8 @@ export async function GET() {
         nota: String(r[3] || '').trim(),
       }));
 
-    return NextResponse.json({ drivers });
+    const noCache = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
+    return NextResponse.json({ drivers }, { headers: noCache });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
