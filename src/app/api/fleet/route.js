@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'; // never cache — always fetch latest from Sheets
+
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 

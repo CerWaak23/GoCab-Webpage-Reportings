@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'; // never cache — always fetch latest from Drive
+
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
