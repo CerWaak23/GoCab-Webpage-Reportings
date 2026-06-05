@@ -32,8 +32,8 @@ function dateToYYYYMM(dateStr) {
   } else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
     const parts = str.split('/');
     const a = parseInt(parts[0]), b = parseInt(parts[1]), y = parseInt(parts[2]);
-    // Treat as DD/MM/YYYY (European/SumUp format)
-    d = a > 12 ? new Date(y, b - 1, a) : new Date(y, b - 1, a);
+    // SumUp Chile uses DD/MM/YYYY format
+    d = new Date(y, b - 1, a);
   } else {
     d = new Date(str);
   }
@@ -131,11 +131,18 @@ export async function GET() {
           continue;
         }
 
-        // Only count completed payment transactions
-        if (tipo && tipo !== 'pago') continue;
+        // Skip refunds / chargebacks
+        if (tipo && (tipo.includes('reembolso') || tipo.includes('refund') || tipo.includes('chargeback') || tipo.includes('reversal'))) continue;
+
+        // Accept any payment-type row in ES or EN; if tipo column missing, include all
+        const PAYMENT_TYPES = ['pago', 'payment', 'sale', 'venta', 'cobro', 'card', 'charge'];
+        if (tipo && !PAYMENT_TYPES.some(t => tipo.includes(t))) continue;
+
+        // Accept any success-state in ES or EN; if status column missing, include all
         if (iState >= 0) {
           const estado = String(row[iState] || '').toLowerCase().trim();
-          if (estado && estado !== 'exitosa') continue;
+          const SUCCESS = ['exitosa', 'successful', 'completada', 'paid', 'approved', 'confirmed', 'complete'];
+          if (estado && !SUCCESS.some(s => estado.includes(s))) continue;
         }
 
         const dateStr = iDate >= 0 ? String(row[iDate] || '') : file.modifiedTime;
