@@ -16,14 +16,16 @@ function getAuth() {
   });
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     const auth = getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
+    // quotaUser forces Google to bypass any server-side response caching
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: FLEET_SHEET_ID,
       range: FLEET_SHEET_NAME,
+      quotaUser: `nocache-${Date.now()}`,
     });
 
     const rows = res.data.values || [];
@@ -40,7 +42,7 @@ export async function GET() {
       }));
 
     const noCache = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
-    return NextResponse.json({ drivers }, { headers: noCache });
+    return NextResponse.json({ drivers, _fetchedAt: new Date().toISOString() }, { headers: noCache });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
