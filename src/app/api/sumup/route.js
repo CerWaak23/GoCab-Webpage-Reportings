@@ -118,10 +118,10 @@ export async function GET() {
         if (!row || row.every(c => !c)) continue;
 
         const tipo = iType >= 0 ? String(row[iType] || '').toLowerCase().trim() : '';
+        // Only unambiguously bank-payout terms — "depósito"/"deposito"/"transferencia"
+        // are used by Chilean SumUp for incoming card payments, NOT bank withdrawals
         const isRetiro = tipo && (
-          tipo.includes('retiro') || tipo.includes('withdrawal') ||
-          tipo.includes('payout') || tipo.includes('depósito') ||
-          tipo.includes('deposito') || tipo.includes('transferencia')
+          tipo.includes('retiro') || tipo.includes('withdrawal') || tipo.includes('payout')
         );
 
         // Capture payout/withdrawal rows for SumUp balance calc (dedup by date+amount)

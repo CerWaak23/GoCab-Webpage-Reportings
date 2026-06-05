@@ -954,10 +954,18 @@ function renderSumupKpis() {
   var mesCurrComis  = (SUMUP[MES0]||{}).comision||0;
   var avgMensual    = meses.length ? totalNeto/meses.length : 0;
 
-  // Balance = total net collected minus payouts already withdrawn to bank (from SumUp payout rows)
-  var saldoSumUp = totalNeto - SUMUP_RETIROS;
-  var saldoMeta = SUMUP_RETIROS > 0
-    ? t('sumup_neto_cobrado')+' − '+fmtAmt(SUMUP_RETIROS)+' '+t('sumup_transferido')
+  // Transfers FROM SumUp TO Santander:
+  //   Primary: "retiro"/"withdrawal"/"payout" rows in SumUp files (SUMUP_RETIROS)
+  //   Fallback: cash-in rows in Invoices tagged "SumUp" (if SumUp files have no payout rows)
+  var sumupTransferRows = RAW.filter(function(r){
+    var tag = (r.supplier+' '+r.desc+' '+r.entity).toLowerCase();
+    return r.cashIn > 0 && tag.indexOf('sumup') >= 0;
+  });
+  var totalTransferido = sumupTransferRows.reduce(function(s,r){ return s+r.cashIn; },0);
+  var retirosUsados = SUMUP_RETIROS > 0 ? SUMUP_RETIROS : totalTransferido;
+  var saldoSumUp = totalNeto - retirosUsados;
+  var saldoMeta = retirosUsados > 0
+    ? t('sumup_neto_cobrado')+' − '+fmtAmt(retirosUsados)+' '+t('sumup_transferido')
     : t('sumup_neto_cobrado')+' '+t('sumup_sin_transfer');
 
   grid.innerHTML = [
