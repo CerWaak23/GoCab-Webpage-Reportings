@@ -21,11 +21,9 @@ export async function GET(request) {
     const auth = getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // quotaUser forces Google to bypass any server-side response caching
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: FLEET_SHEET_ID,
       range: FLEET_SHEET_NAME,
-      quotaUser: `nocache-${Date.now()}`,
     });
 
     const rows = res.data.values || [];
