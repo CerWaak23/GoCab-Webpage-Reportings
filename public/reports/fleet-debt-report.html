@@ -950,21 +950,17 @@ function renderKPIs(){
   // This matches the evolution table's PENDIENTE ACTUAL footer total exactly.
   var _kpiActiveSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){_kpiActiveSet[d.driver]=true;});
-  var _kpiCharges={},_kpiPays={};
+  var _kpiAmt={},_kpiPaid={};
   BILLS.forEach(function(b){
     var drv=normalizeName(b.driver);
     if(!_kpiActiveSet[drv])return;
-    var dt=parseDate(b.createdAt);if(!dt)return; // dated bills only, same as chargeMap
-    _kpiCharges[drv]=(_kpiCharges[drv]||0)+parseAmt(b.amount);
-  });
-  PAYMENT_EVENTS.forEach(function(p){
-    var drv=normalizeName(p.driver);
-    if(!_kpiActiveSet[drv])return;
-    _kpiPays[drv]=(_kpiPays[drv]||0)+p.amount;
+    var dt=parseDate(b.createdAt);if(!dt)return;
+    _kpiAmt[drv]=(_kpiAmt[drv]||0)+parseAmt(b.amount);
+    _kpiPaid[drv]=(_kpiPaid[drv]||0)+parseAmt(b.paidAmount);
   });
   var runningActivePending=0,runningActiveWithDebtCnt=0;
   Object.keys(_kpiActiveSet).forEach(function(drv){
-    var r=(_kpiCharges[drv]||0)-(_kpiPays[drv]||0);
+    var r=Math.max(0,(_kpiAmt[drv]||0)-(_kpiPaid[drv]||0));
     if(r>0){runningActivePending+=r;runningActiveWithDebtCnt++;}
   });
 
