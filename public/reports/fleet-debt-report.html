@@ -144,6 +144,30 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .filter-clear{background:none;border:1px solid #374151;color:#6b7280;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
 .filter-clear:hover{border-color:#6b7280;color:#e2e8f0}
 
+/* Weekly breakdown */
+.wk-section{margin-bottom:22px}
+.wk-section-hdr{margin-bottom:12px}
+.wk-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:2px}
+.wk-section-sub{font-size:11px;color:#4b5563}
+.wk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.wk-card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:18px 20px}
+.wk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.wk-week-lbl{font-size:11px;font-weight:700;color:#93c5fd;letter-spacing:.02em}
+.wk-days-badge{font-size:10px;font-weight:700;color:#60a5fa;background:#0c1e3a;border:1px solid #1e3a5f44;border-radius:5px;padding:2px 8px;white-space:nowrap}
+.wk-amounts{display:flex;gap:14px;margin-bottom:11px;flex-wrap:wrap}
+.wk-cargado{font-size:14px;font-weight:800;color:#34d399}
+.wk-pagado{font-size:14px;font-weight:800;color:#e2e8f0}
+.wk-bar{height:8px;border-radius:4px;background:#1f2937;display:flex;overflow:hidden;margin-bottom:8px}
+.wk-bar-vieja{background:#374151;border-right:1px solid #111827;height:100%;transition:width .5s}
+.wk-bar-actual{background:#34d399;height:100%;transition:width .5s}
+.wk-bar-labels{display:flex;justify-content:space-between;font-size:10px;color:#4b5563;margin-bottom:12px;flex-wrap:wrap;gap:4px}
+.wk-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
+.wk-dot.vieja{background:#4b5563}.wk-dot.actual{background:#34d399}
+.wk-pct-box{border-radius:9px;padding:11px;text-align:center}
+.wk-pct{font-size:22px;font-weight:800;line-height:1.1}
+.wk-pct-sub{font-size:10px;margin-top:3px;font-weight:500}
+@media(max-width:800px){.wk-grid{grid-template-columns:1fr}}
+
 /* Pagination */
 .pagination{display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:flex-end}
 .page-btn{background:#111827;border:1px solid #374151;color:#6b7280;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer}
@@ -368,6 +392,15 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     <div class="evol-scroll">
       <table class="evol-table" id="evolTable"></table>
     </div>
+  </div>
+
+  <!-- Weekly payment breakdown -->
+  <div class="section wk-section" id="weeklySection" style="display:none">
+    <div class="wk-section-hdr">
+      <div class="wk-section-title">📅 Desglose Semanal de Cobranza</div>
+      <div class="wk-section-sub">De los pagos recibidos cada semana: cuánto fue a deuda nueva (cargada esa semana) y cuánto a deuda anterior</div>
+    </div>
+    <div class="wk-grid" id="wkGrid"></div>
   </div>
 
   <!-- Fired drivers cards -->
@@ -1791,62 +1824,4 @@ function exportTollsDetail(){
   var detail=_plateDetailCache[_tollsDetailPlate]||{};
   var fi=FLEET_PLATE_MAP[_tollsDetailPlate]?FLEET_PLATE_MAP[_tollsDetailPlate].fechaInicioStr:null;
   var txns=(detail.transactions||[]).filter(function(t){
-    if(_tollsDetailWk&&t.wk!==_tollsDetailWk)return false;
-    if(fi&&t.fechaStr&&t.fechaStr<fi)return false;
-    return true;
-  }).slice().sort(function(a,b){
-    if(!a.fechaStr||!b.fechaStr)return 0;
-    return b.fechaStr.localeCompare(a.fechaStr);
-  });
-  if(!txns.length)return;
-
-  var fleetRow=FLEET_PLATE_MAP[_tollsDetailPlate];
-  var sheetData=[['Conductor','Patente','Fecha','Hora','Semana','Autopista','Pórtico','Tipo Tarifa','Valor CLP']];
-  txns.forEach(function(t){
-    sheetData.push([
-      fleetRow?fleetRow.conductorDisplay:t.plate,
-      t.plate, t.fechaStr||'', t.horaStr||'', t.wk||'',
-      txnAutopista(t,detail)||'', txnPortico(t,detail)||'', txnTarifa(t,detail)||'',
-      t.valor
-    ]);
-  });
-
-  var wb=XLSX.utils.book_new();
-  var ws=XLSX.utils.aoa_to_sheet(sheetData);
-  ws['!cols']=[{wch:24},{wch:10},{wch:12},{wch:8},{wch:12},{wch:22},{wch:14},{wch:14},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,ws,'Detalle Pórticos');
-  XLSX.writeFile(wb,'GoCab_Porticos_Detalle_'+new Date().toISOString().slice(0,10)+'.xlsx');
-}
-
-function renderAll(){
-  FILTERED=sortDrivers(getFiltered());
-  renderKPIs();renderDonut();renderMixedChart();renderEvolTable();renderDriversTable(FILTERED);
-  renderTollsSection();
-  applyI18n();
-}
-
-function setLang(lang){if(!T[lang])return;LANG=lang;renderAll();}
-function setLanguage(lang){setLang(lang);}
-function setCurrency(cur){CUR=cur;renderAll();}
-
-window.addEventListener('message',function(e){
-  if(!e.data)return;
-  if(e.data.type==='setLanguage')setLang(e.data.lang);
-  if(e.data.type==='setCurrency')setCurrency(e.data.currency);
-});
-window.addEventListener('load',function(){
-  try{
-    var pl=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_lang');
-    if(pl&&T[pl])LANG=pl;
-    var pc=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_currency');
-    if(pc)CUR=pc;
-  }catch(e){}
-  // Fetch live USD/CLP rate then load data
-  fetch('/api/fx').then(function(r){return r.ok?r.json():null;}).then(function(fx){
-    if(fx&&fx.rate>0){USD_RATE=fx.rate;}
-    setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
-  }).catch(function(){}).finally(function(){loadData();});
-});
-</script>
-</body>
-</html>
+    if
