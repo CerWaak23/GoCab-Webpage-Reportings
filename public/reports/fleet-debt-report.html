@@ -394,7 +394,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     </div>
   </div>
 
-  <!-- Weekly payment breakdown -->
+    <!-- Weekly payment breakdown -->
   <div class="section wk-section" id="weeklySection" style="display:none">
     <div class="wk-section-hdr">
       <div class="wk-section-title">📅 Desglose Semanal de Cobranza</div>
@@ -1834,8 +1834,7 @@ function exportTollsDetail(){
   if(!txns.length)return;
 
   var fleetRow=FLEET_PLATE_MAP[_tollsDetailPlate];
-  var sheetData=[['Conductor','Patente','Fecha','Hora','Semana','Autopista',
-    'Pórtico','Tipo Tarifa','Valor CLP']];
+  var sheetData=[['Conductor','Patente','Fecha','Hora','Semana','Autopista','Pórtico','Tipo Tarifa','Valor CLP']];
   txns.forEach(function(t){
     sheetData.push([
       fleetRow?fleetRow.conductorDisplay:t.plate,
@@ -1852,11 +1851,11 @@ function exportTollsDetail(){
   XLSX.writeFile(wb,'GoCab_Porticos_Detalle_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
-/* ── WEEKLY BREAKDOWN ────────────────────────────────────────────────────── */
+
+/* ── WEEKLY BREAKDOWN ──────────────────────────────────────────────────── */
 function computeWeeklyBreakdown(){
   if(!BILLS.length)return[];
-  var billWeekMap={};
-  var weekCharged={};
+  var billWeekMap={},weekCharged={};
   BILLS.forEach(function(b){
     if(!b.reference)return;
     var d=parseDate(b.createdAt);if(!d)return;
@@ -1864,65 +1863,34 @@ function computeWeeklyBreakdown(){
     billWeekMap[b.reference]=wk;
     weekCharged[wk]=(weekCharged[wk]||0)+parseAmt(b.amount);
   });
-  var weekActuales={};
-  var weekVieja={};
+  var weekActuales={},weekVieja={};
   PAYMENT_EVENTS.forEach(function(p){
     var pd=parseDate(p.date);if(!pd)return;
     var wk=getWeekKey(pd);if(!wk)return;
-    if(p.reference&&billWeekMap[p.reference]===wk){
-      weekActuales[wk]=(weekActuales[wk]||0)+p.amount;
-    } else {
-      weekVieja[wk]=(weekVieja[wk]||0)+p.amount;
-    }
+    if(p.reference&&billWeekMap[p.reference]===wk)weekActuales[wk]=(weekActuales[wk]||0)+p.amount;
+    else weekVieja[wk]=(weekVieja[wk]||0)+p.amount;
   });
   var allWks={};
-  Object.keys(weekCharged).forEach(function(w){allWks[w]=true;});
-  Object.keys(weekActuales).forEach(function(w){allWks[w]=true;});
-  Object.keys(weekVieja).forEach(function(w){allWks[w]=true;});
+  [weekCharged,weekActuales,weekVieja].forEach(function(o){Object.keys(o).forEach(function(w){allWks[w]=true;});});
   var weekMinDate={};
-  BILLS.forEach(function(b){
-    var d=parseDate(b.createdAt);if(!d)return;
-    var wk=getWeekKey(d);if(!wk)return;
-    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
-  });
-  PAYMENT_EVENTS.forEach(function(p){
-    var d=parseDate(p.date);if(!d)return;
-    var wk=getWeekKey(d);if(!wk)return;
-    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
-  });
-  var sortedWks=Object.keys(allWks).filter(function(w){return weekMinDate[w];}).sort(function(a,b){
-    return weekMinDate[a]-weekMinDate[b];
-  });
-  var lastWks=sortedWks.slice(-3);
+  BILLS.forEach(function(b){var d=parseDate(b.createdAt);if(!d)return;var wk=getWeekKey(d);if(wk&&(!weekMinDate[wk]||d<weekMinDate[wk]))weekMinDate[wk]=d;});
+  PAYMENT_EVENTS.forEach(function(p){var d=parseDate(p.date);if(!d)return;var wk=getWeekKey(d);if(wk&&(!weekMinDate[wk]||d<weekMinDate[wk]))weekMinDate[wk]=d;});
+  var lastWks=Object.keys(allWks).filter(function(w){return weekMinDate[w];}).sort(function(a,b){return weekMinDate[a]-weekMinDate[b];}).slice(-3);
   if(!lastWks.length)return[];
-  function dd(dt){return('0'+dt.getDate()).slice(-2)+'/'+('0'+(dt.getMonth()+1)).slice(-2);}
   return lastWks.map(function(wk,i){
-    var startD=weekMinDate[wk];
-    var endD=new Date(startD.getTime()+6*86400000);
-    var isLast=(i===lastWks.length-1);
-    var daysLabel=null;
+    var s=weekMinDate[wk],e=new Date(s.getTime()+6*86400000);
+    var pad=function(n){return('0'+n).slice(-2);};
+    var lbl=pad(s.getDate())+'/'+pad(s.getMonth()+1)+' → '+pad(e.getDate())+'/'+pad(e.getMonth()+1);
+    var isLast=(i===lastWks.length-1),daysLabel=null;
     if(isLast){
-      var maxD=startD;
-      PAYMENT_EVENTS.forEach(function(p){
-        var d=parseDate(p.date);
-        if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;
-      });
-      BILLS.forEach(function(b){
-        var d=parseDate(b.createdAt);
-        if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;
-      });
-      var diff=Math.round((maxD-startD)/86400000)+1;
+      var maxD=s;
+      PAYMENT_EVENTS.forEach(function(p){var d=parseDate(p.date);if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;});
+      BILLS.forEach(function(b){var d=parseDate(b.createdAt);if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;});
+      var diff=Math.round((maxD-s)/86400000)+1;
       if(diff<7)daysLabel=diff+(diff===1?' DÍA':' DÍAS');
     }
-    var cargado=weekCharged[wk]||0;
-    var pagadoActuales=weekActuales[wk]||0;
-    var pagadoVieja=weekVieja[wk]||0;
-    var tot=pagadoActuales+pagadoVieja;
-    return {
-      weekNum:i+1,label:dd(startD)+' → '+dd(endD),daysLabel:daysLabel,
-      cargado:cargado,pagadoActuales:pagadoActuales,pagadoVieja:pagadoVieja,
-      totalPagado:tot,pctDeLoActual:cargado>0?Math.round(pagadoActuales/cargado*100):0
-    };
+    var cargado=weekCharged[wk]||0,pagadoActuales=weekActuales[wk]||0,pagadoVieja=weekVieja[wk]||0,tot=pagadoActuales+pagadoVieja;
+    return {weekNum:i+1,label:lbl,daysLabel:daysLabel,cargado:cargado,pagadoActuales:pagadoActuales,pagadoVieja:pagadoVieja,totalPagado:tot,pctDeLoActual:cargado>0?Math.round(pagadoActuales/cargado*100):0};
   });
 }
 
@@ -1931,46 +1899,23 @@ function renderWeeklyBreakdown(){
   var weeks=computeWeeklyBreakdown();
   el.style.display='';
   if(!weeks.length){
-    var pe0=PAYMENT_EVENTS.length>0?PAYMENT_EVENTS[0]:{};
-    var b0=BILLS.length>0?BILLS[0]:{};
+    var b0=BILLS.length>0?BILLS[0]:{},pe0=PAYMENT_EVENTS.length>0?PAYMENT_EVENTS[0]:{};
     document.getElementById('wkGrid').innerHTML='<div style="color:#6b7280;font-size:11px;padding:12px;background:#0a0d14;border-radius:8px;grid-column:1/-1">'
-      +'<b style="color:#f87171">⚠ Sin datos semanales</b><br>'
-      +'BILLS: '+BILLS.length+' | EVENTS: '+PAYMENT_EVENTS.length+'<br>'
-      +'Primer bill — ref: <code>'+esc(String(b0.reference||''))+'</code> createdAt: <code>'+esc(String(b0.createdAt||''))+'</code><br>'
-      +'Primer evento — ref: <code>'+esc(String(pe0.reference||''))+'</code> date: <code>'+esc(String(pe0.date||''))+'</code>'
-      +'</div>';
+      +'<b style="color:#f87171">⚠ Sin datos semanales</b> — BILLS:'+BILLS.length+' EVENTS:'+PAYMENT_EVENTS.length
+      +' | bill[0] ref:<code>'+esc(String(b0.reference||'(none)'))+'</code> createdAt:<code>'+esc(String(b0.createdAt||'(empty)'))+'</code>'
+      +' | event[0] date:<code>'+esc(String(pe0.date||'(empty)'))+'</code></div>';
     return;
   }
   var html='';
   weeks.forEach(function(w){
-    var tot=w.totalPagado;
-    var wV=tot>0?Math.round(w.pagadoVieja/tot*100):0;
-    var wA=tot>0?Math.round(w.pagadoActuales/tot*100):0;
-    var p=w.pctDeLoActual;
-    var pColor=p>=80?'#34d399':p>=50?'#fbbf24':'#f87171';
-    var pBg=p>=80?'#05150d':p>=50?'#130d02':'#150505';
-    var pBorder=p>=80?'#064e3b44':p>=50?'#78350f44':'#7f1d1d44';
+    var tot=w.totalPagado,wV=tot>0?Math.round(w.pagadoVieja/tot*100):0,wA=tot>0?Math.round(w.pagadoActuales/tot*100):0;
+    var p=w.pctDeLoActual,pColor=p>=80?'#34d399':p>=50?'#fbbf24':'#f87171',pBg=p>=80?'#05150d':p>=50?'#130d02':'#150505',pBorder=p>=80?'#064e3b44':p>=50?'#78350f44':'#7f1d1d44';
     html+='<div class="wk-card">'
-      +'<div class="wk-header">'
-      +'<span class="wk-week-lbl">Semana '+w.weekNum+' · '+esc(w.label)+'</span>'
-      +(w.daysLabel?'<span class="wk-days-badge">'+esc(w.daysLabel)+'</span>':'')
-      +'</div>'
-      +'<div class="wk-amounts">'
-      +'<span class="wk-cargado">+'+fmtShort(w.cargado)+' cargado</span>'
-      +'<span class="wk-pagado">−'+fmtShort(tot)+' pagado</span>'
-      +'</div>'
-      +'<div class="wk-bar">'
-      +'<div class="wk-bar-vieja" style="width:'+wV+'%"></div>'
-      +'<div class="wk-bar-actual" style="width:'+wA+'%"></div>'
-      +'</div>'
-      +'<div class="wk-bar-labels">'
-      +'<span><span class="wk-dot vieja"></span>Deuda vieja: '+fmtShort(w.pagadoVieja)+'</span>'
-      +'<span><span class="wk-dot actual"></span>Multas actuales: '+fmtShort(w.pagadoActuales)+'</span>'
-      +'</div>'
-      +'<div class="wk-pct-box" style="background:'+pBg+';border:1px solid '+pBorder+'">'
-      +'<div class="wk-pct" style="color:'+pColor+'">'+p+'% de lo cargado</div>'
-      +'<div class="wk-pct-sub" style="color:'+pColor+'">Pagado de actuales</div>'
-      +'</div>'
+      +'<div class="wk-header"><span class="wk-week-lbl">Semana '+w.weekNum+' · '+esc(w.label)+'</span>'+(w.daysLabel?'<span class="wk-days-badge">'+esc(w.daysLabel)+'</span>':'')+'</div>'
+      +'<div class="wk-amounts"><span class="wk-cargado">+'+fmtShort(w.cargado)+' cargado</span><span class="wk-pagado">−'+fmtShort(tot)+' pagado</span></div>'
+      +'<div class="wk-bar"><div class="wk-bar-vieja" style="width:'+wV+'%"></div><div class="wk-bar-actual" style="width:'+wA+'%"></div></div>'
+      +'<div class="wk-bar-labels"><span><span class="wk-dot vieja"></span>Deuda vieja: '+fmtShort(w.pagadoVieja)+'</span><span><span class="wk-dot actual"></span>Multas actuales: '+fmtShort(w.pagadoActuales)+'</span></div>'
+      +'<div class="wk-pct-box" style="background:'+pBg+';border:1px solid '+pBorder+'"><div class="wk-pct" style="color:'+pColor+'">'+p+'% de lo cargado</div><div class="wk-pct-sub" style="color:'+pColor+'">Pagado de actuales</div></div>'
       +'</div>';
   });
   document.getElementById('wkGrid').innerHTML=html;
@@ -2000,6 +1945,7 @@ window.addEventListener('load',function(){
     var pc=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_currency');
     if(pc)CUR=pc;
   }catch(e){}
+  // Fetch live USD/CLP rate then load data
   fetch('/api/fx').then(function(r){return r.ok?r.json():null;}).then(function(fx){
     if(fx&&fx.rate>0){USD_RATE=fx.rate;}
     setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
