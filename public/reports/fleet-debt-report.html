@@ -1853,6 +1853,15 @@ function exportTollsDetail(){
 
 
 /* ── WEEKLY BREAKDOWN ──────────────────────────────────────────────────── */
+function getWeekStartDate(d){
+  /* Returns the actual week-start Date using the same epoch as getWeekKey(),
+     so weekly cards show the exact same date boundaries as the evolution table columns */
+  if(!d)return null;
+  var msPerWeek=7*24*60*60*1000;
+  var epoch=new Date('2020-01-06');
+  var wn=Math.floor((d-epoch)/msPerWeek);
+  return new Date(epoch.getTime()+wn*msPerWeek);
+}
 function computeWeeklyBreakdown(){
   if(!BILLS.length)return[];
   var billWeekMap={},weekCharged={};
@@ -1878,9 +1887,10 @@ function computeWeeklyBreakdown(){
   var lastWks=Object.keys(allWks).filter(function(w){return weekMinDate[w];}).sort(function(a,b){return weekMinDate[a]-weekMinDate[b];}).slice(-3);
   if(!lastWks.length)return[];
   return lastWks.map(function(wk,i){
-    var s=weekMinDate[wk],e=new Date(s.getTime()+6*86400000);
+    /* Use real week-start from epoch (same as evolution table), not first data point */
+    var s=getWeekStartDate(weekMinDate[wk]),e=new Date(s.getTime()+6*86400000);
     var pad=function(n){return('0'+n).slice(-2);};
-    var lbl=pad(s.getDate())+'/'+pad(s.getMonth()+1)+' → '+pad(e.getDate())+'/'+pad(e.getMonth()+1);
+    var lbl=pad(s.getUTCDate())+'/'+pad(s.getUTCMonth()+1)+' → '+pad(e.getUTCDate())+'/'+pad(e.getUTCMonth()+1);
     var isLast=(i===lastWks.length-1),daysLabel=null;
     if(isLast){
       var maxD=s;
