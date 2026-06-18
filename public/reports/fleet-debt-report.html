@@ -1869,10 +1869,16 @@ function getWeekStartDate(d){
 function computeWeeklyBreakdown(){
   if(!BILLS.length)return[];
 
+  // Same active-driver filter as renderEvolTable — guarantees card totals match the table footer
+  var activeSet={};
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
+
   // Step 1: Map each bill reference → its week key (same grouping as evolution table)
+  // Only active drivers, matching renderEvolTable's srcBills loop
   var billWeekMap={},weekCharged={};
   BILLS.forEach(function(b){
     if(!b.reference)return;
+    if(!activeSet[normalizeName(b.driver)])return;
     var d=parseDate(b.createdAt);if(!d)return;
     var wk=getWeekKey(d);if(!wk)return;
     billWeekMap[b.reference]=wk;
@@ -1882,8 +1888,10 @@ function computeWeeklyBreakdown(){
   // Step 2: Split payments into "actuales" (same week as the bill) vs "vieja" (older bill)
   // Uses the PAYMENT date's week as the bucket, and compares to the BILL's creation week.
   // Payments with no reference, or whose bill has no date, go to "vieja" by default.
+  // Only active drivers, matching renderEvolTable's srcPayments loop.
   var weekActuales={},weekVieja={};
   PAYMENT_EVENTS.forEach(function(p){
+    if(!activeSet[normalizeName(p.driver)])return;
     var pd=parseDate(p.date);if(!pd)return;
     var wk=getWeekKey(pd);if(!wk)return;
     if(p.reference&&billWeekMap[p.reference]&&billWeekMap[p.reference]===wk){
@@ -1899,14 +1907,17 @@ function computeWeeklyBreakdown(){
 
   // Step 4: For each week, track the EARLIEST actual date (first bill creation date)
   // This is used for sorting and for the card date label (matches "de jueves a jueves" business cycles)
+  // Only active drivers — keeps date boundaries consistent with the evolution table
   var weekMinDate={};
   BILLS.forEach(function(b){
+    if(!activeSet[normalizeName(b.driver)])return;
     var d=parseDate(b.createdAt);if(!d)return;
     var wk=getWeekKey(d);if(!wk)return;
     if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
   });
   // Also seed weekMinDate from payment dates (in case a week only has payments, no charges)
   PAYMENT_EVENTS.forEach(function(p){
+    if(!activeSet[normalizeName(p.driver)])return;
     var d=parseDate(p.date);if(!d)return;
     var wk=getWeekKey(d);if(!wk)return;
     if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
