@@ -149,7 +149,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .wk-section-hdr{margin-bottom:12px}
 .wk-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:2px}
 .wk-section-sub{font-size:11px;color:#4b5563}
-.wk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:13px}
 .wk-card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:18px 20px}
 .wk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
 .wk-week-lbl{font-size:11px;font-weight:700;color:#93c5fd;letter-spacing:.02em}
@@ -1884,7 +1884,8 @@ function computeWeeklyBreakdown(){
   var weekMinDate={};
   BILLS.forEach(function(b){var d=parseDate(b.createdAt);if(!d)return;var wk=getWeekKey(d);if(wk&&(!weekMinDate[wk]||d<weekMinDate[wk]))weekMinDate[wk]=d;});
   PAYMENT_EVENTS.forEach(function(p){var d=parseDate(p.date);if(!d)return;var wk=getWeekKey(d);if(wk&&(!weekMinDate[wk]||d<weekMinDate[wk]))weekMinDate[wk]=d;});
-  var lastWks=Object.keys(allWks).filter(function(w){return weekMinDate[w];}).sort(function(a,b){return weekMinDate[a]-weekMinDate[b];}).slice(-3);
+  /* Show same weeks as the evolution table (last 4 max) */
+  var lastWks=Object.keys(allWks).filter(function(w){return weekMinDate[w];}).sort(function(a,b){return weekMinDate[a]-weekMinDate[b];}).slice(-4);
   if(!lastWks.length)return[];
   return lastWks.map(function(wk,i){
     /* Use real week-start from epoch (same as evolution table), not first data point */
