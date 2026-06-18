@@ -1868,6 +1868,8 @@ function getWeekStartDate(d){
 }
 function computeWeeklyBreakdown(){
   if(!BILLS.length)return[];
+
+  // Step 1: Map each bill reference → its week key (same grouping as evolution table)
   var billWeekMap={},weekCharged={};
   BILLS.forEach(function(b){
     if(!b.reference)return;
@@ -1876,36 +1878,90 @@ function computeWeeklyBreakdown(){
     billWeekMap[b.reference]=wk;
     weekCharged[wk]=(weekCharged[wk]||0)+parseAmt(b.amount);
   });
+
+  // Step 2: Split payments into "actuales" (same week as the bill) vs "vieja" (older bill)
+  // Uses the PAYMENT date's week as the bucket, and compares to the BILL's creation week.
+  // Payments with no reference, or whose bill has no date, go to "vieja" by default.
   var weekActuales={},weekVieja={};
   PAYMENT_EVENTS.forEach(function(p){
     var pd=parseDate(p.date);if(!pd)return;
     var wk=getWeekKey(pd);if(!wk)return;
-    if(p.reference&&billWeekMap[p.reference]===wk)weekActuales[wk]=(weekActuales[wk]||0)+p.amount;
-    else weekVieja[wk]=(weekVieja[wk]||0)+p.amount;
+    if(p.reference&&billWeekMap[p.reference]&&billWeekMap[p.reference]===wk){
+      weekActuales[wk]=(weekActuales[wk]||0)+p.amount;
+    } else {
+      weekVieja[wk]=(weekVieja[wk]||0)+p.amount;
+    }
   });
+
+  // Step 3: Collect all weeks that have ANY data
   var allWks={};
   [weekCharged,weekActuales,weekVieja].forEach(function(o){Object.keys(o).forEach(function(w){allWks[w]=true;});});
+
+  // Step 4: For each week, track the EARLIEST actual date (first bill creation date)
+  // This is used for sorting and for the card date label (matches "de jueves a jueves" business cycles)
   var weekMinDate={};
-  BILLS.forEach(function(b){var d=parseDate(b.createdAt);if(!d)return;var wk=getWeekKey(d);if(wk&&(!weekMinDate[wk]||d<weekMinDate[wk]))weekMinDate[wk]=d;});
-  PAYMENT_EVENTS.forEach(function(p){var d=parseDate(p.date);if(!d)return;var wk=getWeekKey(d);if(wk&&(!weekMinDate[wk]||d<weekMinDate[wk]))weekMinDate[wk]=d;});
-  /* Show same weeks as the evolution table (last 4 max) */
-  var lastWks=Object.keys(allWks).filter(function(w){return weekMinDate[w];}).sort(function(a,b){return weekMinDate[a]-weekMinDate[b];}).slice(-4);
+  BILLS.forEach(function(b){
+    var d=parseDate(b.createdAt);if(!d)return;
+    var wk=getWeekKey(d);if(!wk)return;
+    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
+  });
+  // Also seed weekMinDate from payment dates (in case a week only has payments, no charges)
+  PAYMENT_EVENTS.forEach(function(p){
+    var d=parseDate(p.date);if(!d)return;
+    var wk=getWeekKey(d);if(!wk)return;
+    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
+  });
+
+  // Step 5: Sort weeks by their first date, take last 4 (same horizon as evolution table)
+  var lastWks=Object.keys(allWks)
+    .filter(function(w){return weekMinDate[w];})
+    .sort(function(a,b){return weekMinDate[a]-weekMinDate[b];})
+    .slice(-4);
   if(!lastWks.length)return[];
+
+  var pad=function(n){return('0'+n).slice(-2);};
+
   return lastWks.map(function(wk,i){
-    /* Use real week-start from epoch (same as evolution table), not first data point */
-    var s=getWeekStartDate(weekMinDate[wk]),e=new Date(s.getTime()+6*86400000);
-    var pad=function(n){return('0'+n).slice(-2);};
-    var lbl=pad(s.getUTCDate())+'/'+pad(s.getUTCMonth()+1)+' → '+pad(e.getUTCDate())+'/'+pad(e.getUTCMonth()+1);
+    // Date label: from first actual data of THIS batch → first actual data of NEXT batch
+    // This mirrors "de jueves a jueves" — each card covers one upload cycle
+    var startD=weekMinDate[wk];
+    var nextWk=i<lastWks.length-1?lastWks[i+1]:null;
+    var endD=nextWk?weekMinDate[nextWk]:null;
+
+    var lbl;
+    if(endD){
+      lbl=pad(startD.getUTCDate())+'/'+pad(startD.getUTCMonth()+1)
+        +' → '+pad(endD.getUTCDate())+'/'+pad(endD.getUTCMonth()+1);
+    } else {
+      // Last (current/partial) week: show from first data to today
+      var today=new Date();
+      lbl=pad(startD.getUTCDate())+'/'+pad(startD.getUTCMonth()+1)
+        +' → '+pad(today.getUTCDate())+'/'+pad(today.getUTCMonth()+1);
+    }
+
+    // Days badge for the current partial week
     var isLast=(i===lastWks.length-1),daysLabel=null;
-    if(isLast){
-      var maxD=s;
-      PAYMENT_EVENTS.forEach(function(p){var d=parseDate(p.date);if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;});
-      BILLS.forEach(function(b){var d=parseDate(b.createdAt);if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;});
-      var diff=Math.round((maxD-s)/86400000)+1;
+    if(isLast&&endD===null){
+      var today2=new Date();
+      var diff=Math.round((today2-startD)/86400000)+1;
       if(diff<7)daysLabel=diff+(diff===1?' DÍA':' DÍAS');
     }
-    var cargado=weekCharged[wk]||0,pagadoActuales=weekActuales[wk]||0,pagadoVieja=weekVieja[wk]||0,tot=pagadoActuales+pagadoVieja;
-    return {weekNum:i+1,label:lbl,daysLabel:daysLabel,cargado:cargado,pagadoActuales:pagadoActuales,pagadoVieja:pagadoVieja,totalPagado:tot,pctDeLoActual:cargado>0?Math.round(pagadoActuales/cargado*100):0};
+
+    var cargado=weekCharged[wk]||0;
+    var pagadoActuales=weekActuales[wk]||0;
+    var pagadoVieja=weekVieja[wk]||0;
+    var tot=pagadoActuales+pagadoVieja;
+    return {
+      weekNum:i+1,
+      weekKey:wk,
+      label:lbl,
+      daysLabel:daysLabel,
+      cargado:cargado,
+      pagadoActuales:pagadoActuales,
+      pagadoVieja:pagadoVieja,
+      totalPagado:tot,
+      pctDeLoActual:cargado>0?Math.round(pagadoActuales/cargado*100):0
+    };
   });
 }
 
