@@ -734,11 +734,23 @@ function parseDate(s){
 function getWeekKey(d){
   if(!d)return null;
   var msPerWeek=7*24*60*60*1000;
-  var epoch=new Date('2020-01-06');
+  var epoch=new Date('2020-01-03'); // Friday — cycles run Fri 00:00 UTC → Thu 23:59 UTC
   var wn=Math.floor((d-epoch)/msPerWeek);
   var weekStart=new Date(epoch.getTime()+wn*msPerWeek);
   var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return weekStart.getUTCDate()+' '+mn[weekStart.getUTCMonth()];
+}
+
+// Reconstruct the Friday start date from a week key like "12 Jun".
+// Used to compute exact Fri→Thu date labels on breakdown cards.
+function weekKeyToDate(wk){
+  var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var p=wk.split(' ');var d=parseInt(p[0]),m=mn.indexOf(p[1]);
+  if(m<0)return null;
+  var now=new Date();var yr=now.getUTCFullYear();
+  var dt=new Date(Date.UTC(yr,m,d));
+  if(dt>now)dt=new Date(Date.UTC(yr-1,m,d));
+  return dt;
 }
 
 // Normalize a license plate: uppercase, remove dashes and spaces
@@ -1933,26 +1945,22 @@ function computeWeeklyBreakdown(){
   var pad=function(n){return('0'+n).slice(-2);};
 
   return lastWks.map(function(wk,i){
-    // Date label: from first actual data of THIS batch → first actual data of NEXT batch
-    // This mirrors "de jueves a jueves" — each card covers one upload cycle
-    var startD=weekMinDate[wk];
-    var nextWk=i<lastWks.length-1?lastWks[i+1]:null;
-    var endD=nextWk?weekMinDate[nextWk]:null;
+    // Date label: exact Fri→Thu boundaries for this cycle
+    // weekKeyToDate(wk) recovers the Friday start; +6 days = the Thursday end
+    var startD=weekKeyToDate(wk);
+    var endD=startD?new Date(startD.getTime()+6*24*60*60*1000):null;
 
     var lbl;
-    if(endD){
+    if(startD&&endD){
       lbl=pad(startD.getUTCDate())+'/'+pad(startD.getUTCMonth()+1)
         +' → '+pad(endD.getUTCDate())+'/'+pad(endD.getUTCMonth()+1);
     } else {
-      // Last (current/partial) week: show from first data to today
-      var today=new Date();
-      lbl=pad(startD.getUTCDate())+'/'+pad(startD.getUTCMonth()+1)
-        +' → '+pad(today.getUTCDate())+'/'+pad(today.getUTCMonth()+1);
+      lbl=wk;
     }
 
-    // Days badge for the current partial week
+    // Days badge for the current partial week (last card in list)
     var isLast=(i===lastWks.length-1),daysLabel=null;
-    if(isLast&&endD===null){
+    if(isLast&&startD){
       var today2=new Date();
       var diff=Math.round((today2-startD)/86400000)+1;
       if(diff<7)daysLabel=diff+(diff===1?' DÍA':' DÍAS');
