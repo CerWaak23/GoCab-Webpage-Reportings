@@ -1824,4 +1824,187 @@ function exportTollsDetail(){
   var detail=_plateDetailCache[_tollsDetailPlate]||{};
   var fi=FLEET_PLATE_MAP[_tollsDetailPlate]?FLEET_PLATE_MAP[_tollsDetailPlate].fechaInicioStr:null;
   var txns=(detail.transactions||[]).filter(function(t){
-    if
+    if(_tollsDetailWk&&t.wk!==_tollsDetailWk)return false;
+    if(fi&&t.fechaStr&&t.fechaStr<fi)return false;
+    return true;
+  }).slice().sort(function(a,b){
+    if(!a.fechaStr||!b.fechaStr)return 0;
+    return b.fechaStr.localeCompare(a.fechaStr);
+  });
+  if(!txns.length)return;
+
+  var fleetRow=FLEET_PLATE_MAP[_tollsDetailPlate];
+  var sheetData=[['Conductor','Patente','Fecha','Hora','Semana','Autopista',
+    'Pórtico','Tipo Tarifa','Valor CLP']];
+  txns.forEach(function(t){
+    sheetData.push([
+      fleetRow?fleetRow.conductorDisplay:t.plate,
+      t.plate, t.fechaStr||'', t.horaStr||'', t.wk||'',
+      txnAutopista(t,detail)||'', txnPortico(t,detail)||'', txnTarifa(t,detail)||'',
+      t.valor
+    ]);
+  });
+
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(sheetData);
+  ws['!cols']=[{wch:24},{wch:10},{wch:12},{wch:8},{wch:12},{wch:22},{wch:14},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'Detalle Pórticos');
+  XLSX.writeFile(wb,'GoCab_Porticos_Detalle_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+/* ── WEEKLY BREAKDOWN ────────────────────────────────────────────────────── */
+function computeWeeklyBreakdown(){
+  if(!BILLS.length)return[];
+  var billWeekMap={};
+  var weekCharged={};
+  BILLS.forEach(function(b){
+    if(!b.reference)return;
+    var d=parseDate(b.createdAt);if(!d)return;
+    var wk=getWeekKey(d);if(!wk)return;
+    billWeekMap[b.reference]=wk;
+    weekCharged[wk]=(weekCharged[wk]||0)+parseAmt(b.amount);
+  });
+  var weekActuales={};
+  var weekVieja={};
+  PAYMENT_EVENTS.forEach(function(p){
+    var pd=parseDate(p.date);if(!pd)return;
+    var wk=getWeekKey(pd);if(!wk)return;
+    if(p.reference&&billWeekMap[p.reference]===wk){
+      weekActuales[wk]=(weekActuales[wk]||0)+p.amount;
+    } else {
+      weekVieja[wk]=(weekVieja[wk]||0)+p.amount;
+    }
+  });
+  var allWks={};
+  Object.keys(weekCharged).forEach(function(w){allWks[w]=true;});
+  Object.keys(weekActuales).forEach(function(w){allWks[w]=true;});
+  Object.keys(weekVieja).forEach(function(w){allWks[w]=true;});
+  var weekMinDate={};
+  BILLS.forEach(function(b){
+    var d=parseDate(b.createdAt);if(!d)return;
+    var wk=getWeekKey(d);if(!wk)return;
+    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
+  });
+  PAYMENT_EVENTS.forEach(function(p){
+    var d=parseDate(p.date);if(!d)return;
+    var wk=getWeekKey(d);if(!wk)return;
+    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
+  });
+  var sortedWks=Object.keys(allWks).filter(function(w){return weekMinDate[w];}).sort(function(a,b){
+    return weekMinDate[a]-weekMinDate[b];
+  });
+  var lastWks=sortedWks.slice(-3);
+  if(!lastWks.length)return[];
+  function dd(dt){return('0'+dt.getDate()).slice(-2)+'/'+('0'+(dt.getMonth()+1)).slice(-2);}
+  return lastWks.map(function(wk,i){
+    var startD=weekMinDate[wk];
+    var endD=new Date(startD.getTime()+6*86400000);
+    var isLast=(i===lastWks.length-1);
+    var daysLabel=null;
+    if(isLast){
+      var maxD=startD;
+      PAYMENT_EVENTS.forEach(function(p){
+        var d=parseDate(p.date);
+        if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;
+      });
+      BILLS.forEach(function(b){
+        var d=parseDate(b.createdAt);
+        if(d&&getWeekKey(d)===wk&&d>maxD)maxD=d;
+      });
+      var diff=Math.round((maxD-startD)/86400000)+1;
+      if(diff<7)daysLabel=diff+(diff===1?' DÍA':' DÍAS');
+    }
+    var cargado=weekCharged[wk]||0;
+    var pagadoActuales=weekActuales[wk]||0;
+    var pagadoVieja=weekVieja[wk]||0;
+    var tot=pagadoActuales+pagadoVieja;
+    return {
+      weekNum:i+1,label:dd(startD)+' → '+dd(endD),daysLabel:daysLabel,
+      cargado:cargado,pagadoActuales:pagadoActuales,pagadoVieja:pagadoVieja,
+      totalPagado:tot,pctDeLoActual:cargado>0?Math.round(pagadoActuales/cargado*100):0
+    };
+  });
+}
+
+function renderWeeklyBreakdown(){
+  var el=document.getElementById('weeklySection');if(!el)return;
+  var weeks=computeWeeklyBreakdown();
+  el.style.display='';
+  if(!weeks.length){
+    var pe0=PAYMENT_EVENTS.length>0?PAYMENT_EVENTS[0]:{};
+    var b0=BILLS.length>0?BILLS[0]:{};
+    document.getElementById('wkGrid').innerHTML='<div style="color:#6b7280;font-size:11px;padding:12px;background:#0a0d14;border-radius:8px;grid-column:1/-1">'
+      +'<b style="color:#f87171">⚠ Sin datos semanales</b><br>'
+      +'BILLS: '+BILLS.length+' | EVENTS: '+PAYMENT_EVENTS.length+'<br>'
+      +'Primer bill — ref: <code>'+esc(String(b0.reference||''))+'</code> createdAt: <code>'+esc(String(b0.createdAt||''))+'</code><br>'
+      +'Primer evento — ref: <code>'+esc(String(pe0.reference||''))+'</code> date: <code>'+esc(String(pe0.date||''))+'</code>'
+      +'</div>';
+    return;
+  }
+  var html='';
+  weeks.forEach(function(w){
+    var tot=w.totalPagado;
+    var wV=tot>0?Math.round(w.pagadoVieja/tot*100):0;
+    var wA=tot>0?Math.round(w.pagadoActuales/tot*100):0;
+    var p=w.pctDeLoActual;
+    var pColor=p>=80?'#34d399':p>=50?'#fbbf24':'#f87171';
+    var pBg=p>=80?'#05150d':p>=50?'#130d02':'#150505';
+    var pBorder=p>=80?'#064e3b44':p>=50?'#78350f44':'#7f1d1d44';
+    html+='<div class="wk-card">'
+      +'<div class="wk-header">'
+      +'<span class="wk-week-lbl">Semana '+w.weekNum+' · '+esc(w.label)+'</span>'
+      +(w.daysLabel?'<span class="wk-days-badge">'+esc(w.daysLabel)+'</span>':'')
+      +'</div>'
+      +'<div class="wk-amounts">'
+      +'<span class="wk-cargado">+'+fmtShort(w.cargado)+' cargado</span>'
+      +'<span class="wk-pagado">−'+fmtShort(tot)+' pagado</span>'
+      +'</div>'
+      +'<div class="wk-bar">'
+      +'<div class="wk-bar-vieja" style="width:'+wV+'%"></div>'
+      +'<div class="wk-bar-actual" style="width:'+wA+'%"></div>'
+      +'</div>'
+      +'<div class="wk-bar-labels">'
+      +'<span><span class="wk-dot vieja"></span>Deuda vieja: '+fmtShort(w.pagadoVieja)+'</span>'
+      +'<span><span class="wk-dot actual"></span>Multas actuales: '+fmtShort(w.pagadoActuales)+'</span>'
+      +'</div>'
+      +'<div class="wk-pct-box" style="background:'+pBg+';border:1px solid '+pBorder+'">'
+      +'<div class="wk-pct" style="color:'+pColor+'">'+p+'% de lo cargado</div>'
+      +'<div class="wk-pct-sub" style="color:'+pColor+'">Pagado de actuales</div>'
+      +'</div>'
+      +'</div>';
+  });
+  document.getElementById('wkGrid').innerHTML=html;
+}
+
+function renderAll(){
+  FILTERED=sortDrivers(getFiltered());
+  renderKPIs();renderDonut();renderMixedChart();renderEvolTable();renderDriversTable(FILTERED);
+  renderWeeklyBreakdown();
+  renderTollsSection();
+  applyI18n();
+}
+
+function setLang(lang){if(!T[lang])return;LANG=lang;renderAll();}
+function setLanguage(lang){setLang(lang);}
+function setCurrency(cur){CUR=cur;renderAll();}
+
+window.addEventListener('message',function(e){
+  if(!e.data)return;
+  if(e.data.type==='setLanguage')setLang(e.data.lang);
+  if(e.data.type==='setCurrency')setCurrency(e.data.currency);
+});
+window.addEventListener('load',function(){
+  try{
+    var pl=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_lang');
+    if(pl&&T[pl])LANG=pl;
+    var pc=window.parent.localStorage&&window.parent.localStorage.getItem('gocab_currency');
+    if(pc)CUR=pc;
+  }catch(e){}
+  fetch('/api/fx').then(function(r){return r.ok?r.json():null;}).then(function(fx){
+    if(fx&&fx.rate>0){USD_RATE=fx.rate;}
+    setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
+  }).catch(function(){}).finally(function(){loadData();});
+});
+</script>
+</body>
+</html>
