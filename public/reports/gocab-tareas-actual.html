@@ -334,7 +334,7 @@
       <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done" data-ru="Описание — что это и как выполняется">Descripción</label>
       <textarea id="fDesc" rows="2" placeholder="Paso a paso, para que otra persona pueda tomarla…"></textarea>
       <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover" data-ru="Резерв — кто заменит" style="margin-top:12px">Backup / respaldo</label>
-      <input id="fBackup" placeholder="Persona que puede tomarla si el encargado no está…">
+      <select id="fBackup"></select>
       <label data-es="Contactos" data-en="Contacts" data-ru="Контакты">Contactos</label>
       <textarea id="fContacts" rows="2" placeholder="Nombre, teléfono, correo…"></textarea>
       <label data-es="Links" data-en="Links" data-ru="Ссылки">Links</label>
@@ -373,7 +373,7 @@
     <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done" data-ru="Описание — что это и как выполняется">Descripción</label>
     <textarea id="eDesc" rows="3" placeholder="Paso a paso, para que otra persona pueda tomarla…"></textarea>
     <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover" data-ru="Резерв — кто заменит">Backup / respaldo</label>
-    <input id="eBackup" placeholder="Persona que puede tomarla si el encargado no está…">
+    <select id="eBackup"></select>
     <label data-es="Contactos" data-en="Contacts" data-ru="Контакты">Contactos</label>
     <textarea id="eContacts" rows="2" placeholder="Nombre, teléfono, correo…"></textarea>
     <label data-es="Links" data-en="Links" data-ru="Ссылки">Links</label>
@@ -775,7 +775,7 @@
     document.getElementById('eFreq').innerHTML = Object.keys(FREQ).map(k=>opt(k, freqLabel(k,lang), k===t.f)).join('');
     document.getElementById('eHours').value = t.h>0?t.h:'';
     document.getElementById('eDesc').value = t.desc||'';
-    document.getElementById('eBackup').value = t.backup||'';
+    document.getElementById('eBackup').innerHTML = backupOptions(t.backup||'', lang);
     document.getElementById('eContacts').value = t.contacts||'';
     document.getElementById('eLinks').value = t.links||'';
     document.getElementById('editModal').hidden=false;
@@ -975,12 +975,17 @@
 
   /* ---------- Create-form selects ---------- */
   function opt(v,txt,sel){return `<option value="${v}"${sel?' selected':''}>${txt}</option>`;}
+  function backupOptions(sel,lang){
+    const none = lang==='ru'?'— без резерва':lang==='en'?'— no backup':'— sin backup';
+    return `<option value="">${none}</option>`+getPeople().map(p=>opt(p.name, pName(p,lang), p.name===sel)).join('');
+  }
   function fillSelects(lang){
-    const fp=document.getElementById('fProc'), fpe=document.getElementById('fPerson'), ff=document.getElementById('fFreq');
-    const pv=fp.value, pev=fpe.value, fv=ff.value;
+    const fp=document.getElementById('fProc'), fpe=document.getElementById('fPerson'), ff=document.getElementById('fFreq'), fbk=document.getElementById('fBackup');
+    const pv=fp.value, pev=fpe.value, fv=ff.value, bv=fbk?fbk.value:'';
     fp.innerHTML=PROCESS.map(p=>opt(p.key, procLabel(p.key,lang), p.key===pv)).join('');
     fpe.innerHTML=getPeople().map(p=>opt(p.name, pName(p,lang), p.name===pev)).join('');
     ff.innerHTML=Object.keys(FREQ).map(k=>opt(k, freqLabel(k,lang), k===fv)).join('');
+    if(fbk) fbk.innerHTML=backupOptions(bv,lang);
   }
 
   /* ---------- Theme (dark / light) ---------- */
@@ -1012,7 +1017,6 @@
     ph('pRole','Ej: Coordinador de Flota','e.g. Fleet coordinator','Напр.: Координатор автопарка');
     ph('projName','Nombre del proyecto…','Project name…','Название проекта…');
     ['fDesc','eDesc'].forEach(i=>ph(i,'Paso a paso, para que otra persona pueda tomarla…','Step by step, so anyone can take it over…','Пошагово, чтобы задачу мог принять другой…'));
-    ['fBackup','eBackup'].forEach(i=>ph(i,'Persona que puede tomarla si el encargado no está…','Who can cover if the owner is away…','Кто заменит, если ответственного нет…'));
     ['fContacts','eContacts'].forEach(i=>ph(i,'Nombre, teléfono, correo…','Name, phone, email…','Имя, телефон, эл. почта…'));
     ['fLinks','eLinks'].forEach(i=>ph(i,'Un link por línea…','One link per line…','По одной ссылке на строку…'));
     fillSelects(lang);
