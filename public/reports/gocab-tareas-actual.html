@@ -237,150 +237,150 @@
     <div class="hrow">
       <div class="logo">G</div>
       <div class="htitle">
-        <h1 data-es="Tareas Operacionales" data-en="Operational Tasks">Tareas Operacionales</h1>
-        <p data-es="Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas" data-en="Cross of the task sheet · by process and by person · drag &amp; create tasks">Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas</p>
+        <h1 data-es="Tareas Operacionales" data-en="Operational Tasks" data-ru="Операционные задачи">Tareas Operacionales</h1>
+        <p data-es="Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas" data-en="Cross of the task sheet · by process and by person · drag &amp; create tasks" data-ru="Свод задач · по процессам и по людям · перетаскивайте и создавайте задачи">Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas</p>
       </div>
       <div class="hbtns">
         <span id="syncStatus" class="sync" title="Sincronización con la base compartida en Drive"></span>
-        <button class="lang" id="saveAsBtn" onclick="saveAs()" title="Descargar una copia del reporte (respaldo)">⬇️ <span data-es="Descargar copia" data-en="Download copy">Descargar copia</span></button>
+        <button class="lang" id="saveAsBtn" onclick="saveAs()" title="Descargar una copia del reporte (respaldo)">⬇️ <span data-es="Descargar copia" data-en="Download copy" data-ru="Скачать копию">Descargar copia</span></button>
         <button class="lang" id="themeBtn" onclick="toggleTheme()" title="Claro / oscuro">🌙</button>
       </div>
     </div>
 
     <div class="kpis">
-      <div class="kpi"><div class="num" id="kpiTotal">36</div><div class="lab" data-es="Tareas totales" data-en="Total tasks">Tareas totales</div></div>
-      <div class="kpi"><div class="num" id="kpiProc">12</div><div class="lab" data-es="Procesos" data-en="Processes">Procesos</div></div>
-      <div class="kpi"><div class="num" id="kpiPeople">5</div><div class="lab" data-es="Personas con tareas" data-en="People with tasks">Personas con tareas</div></div>
-      <div class="kpi"><div class="num" id="kpiDaily">8</div><div class="lab" data-es="Tareas diarias" data-en="Daily tasks">Tareas diarias</div></div>
+      <div class="kpi"><div class="num" id="kpiTotal">36</div><div class="lab" data-es="Tareas totales" data-en="Total tasks" data-ru="Всего задач">Tareas totales</div></div>
+      <div class="kpi"><div class="num" id="kpiProc">12</div><div class="lab" data-es="Procesos" data-en="Processes" data-ru="Процессы">Procesos</div></div>
+      <div class="kpi"><div class="num" id="kpiPeople">5</div><div class="lab" data-es="Personas con tareas" data-en="People with tasks" data-ru="Люди с задачами">Personas con tareas</div></div>
+      <div class="kpi"><div class="num" id="kpiDaily">8</div><div class="lab" data-es="Tareas diarias" data-en="Daily tasks" data-ru="Ежедневные задачи">Tareas diarias</div></div>
     </div>
   </header>
 
   <div class="grid2">
     <div class="panel">
       <div class="ptop">
-        <h2 data-es="Tareas por proceso" data-en="Tasks by process">Tareas por proceso</h2>
+        <h2 data-es="Tareas por proceso" data-en="Tasks by process" data-ru="Задачи по процессам">Tareas por proceso</h2>
         <span class="cap" id="capProc">36 tareas · 12 procesos</span>
       </div>
       <div id="chartProcess"></div>
     </div>
     <div class="panel">
       <div class="ptop">
-        <h2 data-es="Tareas por persona" data-en="Tasks by person">Tareas por persona</h2>
-        <span class="cap" data-es="responsable directo" data-en="direct owner">responsable directo</span>
+        <h2 data-es="Tareas por persona" data-en="Tasks by person" data-ru="Задачи по людям">Tareas por persona</h2>
+        <span class="cap" data-es="responsable directo" data-en="direct owner" data-ru="прямой ответственный">responsable directo</span>
       </div>
       <div id="chartPeople"></div>
       <p class="note">
-        <span><i style="background:var(--red)"></i><span data-es="Sobrecarga (10+)" data-en="Overloaded (10+)">Sobrecarga (10+)</span></span>
-        <span><i style="background:var(--amber)"></i><span data-es="Carga alta" data-en="High load">Carga alta</span></span>
-        <span><i style="background:var(--green)"></i><span data-es="Carga sana" data-en="Healthy load">Carga sana</span></span>
-        <span><i style="background:var(--teal)"></i><span data-es="Compartida (coordinadores)" data-en="Shared (coordinators)">Compartida (coordinadores)</span></span>
+        <span><i style="background:var(--red)"></i><span data-es="Sobrecarga (10+)" data-en="Overloaded (10+)" data-ru="Перегрузка (10+)">Sobrecarga (10+)</span></span>
+        <span><i style="background:var(--amber)"></i><span data-es="Carga alta" data-en="High load" data-ru="Высокая нагрузка">Carga alta</span></span>
+        <span><i style="background:var(--green)"></i><span data-es="Carga sana" data-en="Healthy load" data-ru="Нормальная нагрузка">Carga sana</span></span>
+        <span><i style="background:var(--teal)"></i><span data-es="Compartida (coordinadores)" data-en="Shared (coordinators)" data-ru="Общая (координаторы)">Compartida (coordinadores)</span></span>
       </p>
     </div>
   </div>
 
   <!-- PROCESS TREE -->
   <div class="sec">
-    <p class="sh"><span data-es="🗂️ Procesos y sus tareas" data-en="🗂️ Processes and their tasks">🗂️ Procesos y sus tareas</span><button class="secbtn collapser" data-grid="treeProcess" onclick="toggleSection('treeProcess',this)">▾ Contraer todo</button></p>
-    <p class="ssub" data-es="Cada proceso con el detalle de sus tareas. Haz clic en un proceso para plegarlo." data-en="Each process with its task detail. Click a process to collapse it.">Cada proceso con el detalle de sus tareas. Haz clic en un proceso para plegarlo.</p>
+    <p class="sh"><span data-es="🗂️ Procesos y sus tareas" data-en="🗂️ Processes and their tasks" data-ru="🗂️ Процессы и их задачи">🗂️ Procesos y sus tareas</span><button class="secbtn collapser" data-grid="treeProcess" onclick="toggleSection('treeProcess',this)">▾ Contraer todo</button></p>
+    <p class="ssub" data-es="Cada proceso con el detalle de sus tareas. Haz clic en un proceso para plegarlo." data-en="Each process with its task detail. Click a process to collapse it." data-ru="Каждый процесс с детализацией задач. Нажмите на процесс, чтобы свернуть.">Cada proceso con el detalle de sus tareas. Haz clic en un proceso para plegarlo.</p>
     <div class="tgrid" id="treeProcess"></div>
   </div>
 
   <!-- PEOPLE TREE -->
   <div class="sec">
-    <p class="sh"><span data-es="🧑‍💼 Personas y sus tareas" data-en="🧑‍💼 People and their tasks">🧑‍💼 Personas y sus tareas</span><button class="secbtn collapser" data-grid="treePeople" onclick="toggleSection('treePeople',this)">▾ Contraer todo</button></p>
-    <p class="ssub" data-es="Arrastra una tarea de una persona a otra para reasignarla. La “×” la elimina. Todo se guarda en este navegador." data-en="Drag a task from one person to another to reassign it. The “×” deletes it. Everything is saved in this browser.">Arrastra una tarea de una persona a otra para reasignarla. La “×” la elimina. Todo se guarda en este navegador.</p>
+    <p class="sh"><span data-es="🧑‍💼 Personas y sus tareas" data-en="🧑‍💼 People and their tasks" data-ru="🧑‍💼 Люди и их задачи">🧑‍💼 Personas y sus tareas</span><button class="secbtn collapser" data-grid="treePeople" onclick="toggleSection('treePeople',this)">▾ Contraer todo</button></p>
+    <p class="ssub" data-es="Arrastra una tarea de una persona a otra para reasignarla. La “×” la elimina. Todo se guarda en este navegador." data-en="Drag a task from one person to another to reassign it. The “×” deletes it. Everything is saved in this browser." data-ru="Перетащите задачу от одного человека к другому, чтобы переназначить. «×» удаляет. Всё сохраняется в браузере.">Arrastra una tarea de una persona a otra para reasignarla. La “×” la elimina. Todo se guarda en este navegador.</p>
     <div class="tgrid people" id="treePeople"></div>
   </div>
 
   <!-- PROJECTS -->
   <div class="sec">
-    <p class="sh"><span data-es="🚀 Proyectos" data-en="🚀 Projects">🚀 Proyectos</span></p>
-    <p class="ssub" data-es="Crea un proyecto y dentro sus tareas con responsable. Marca las hechas para ir viendo el avance." data-en="Create a project and add its tasks with an owner. Check off the done ones to track progress.">Crea un proyecto y dentro sus tareas con responsable. Marca las hechas para ir viendo el avance.</p>
+    <p class="sh"><span data-es="🚀 Proyectos" data-en="🚀 Projects" data-ru="🚀 Проекты">🚀 Proyectos</span></p>
+    <p class="ssub" data-es="Crea un proyecto y dentro sus tareas con responsable. Marca las hechas para ir viendo el avance." data-en="Create a project and add its tasks with an owner. Check off the done ones to track progress." data-ru="Создайте проект и добавьте его задачи с ответственным. Отмечайте выполненные, чтобы видеть прогресс.">Crea un proyecto y dentro sus tareas con responsable. Marca las hechas para ir viendo el avance.</p>
     <div class="projnew">
       <input id="projName" placeholder="Nombre del proyecto…" onkeydown="if(event.key==='Enter')createProject()">
-      <button class="addbtn" onclick="createProject()" data-es="＋ Crear proyecto" data-en="＋ Create project">＋ Crear proyecto</button>
+      <button class="addbtn" onclick="createProject()" data-es="＋ Crear proyecto" data-en="＋ Create project" data-ru="＋ Создать проект">＋ Crear proyecto</button>
     </div>
     <div class="projgrid" id="projGrid"></div>
   </div>
 
   <!-- ADD PERSON -->
   <div class="sec">
-    <p class="sh"><span data-es="🧑 Agregar persona" data-en="🧑 Add person">🧑 Agregar persona</span></p>
-    <p class="ssub" data-es="Crea una persona y aparecerá su tarjeta en “Personas y sus tareas”, lista para arrastrarle tareas." data-en="Create a person and their card will appear under “People and their tasks”, ready to receive dragged tasks.">Crea una persona y aparecerá su tarjeta en “Personas y sus tareas”, lista para arrastrarle tareas.</p>
+    <p class="sh"><span data-es="🧑 Agregar persona" data-en="🧑 Add person" data-ru="🧑 Добавить человека">🧑 Agregar persona</span></p>
+    <p class="ssub" data-es="Crea una persona y aparecerá su tarjeta en “Personas y sus tareas”, lista para arrastrarle tareas." data-en="Create a person and their card will appear under “People and their tasks”, ready to receive dragged tasks." data-ru="Создайте человека — его карточка появится в разделе «Люди и их задачи», готовая принимать задачи.">Crea una persona y aparecerá su tarjeta en “Personas y sus tareas”, lista para arrastrarle tareas.</p>
     <div class="formcard">
       <div class="fgrid two">
-        <div><label data-es="Nombre" data-en="Name">Nombre</label><input id="pName" placeholder="Nombre y apellido…"></div>
-        <div><label data-es="Cargo" data-en="Role">Cargo</label><input id="pRole" placeholder="Ej: Coordinador de Flota"></div>
+        <div><label data-es="Nombre" data-en="Name" data-ru="Имя">Nombre</label><input id="pName" placeholder="Nombre y apellido…"></div>
+        <div><label data-es="Cargo" data-en="Role" data-ru="Должность">Cargo</label><input id="pRole" placeholder="Ej: Coordinador de Flota"></div>
       </div>
-      <div class="factions"><button class="addbtn" onclick="createPerson()" data-es="＋ Agregar persona" data-en="＋ Add person">＋ Agregar persona</button></div>
+      <div class="factions"><button class="addbtn" onclick="createPerson()" data-es="＋ Agregar persona" data-en="＋ Add person" data-ru="＋ Добавить человека">＋ Agregar persona</button></div>
     </div>
   </div>
 
   <!-- CREATE TASK -->
   <div class="sec">
-    <p class="sh"><span data-es="➕ Crear tarea" data-en="➕ Create task">➕ Crear tarea</span></p>
-    <p class="ssub" data-es="Agrega una tarea nueva y asígnala a un proceso, una persona y una periodicidad." data-en="Add a new task and assign it to a process, a person and a periodicity.">Agrega una tarea nueva y asígnala a un proceso, una persona y una periodicidad.</p>
+    <p class="sh"><span data-es="➕ Crear tarea" data-en="➕ Create task" data-ru="➕ Создать задачу">➕ Crear tarea</span></p>
+    <p class="ssub" data-es="Agrega una tarea nueva y asígnala a un proceso, una persona y una periodicidad." data-en="Add a new task and assign it to a process, a person and a periodicity." data-ru="Добавьте новую задачу и назначьте процесс, человека и периодичность.">Agrega una tarea nueva y asígnala a un proceso, una persona y una periodicidad.</p>
     <div class="formcard">
       <div class="frow">
-        <label data-es="Tarea" data-en="Task">Tarea</label>
+        <label data-es="Tarea" data-en="Task" data-ru="Задача">Tarea</label>
         <input id="fName" placeholder="Nombre de la tarea…">
       </div>
       <div class="fgrid">
-        <div><label data-es="Proceso" data-en="Process">Proceso</label><select id="fProc"></select></div>
-        <div><label data-es="Persona" data-en="Person">Persona</label><select id="fPerson"></select></div>
-        <div><label data-es="Periodicidad" data-en="Periodicity">Periodicidad</label><select id="fFreq"></select></div>
-        <div><label data-es="Horas / semana" data-en="Hours / week">Horas / semana</label><input id="fHours" type="number" min="0" step="0.5" placeholder="0"></div>
+        <div><label data-es="Proceso" data-en="Process" data-ru="Процесс">Proceso</label><select id="fProc"></select></div>
+        <div><label data-es="Persona" data-en="Person" data-ru="Человек">Persona</label><select id="fPerson"></select></div>
+        <div><label data-es="Periodicidad" data-en="Periodicity" data-ru="Периодичность">Periodicidad</label><select id="fFreq"></select></div>
+        <div><label data-es="Horas / semana" data-en="Hours / week" data-ru="Часов / неделю">Horas / semana</label><input id="fHours" type="number" min="0" step="0.5" placeholder="0"></div>
       </div>
-      <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done">Descripción</label>
+      <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done" data-ru="Описание — что это и как выполняется">Descripción</label>
       <textarea id="fDesc" rows="2" placeholder="Paso a paso, para que otra persona pueda tomarla…"></textarea>
-      <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover" style="margin-top:12px">Backup / respaldo</label>
+      <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover" data-ru="Резерв — кто заменит" style="margin-top:12px">Backup / respaldo</label>
       <input id="fBackup" placeholder="Persona que puede tomarla si el encargado no está…">
-      <label data-es="Contactos" data-en="Contacts">Contactos</label>
+      <label data-es="Contactos" data-en="Contacts" data-ru="Контакты">Contactos</label>
       <textarea id="fContacts" rows="2" placeholder="Nombre, teléfono, correo…"></textarea>
-      <label data-es="Links" data-en="Links">Links</label>
+      <label data-es="Links" data-en="Links" data-ru="Ссылки">Links</label>
       <textarea id="fLinks" rows="2" placeholder="Un link por línea…"></textarea>
       <div class="factions" style="margin-top:14px">
-        <button class="addbtn" onclick="createTask()" data-es="＋ Agregar tarea" data-en="＋ Add task">＋ Agregar tarea</button>
-        <button class="secbtn" onclick="resetData()" data-es="↺ Restablecer datos originales" data-en="↺ Reset to original data">↺ Restablecer datos originales</button>
+        <button class="addbtn" onclick="createTask()" data-es="＋ Agregar tarea" data-en="＋ Add task" data-ru="＋ Добавить задачу">＋ Agregar tarea</button>
+        <button class="secbtn" onclick="resetData()" data-es="↺ Restablecer datos originales" data-en="↺ Reset to original data" data-ru="↺ Сбросить к исходным данным">↺ Restablecer datos originales</button>
       </div>
     </div>
   </div>
 
   <!-- DELETED TASKS HISTORY -->
   <div class="sec">
-    <p class="sh"><span data-es="🗑️ Tareas eliminadas" data-en="🗑️ Deleted tasks">🗑️ Tareas eliminadas</span><button class="secbtn" onclick="emptyTrash()" data-es="Vaciar historial" data-en="Empty history">Vaciar historial</button></p>
-    <p class="ssub" data-es="Historial de tareas borradas. Puedes restablecer cualquiera por si alguien la eliminó por error." data-en="History of deleted tasks. Restore any of them in case someone removed one by mistake.">Historial de tareas borradas. Puedes restablecer cualquiera por si alguien la eliminó por error.</p>
+    <p class="sh"><span data-es="🗑️ Tareas eliminadas" data-en="🗑️ Deleted tasks" data-ru="🗑️ Удалённые задачи">🗑️ Tareas eliminadas</span><button class="secbtn" onclick="emptyTrash()" data-es="Vaciar historial" data-en="Empty history" data-ru="Очистить историю">Vaciar historial</button></p>
+    <p class="ssub" data-es="Historial de tareas borradas. Puedes restablecer cualquiera por si alguien la eliminó por error." data-en="History of deleted tasks. Restore any of them in case someone removed one by mistake." data-ru="История удалённых задач. Восстановите любую, если кто-то удалил её по ошибке.">Historial de tareas borradas. Puedes restablecer cualquiera por si alguien la eliminó por error.</p>
     <ul class="trashlist" id="trashList"></ul>
   </div>
 
   <p class="foot">
-    <span data-es="GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador" data-en="GOCAB · internal operations map · changes are saved in this browser">GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador</span>
+    <span data-es="GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador" data-en="GOCAB · internal operations map · changes are saved in this browser" data-ru="GOCAB · внутренняя карта операций · изменения сохраняются в браузере">GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador</span>
   </p>
 
 </div>
 
 <div id="editModal" class="modal" hidden>
   <div class="modalcard">
-    <h3 data-es="Editar tarea" data-en="Edit task">Editar tarea</h3>
-    <label data-es="Tarea" data-en="Task">Tarea</label>
+    <h3 data-es="Editar tarea" data-en="Edit task" data-ru="Изменить задачу">Editar tarea</h3>
+    <label data-es="Tarea" data-en="Task" data-ru="Задача">Tarea</label>
     <input id="eName">
     <div class="fgrid">
-      <div><label data-es="Proceso" data-en="Process">Proceso</label><select id="eProc"></select></div>
-      <div><label data-es="Persona" data-en="Person">Persona</label><select id="ePerson"></select></div>
-      <div><label data-es="Periodicidad" data-en="Periodicity">Periodicidad</label><select id="eFreq"></select></div>
-      <div><label data-es="Horas / semana" data-en="Hours / week">Horas / semana</label><input id="eHours" type="number" min="0" step="0.5" placeholder="0"></div>
+      <div><label data-es="Proceso" data-en="Process" data-ru="Процесс">Proceso</label><select id="eProc"></select></div>
+      <div><label data-es="Persona" data-en="Person" data-ru="Человек">Persona</label><select id="ePerson"></select></div>
+      <div><label data-es="Periodicidad" data-en="Periodicity" data-ru="Периодичность">Periodicidad</label><select id="eFreq"></select></div>
+      <div><label data-es="Horas / semana" data-en="Hours / week" data-ru="Часов / неделю">Horas / semana</label><input id="eHours" type="number" min="0" step="0.5" placeholder="0"></div>
     </div>
-    <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done">Descripción</label>
+    <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done" data-ru="Описание — что это и как выполняется">Descripción</label>
     <textarea id="eDesc" rows="3" placeholder="Paso a paso, para que otra persona pueda tomarla…"></textarea>
-    <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover">Backup / respaldo</label>
+    <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover" data-ru="Резерв — кто заменит">Backup / respaldo</label>
     <input id="eBackup" placeholder="Persona que puede tomarla si el encargado no está…">
-    <label data-es="Contactos" data-en="Contacts">Contactos</label>
+    <label data-es="Contactos" data-en="Contacts" data-ru="Контакты">Contactos</label>
     <textarea id="eContacts" rows="2" placeholder="Nombre, teléfono, correo…"></textarea>
-    <label data-es="Links" data-en="Links">Links</label>
+    <label data-es="Links" data-en="Links" data-ru="Ссылки">Links</label>
     <textarea id="eLinks" rows="2" placeholder="Un link por línea…"></textarea>
     <div class="factions">
-      <button class="addbtn" onclick="saveEdit()" data-es="Guardar cambios" data-en="Save changes">Guardar cambios</button>
-      <button class="secbtn" onclick="closeEdit()" data-es="Cancelar" data-en="Cancel">Cancelar</button>
+      <button class="addbtn" onclick="saveEdit()" data-es="Guardar cambios" data-en="Save changes" data-ru="Сохранить изменения">Guardar cambios</button>
+      <button class="secbtn" onclick="closeEdit()" data-es="Cancelar" data-en="Cancel" data-ru="Отмена">Cancelar</button>
     </div>
   </div>
 </div>
@@ -420,6 +420,14 @@
     'Diaria':'Daily','Según demanda':'On demand','Semanal':'Weekly','Semanal (viernes)':'Weekly (Fri)',
     'Según agenda':'As scheduled','Mensual':'Monthly','Según proyecto':'Per project','Según planificación':'As planned'
   };
+  /* ---- Russian dictionaries (report chrome + vocabulary) ---- */
+  const FREQ_RU={
+    'Diaria':'Ежедневно','Según demanda':'По запросу','Semanal':'Еженедельно','Semanal (viernes)':'Еженедельно (пт)',
+    'Según agenda':'По расписанию','Mensual':'Ежемесячно','Según proyecto':'По проекту','Según planificación':'По плану'
+  };
+  const PROCESS_RU={'Operaciones':'Операции','Finanzas':'Финансы','Administración':'Администрирование','Cobranza':'Взыскание','Administración de Conductores':'Адм. водителей','Recursos Humanos':'Кадры','Comercial':'Коммерция','Atención al Cliente':'Поддержка клиентов','Mejora Continua':'Постоянное улучшение','Tecnología':'Технологии','Compras':'Закупки','Dirección':'Руководство'};
+  const ROLE_RU={'Gerente de Operaciones':'Операционный менеджер','Coordinador de Flota':'Координатор автопарка','Gerente de País':'Страновой менеджер','Equipo Producto HQ':'Продуктовая команда HQ','Pablo + Joy · según autos asignados':'Pablo + Joy · по закреплённым авто'};
+  const NAME_RU={'Coordinadores de Flota':'Координаторы автопарка'};
   const SEED_TASKS=[
     {p:'Operaciones',                  a:'Morning Routine',                            ae:'Morning Routine',              r:'Coordinadores de Flota', f:'Diaria'},
     {p:'Administración de Conductores',a:'Actualización de datos en Fleet',            ae:'Update data in Fleet',         r:'Joy Varela',             f:'Según demanda'},
@@ -462,12 +470,15 @@
   const ownerKey=r=>(r==='Coordinador asignado')?'Coordinadores de Flota':r;
   const ownerLabel=(r,lang)=>{
     const k=ownerKey(r);
-    if(k==='Coordinadores de Flota') return lang==='en'?'Fleet Coordinators':'Coordinadores de Flota';
+    if(k==='Coordinadores de Flota') return lang==='ru'?'Координаторы автопарка':lang==='en'?'Fleet Coordinators':'Coordinadores de Flota';
     return k;
   };
-  const procLabel=(key,lang)=>{const p=PROCESS.find(x=>x.key===key);return p?(lang==='en'?p.en:p.es):key;};
-  const freqLabel=(f,lang)=>lang==='en'?(FREQ[f]||f):f;
-  const pName=(d,lang)=>(lang==='en'&&d.enName)?d.enName:d.name;
+  const procLabel=(key,lang)=>{const p=PROCESS.find(x=>x.key===key);return p?(lang==='ru'?(PROCESS_RU[key]||p.en):lang==='en'?p.en:p.es):key;};
+  const freqLabel=(f,lang)=>lang==='ru'?(FREQ_RU[f]||FREQ[f]||f):lang==='en'?(FREQ[f]||f):f;
+  const pName=(d,lang)=>(lang==='en'&&d.enName)?d.enName:(lang==='ru'&&NAME_RU[d.name])?NAME_RU[d.name]:d.name;
+  const roleLabel=(d,lang)=>lang==='ru'?(ROLE_RU[d.es]||d.en):lang==='en'?d.en:d.es;
+  // task name: es shows Spanish, en+ru show English (task content isn't translated to RU)
+  const taskName=(t,lang)=>lang==='es'?t.a:(t.ae||t.a);
 
   /* ---------- State + persistence ---------- */
   const LS={
@@ -529,25 +540,25 @@
 
   // process tree row (flat: shows owner · frequency)
   function taskRow(t,lang,color){
-    const act=lang==='en'?(t.ae||t.a):t.a;
+    const act=taskName(t,lang);
     return `<li class="tli" style="--al:${color}"><div class="ta">${act}<small>${ownerLabel(t.r,lang)} · ${freqLabel(t.f,lang)}</small></div></li>`;
   }
   // person tree row (draggable, shows process + editable hours badge)
   function personTaskRow(t,lang,color){
-    const act=lang==='en'?(t.ae||t.a):t.a;
+    const act=taskName(t,lang);
     const hasDoc=!!(t.desc||t.contacts||t.links||t.backup);
-    return `<li class="tli" style="--al:${color}" ondblclick="taskDblClick(event,'${t.id}')" title="${lang==='en'?'Double-click to document':'Doble clic para documentar'}">`+
-      `<span class="grip" draggable="true" data-id="${t.id}" ondragstart="dragStart(event)" ondragend="dragEnd(event)" title="${lang==='en'?'Drag to reassign':'Arrastra para reasignar'}">⠿</span>`+
+    return `<li class="tli" style="--al:${color}" ondblclick="taskDblClick(event,'${t.id}')" title="${lang==='ru'?'Двойной клик — документировать':lang==='en'?'Double-click to document':'Doble clic para documentar'}">`+
+      `<span class="grip" draggable="true" data-id="${t.id}" ondragstart="dragStart(event)" ondragend="dragEnd(event)" title="${lang==='ru'?'Перетащите, чтобы переназначить':lang==='en'?'Drag to reassign':'Arrastra para reasignar'}">⠿</span>`+
       `<div class="ta">${act}<small>${procLabel(t.p,lang)}</small></div>`+
-      (hasDoc?`<span class="docmark" title="${lang==='en'?'Documented':'Documentada'}">📄</span>`:'')+
-      `<input class="hrs${t.h>0?' set':''}" type="number" min="0" step="0.5" value="${t.h>0?t.h:''}" placeholder="+ h" title="${lang==='en'?'Hours per week':'Horas por semana'}" onchange="setHours('${t.id}',this.value)">`+
-      `<button class="edit" title="${lang==='en'?'Edit / document':'Editar / documentar'}" onclick="editTask('${t.id}')">✎</button>`+
-      `<button class="del" title="${lang==='en'?'Delete':'Eliminar'}" onclick="delTask('${t.id}',event)">×</button></li>`;
+      (hasDoc?`<span class="docmark" title="${lang==='ru'?'Документировано':lang==='en'?'Documented':'Documentada'}">📄</span>`:'')+
+      `<input class="hrs${t.h>0?' set':''}" type="number" min="0" step="0.5" value="${t.h>0?t.h:''}" placeholder="+ h" title="${lang==='ru'?'Часов в неделю':lang==='en'?'Hours per week':'Horas por semana'}" onchange="setHours('${t.id}',this.value)">`+
+      `<button class="edit" title="${lang==='ru'?'Изменить / документировать':lang==='en'?'Edit / document':'Editar / documentar'}" onclick="editTask('${t.id}')">✎</button>`+
+      `<button class="del" title="${lang==='ru'?'Удалить':lang==='en'?'Delete':'Eliminar'}" onclick="delTask('${t.id}',event)">×</button></li>`;
   }
   function taskDblClick(e,id){ if(e.target.closest('input,button,.grip')) return; editTask(id); }
   // person card body: tasks grouped by periodicity (each group is a drop zone that changes frequency)
   function personBody(tasks,lang,color,ownerName){
-    if(!tasks.length) return `<div class="tli empty">${lang==='en'?'Drop tasks here':'Arrastra tareas aquí'}</div>`;
+    if(!tasks.length) return `<div class="tli empty">${lang==='ru'?'Перетащите задачи сюда':lang==='en'?'Drop tasks here':'Arrastra tareas aquí'}</div>`;
     const groups={};
     tasks.forEach(t=>{(groups[t.f]=groups[t.f]||[]).push(t);});
     const freqs=Object.keys(groups).sort((a,b)=>{
@@ -571,10 +582,10 @@
     }else{
       body = tasks.length
         ? tasks.map(t=>taskRow(t,lang,color)).join('')
-        : `<li class="tli empty">${lang==='en'?'Drop tasks here':'Arrastra tareas aquí'}</li>`;
+        : `<li class="tli empty">${lang==='ru'?'Перетащите задачи сюда':lang==='en'?'Drop tasks here':'Arrastra tareas aquí'}</li>`;
     }
     const on=String(ownerName).replace(/'/g,"\\'");
-    const del = removable ? `<button class="delp" title="${lang==='en'?'Remove person':'Eliminar persona'}" onclick="delPerson('${on}',event)">×</button>` : '';
+    const del = removable ? `<button class="delp" title="${lang==='ru'?'Удалить человека':lang==='en'?'Remove person':'Eliminar persona'}" onclick="delPerson('${on}',event)">×</button>` : '';
     const cid=(mode==='ppl'?'u:':'p:')+ownerName;
     const cidEsc=cid.replace(/'/g,"\\'");
     const collCls=collapsed.has(cid)?' collapsed':'';
@@ -612,14 +623,15 @@
     document.getElementById('kpiProc').textContent=procUsed;
     document.getElementById('kpiPeople').textContent=peopleUsed;
     document.getElementById('kpiDaily').textContent=daily;
-    document.getElementById('capProc').textContent = lang==='en'
+    document.getElementById('capProc').textContent = lang==='ru'
+      ? `${total} задач · ${procUsed} процессов` : lang==='en'
       ? `${total} tasks · ${procUsed} processes` : `${total} tareas · ${procUsed} procesos`;
 
     // charts (sorted by live count)
     const procs=PROCESS.map(p=>({...p,n:cntProc(p.key)})).sort((a,b)=>b.n-a.n);
     const pMax=Math.max(1,...procs.map(d=>d.n));
     document.getElementById('chartProcess').innerHTML=procs.map(d=>{
-      const lab=lang==='en'?d.en:d.es, w=(d.n/pMax*100).toFixed(1);
+      const lab=procLabel(d.key,lang), w=(d.n/pMax*100).toFixed(1);
       return `<div class="bar-row"><div class="bar-lab">${lab}</div>`+
         `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:linear-gradient(90deg,#4f6bed,#12b6b0)"></div></div>`+
         `<div class="bar-val" style="color:var(--blue)">${d.n}</div></div>`;
@@ -627,9 +639,9 @@
     const ppl=getPeople().map(p=>({...p,n:cntPerson(p.name)})).sort((a,b)=>b.n-a.n);
     const nMax=Math.max(1,...ppl.map(d=>d.n));
     document.getElementById('chartPeople').innerHTML=ppl.map(d=>{
-      const role=lang==='en'?d.en:d.es, w=(d.n/nMax*100).toFixed(1);
+      const role=roleLabel(d,lang), w=(d.n/nMax*100).toFixed(1);
       const hrs=state.tasks.filter(t=>ownerKey(t.r)===d.name).reduce((s,t)=>s+(t.h||0),0);
-      const small=`${role}${hrs>0?' · '+fmtH(hrs)+'/'+(lang==='en'?'wk':'sem'):''}`;
+      const small=`${role}${hrs>0?' · '+fmtH(hrs)+'/'+(lang==='ru'?'нед':lang==='en'?'wk':'sem'):''}`;
       return `<div class="bar-row"><div class="bar-lab">${pName(d,lang)}<small>${small}</small></div>`+
         `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${d.c}"></div></div>`+
         `<div class="bar-val" style="color:${d.c}">${d.n}</div></div>`;
@@ -638,12 +650,12 @@
     // trees
     document.getElementById('treeProcess').innerHTML=procs.map(pr=>{
       const tasks=state.tasks.filter(t=>t.p===pr.key);
-      return treeCard(pr.c, lang==='en'?pr.en:pr.es, '', tasks, lang, 'proc', pr.key);
+      return treeCard(pr.c, procLabel(pr.key,lang), '', tasks, lang, 'proc', pr.key);
     }).join('');
     document.getElementById('treePeople').innerHTML=ppl.map(pp=>{
       const tasks=state.tasks.filter(t=>ownerKey(t.r)===pp.name);
       const th=tasks.reduce((s,t)=>s+(t.h||0),0);
-      const sub=`${lang==='en'?pp.en:pp.es}${th>0?` · ${fmtH(th)}/${lang==='en'?'wk':'sem'}`:''}`;
+      const sub=`${roleLabel(pp,lang)}${th>0?` · ${fmtH(th)}/${lang==='ru'?'нед':lang==='en'?'wk':'sem'}`:''}`;
       return treeCard(pp.c, pName(pp,lang), sub, tasks, lang, 'ppl', pp.name, pp.custom);
     }).join('');
 
@@ -707,19 +719,19 @@
     const nEl=document.getElementById('pName'), rEl=document.getElementById('pRole');
     const name=nEl.value.trim(); if(!name){ nEl.focus(); return; }
     if(getPeople().some(p=>p.name.toLowerCase()===name.toLowerCase())){
-      alert(LANG==='en'?'That name already exists.':'Ese nombre ya existe.'); return;
+      alert(LANG==='ru'?'Такое имя уже существует.':LANG==='en'?'That name already exists.':'Ese nombre ya existe.'); return;
     }
     const role=rEl.value.trim();
     const c=PALETTE[(state.people.length)%PALETTE.length];
-    state.people.push({name, es:role||(LANG==='en'?'Team member':'Miembro del equipo'), en:role||'Team member', c, custom:true});
+    state.people.push({name, es:role||'Miembro del equipo', en:role||'Team member', c, custom:true});
     save(); nEl.value=''; rEl.value=''; render();
   }
   function delPerson(name,ev){
     if(ev) ev.stopPropagation();
     if(cntPerson(name)>0){
-      alert(LANG==='en'?'Move this person’s tasks to someone else first.':'Primero reasigna las tareas de esta persona a otra.'); return;
+      alert(LANG==='ru'?'Сначала переназначьте задачи этого человека другому.':LANG==='en'?'Move this person’s tasks to someone else first.':'Primero reasigna las tareas de esta persona a otra.'); return;
     }
-    if(!confirm(LANG==='en'?`Remove ${name}?`:`¿Eliminar a ${name}?`)) return;
+    if(!confirm(LANG==='ru'?`Удалить ${name}?`:LANG==='en'?`Remove ${name}?`:`¿Eliminar a ${name}?`)) return;
     state.people=state.people.filter(p=>p.name!==name);
     save(); render();
   }
@@ -757,10 +769,10 @@
     const t=state.tasks.find(x=>x.id===id); if(!t) return;
     editingId=id;
     const lang=LANG;
-    document.getElementById('eName').value = lang==='en'?(t.ae||t.a):t.a;
-    document.getElementById('eProc').innerHTML = PROCESS.map(p=>opt(p.key, lang==='en'?p.en:p.es, p.key===t.p)).join('');
+    document.getElementById('eName').value = taskName(t,lang);
+    document.getElementById('eProc').innerHTML = PROCESS.map(p=>opt(p.key, procLabel(p.key,lang), p.key===t.p)).join('');
     document.getElementById('ePerson').innerHTML = getPeople().map(p=>opt(p.name, pName(p,lang), p.name===ownerKey(t.r))).join('');
-    document.getElementById('eFreq').innerHTML = Object.keys(FREQ).map(k=>opt(k, lang==='en'?FREQ[k]:k, k===t.f)).join('');
+    document.getElementById('eFreq').innerHTML = Object.keys(FREQ).map(k=>opt(k, freqLabel(k,lang), k===t.f)).join('');
     document.getElementById('eHours').value = t.h>0?t.h:'';
     document.getElementById('eDesc').value = t.desc||'';
     document.getElementById('eBackup').value = t.backup||'';
@@ -788,7 +800,7 @@
   function delTask(id,ev){
     if(ev) ev.stopPropagation();
     const t=state.tasks.find(x=>x.id===id); if(!t) return;
-    const msg=LANG==='en'?`Delete task "${t.ae||t.a}"? It will go to the history and can be restored.`:`¿Eliminar la tarea "${t.a}"? Quedará en el historial y podrás restablecerla.`;
+    const msg=LANG==='ru'?`Удалить задачу «${t.ae||t.a}»? Она попадёт в историю и её можно восстановить.`:LANG==='en'?`Delete task "${t.ae||t.a}"? It will go to the history and can be restored.`:`¿Eliminar la tarea "${t.a}"? Quedará en el historial y podrás restablecerla.`;
     if(!confirm(msg)) return;
     state.tasks=state.tasks.filter(x=>x.id!==id);
     t.deletedAt=Date.now();
@@ -811,24 +823,24 @@
   }
   function purgeTask(id){
     const t=state.trash.find(x=>x.id===id); if(!t) return;
-    if(!confirm(LANG==='en'?`Permanently delete "${t.ae||t.a}"? This cannot be undone.`:`¿Eliminar definitivamente "${t.a}"? No se puede deshacer.`)) return;
+    if(!confirm(LANG==='ru'?`Удалить «${t.ae||t.a}» навсегда? Это необратимо.`:LANG==='en'?`Permanently delete "${t.ae||t.a}"? This cannot be undone.`:`¿Eliminar definitivamente "${t.a}"? No se puede deshacer.`)) return;
     state.trash=state.trash.filter(x=>x.id!==id); save(); render();
   }
   function emptyTrash(){
     if(!state.trash.length) return;
-    if(!confirm(LANG==='en'?'Empty the deleted-tasks history? This cannot be undone.':'¿Vaciar el historial de tareas eliminadas? No se puede deshacer.')) return;
+    if(!confirm(LANG==='ru'?'Очистить историю удалённых задач? Это необратимо.':LANG==='en'?'Empty the deleted-tasks history? This cannot be undone.':'¿Vaciar el historial de tareas eliminadas? No se puede deshacer.')) return;
     state.trash=[]; save(); render();
   }
   function renderTrash(){
     const lang=LANG, el=document.getElementById('trashList'); if(!el) return;
-    if(!state.trash.length){ el.innerHTML=`<li class="trash-empty">${lang==='en'?'No deleted tasks.':'No hay tareas eliminadas.'}</li>`; return; }
+    if(!state.trash.length){ el.innerHTML=`<li class="trash-empty">${lang==='ru'?'Нет удалённых задач.':lang==='en'?'No deleted tasks.':'No hay tareas eliminadas.'}</li>`; return; }
     el.innerHTML=state.trash.map(t=>{
-      const act=lang==='en'?(t.ae||t.a):t.a;
-      const when=t.deletedAt?` · ${lang==='en'?'deleted':'eliminada'} ${fmtDate(t.deletedAt)}`:'';
+      const act=taskName(t,lang);
+      const when=t.deletedAt?` · ${lang==='ru'?'удалена':lang==='en'?'deleted':'eliminada'} ${fmtDate(t.deletedAt)}`:'';
       const meta=`${procLabel(t.p,lang)} · ${ownerLabel(t.r,lang)} · ${freqLabel(t.f,lang)}${when}`;
       return `<li class="trashrow"><div class="tt">${act}<small>${meta}</small></div>`+
-        `<button class="restore" onclick="restoreTask('${t.id}')">↩ ${lang==='en'?'Restore':'Restablecer'}</button>`+
-        `<button class="purge" title="${lang==='en'?'Delete permanently':'Eliminar definitivamente'}" onclick="purgeTask('${t.id}')">×</button></li>`;
+        `<button class="restore" onclick="restoreTask('${t.id}')">↩ ${lang==='ru'?'Восстановить':lang==='en'?'Restore':'Restablecer'}</button>`+
+        `<button class="purge" title="${lang==='ru'?'Удалить навсегда':lang==='en'?'Delete permanently':'Eliminar definitivamente'}" onclick="purgeTask('${t.id}')">×</button></li>`;
     }).join('');
   }
 
@@ -840,7 +852,7 @@
   }
   function delProject(id){
     const p=state.projects.find(x=>x.id===id); if(!p) return;
-    if(!confirm(LANG==='en'?`Delete project "${p.name}" and its tasks?`:`¿Eliminar el proyecto "${p.name}" y sus tareas?`)) return;
+    if(!confirm(LANG==='ru'?`Удалить проект «${p.name}» и его задачи?`:LANG==='en'?`Delete project "${p.name}" and its tasks?`:`¿Eliminar el proyecto "${p.name}" y sus tareas?`)) return;
     state.projects=state.projects.filter(x=>x.id!==id); save(); render();
   }
   function addProjTask(projId){
@@ -861,21 +873,21 @@
   }
   function renderProjects(){
     const lang=LANG, grid=document.getElementById('projGrid'); if(!grid) return;
-    if(!state.projects.length){ grid.innerHTML=`<p class="trash-empty">${lang==='en'?'No projects yet. Create one above.':'Aún no hay proyectos. Crea uno arriba.'}</p>`; return; }
+    if(!state.projects.length){ grid.innerHTML=`<p class="trash-empty">${lang==='ru'?'Пока нет проектов. Создайте выше.':lang==='en'?'No projects yet. Create one above.':'Aún no hay proyectos. Crea uno arriba.'}</p>`; return; }
     grid.innerHTML=state.projects.map(p=>{
       const total=p.tasks.length, done=p.tasks.filter(t=>t.done).length, pct=total?Math.round(done/total*100):0;
       const people=getPeople().map(pp=>opt(pp.name, pName(pp,lang), false)).join('');
       const tasks=p.tasks.length ? p.tasks.map(t=>
         `<li class="ptask"><label><input type="checkbox" ${t.done?'checked':''} onchange="toggleProjTask('${p.id}','${t.id}')"><span class="${t.done?'done':''}">${t.name}</span></label>`+
         `<span class="who">👤 ${ownerLabel(t.r,lang)}</span>`+
-        `<button class="pdel" title="${lang==='en'?'Delete':'Eliminar'}" onclick="delProjTask('${p.id}','${t.id}')">×</button></li>`
-      ).join('') : `<li class="trash-empty" style="padding:3px 2px">${lang==='en'?'No tasks yet.':'Sin tareas aún.'}</li>`;
+        `<button class="pdel" title="${lang==='ru'?'Удалить':lang==='en'?'Delete':'Eliminar'}" onclick="delProjTask('${p.id}','${t.id}')">×</button></li>`
+      ).join('') : `<li class="trash-empty" style="padding:3px 2px">${lang==='ru'?'Пока нет задач.':lang==='en'?'No tasks yet.':'Sin tareas aún.'}</li>`;
       return `<div class="projcard">`+
         `<div class="projhead"><div class="projname">${p.name}<small>${done}/${total} · ${pct}%</small></div>`+
-        `<button class="delp" title="${lang==='en'?'Delete project':'Eliminar proyecto'}" onclick="delProject('${p.id}')">×</button></div>`+
+        `<button class="delp" title="${lang==='ru'?'Удалить проект':lang==='en'?'Delete project':'Eliminar proyecto'}" onclick="delProject('${p.id}')">×</button></div>`+
         `<div class="progress"><div class="progressbar" style="width:${pct}%"></div></div>`+
         `<ul class="projtasks">${tasks}</ul>`+
-        `<div class="projadd"><input id="ptname_${p.id}" placeholder="${lang==='en'?'New project task…':'Nueva tarea del proyecto…'}" onkeydown="if(event.key==='Enter')addProjTask('${p.id}')">`+
+        `<div class="projadd"><input id="ptname_${p.id}" placeholder="${lang==='ru'?'Новая задача проекта…':lang==='en'?'New project task…':'Nueva tarea del proyecto…'}" onkeydown="if(event.key==='Enter')addProjTask('${p.id}')">`+
         `<select id="ptperson_${p.id}">${people}</select>`+
         `<button class="addbtn" onclick="addProjTask('${p.id}')">＋</button></div>`+
       `</div>`;
@@ -914,30 +926,31 @@
         const h=await window.showSaveFilePicker({suggestedName:lastName,types:[{description:'HTML',accept:{'text/html':['.html']}}]});
         const w=await h.createWritable(); await w.write(html); await w.close();
         fileHandle=h; lastName=h.name||lastName;
-        flash(LANG==='en'?'Saved ✓':'Guardado ✓'); return;
+        flash(LANG==='ru'?'Сохранено ✓':LANG==='en'?'Saved ✓':'Guardado ✓'); return;
       }catch(e){ if(e&&e.name==='AbortError') return; /* not available here → download */ }
     }
-    let name=prompt(LANG==='en'?'File name:':'Nombre del archivo:', lastName);
+    let name=prompt(LANG==='ru'?'Имя файла:':LANG==='en'?'File name:':'Nombre del archivo:', lastName);
     if(name===null) return;
     name=(name.trim()||'gocab-tareas'); if(!/\.html?$/i.test(name)) name+='.html';
     lastName=name; downloadHTML(html,name);
-    flash(LANG==='en'?'Downloaded ✓':'Descargado ✓');
+    flash(LANG==='ru'?'Скачано ✓':LANG==='en'?'Downloaded ✓':'Descargado ✓');
   }
   // Save — overwrites the same file without a new one (needs a handle from a prior Save as…)
   async function saveSame(){
     const html=buildHTML();
     if(fileHandle){
       try{ const w=await fileHandle.createWritable(); await w.write(html); await w.close();
-        flash(LANG==='en'?'Saved ✓':'Guardado ✓'); return;
+        flash(LANG==='ru'?'Сохранено ✓':LANG==='en'?'Saved ✓':'Guardado ✓'); return;
       }catch(e){ /* handle lost → fall through */ }
     }
     if(window.showSaveFilePicker){ return saveAs(); }
     // browser can't overwrite in place → re-download with the same name
     downloadHTML(html,lastName);
-    flash(LANG==='en'?'Downloaded ✓':'Descargado ✓');
+    flash(LANG==='ru'?'Скачано ✓':LANG==='en'?'Downloaded ✓':'Descargado ✓');
   }
   function resetData(){
-    const msg=LANG==='en'?'Restore the original 36 tasks? Your changes will be lost.'
+    const msg=LANG==='ru'?'Восстановить исходные 36 задач? Ваши изменения будут потеряны.'
+             :LANG==='en'?'Restore the original 36 tasks? Your changes will be lost.'
                          :'¿Restablecer las 36 tareas originales? Se perderán tus cambios.';
     if(!confirm(msg)) return;
     state={tasks:freshSeed(), seq:1}; save(); render();
@@ -946,8 +959,8 @@
   /* ---------- Collapse / expand all ---------- */
   function setBtnLabel(btn, collapsed){
     btn.textContent = collapsed
-      ? (LANG==='en'?'▸ Expand all':'▸ Expandir todo')
-      : (LANG==='en'?'▾ Collapse all':'▾ Contraer todo');
+      ? (LANG==='ru'?'▸ Развернуть всё':LANG==='en'?'▸ Expand all':'▸ Expandir todo')
+      : (LANG==='ru'?'▾ Свернуть всё':LANG==='en'?'▾ Collapse all':'▾ Contraer todo');
   }
   function toggleSection(gridId, btn){
     const cards=[...document.getElementById(gridId).children];
@@ -965,9 +978,9 @@
   function fillSelects(lang){
     const fp=document.getElementById('fProc'), fpe=document.getElementById('fPerson'), ff=document.getElementById('fFreq');
     const pv=fp.value, pev=fpe.value, fv=ff.value;
-    fp.innerHTML=PROCESS.map(p=>opt(p.key, lang==='en'?p.en:p.es, p.key===pv)).join('');
+    fp.innerHTML=PROCESS.map(p=>opt(p.key, procLabel(p.key,lang), p.key===pv)).join('');
     fpe.innerHTML=getPeople().map(p=>opt(p.name, pName(p,lang), p.name===pev)).join('');
-    ff.innerHTML=Object.keys(FREQ).map(k=>opt(k, lang==='en'?FREQ[k]:k, k===fv)).join('');
+    ff.innerHTML=Object.keys(FREQ).map(k=>opt(k, freqLabel(k,lang), k===fv)).join('');
   }
 
   /* ---------- Theme (dark / light) ---------- */
@@ -981,28 +994,35 @@
   function toggleTheme(){ applyTheme(THEME==='dark'?'light':'dark'); }
 
   /* ---------- Language ---------- */
-  let LANG=(function(){ try{ const g=localStorage.getItem('gocab_lang'); if(g) return g==='es'?'es':'en'; }catch(e){} return LS.get('gocab_dash_lang')||'es'; })();
+  let LANG=(function(){ try{ const g=localStorage.getItem('gocab_lang'); if(g) return ['es','en','ru'].includes(g)?g:'en'; }catch(e){} return LS.get('gocab_dash_lang')||'es'; })();
   function applyLang(lang){
     LANG=lang;
     document.documentElement.lang=lang;
     document.querySelectorAll('[data-es]').forEach(el=>{
-      const v=el.getAttribute('data-'+lang);
+      let v=el.getAttribute('data-'+lang);
+      if(v==null && lang==='ru') v=el.getAttribute('data-en'); // ru: respaldo a inglés si falta
       if(v==null) return;
       if(v.indexOf('<')>-1) el.innerHTML=v; else el.textContent=v;
     });
     const _lb=document.getElementById('langBtn'); if(_lb) _lb.textContent = lang==='en' ? '🌐 Español' : '🌐 English';
-    document.getElementById('fName').placeholder = lang==='en' ? 'Task name…' : 'Nombre de la tarea…';
-    document.getElementById('pName').placeholder = lang==='en' ? 'First and last name…' : 'Nombre y apellido…';
-    document.getElementById('pRole').placeholder = lang==='en' ? 'e.g. Fleet coordinator' : 'Ej: Coordinador de Flota';
-    document.getElementById('projName').placeholder = lang==='en' ? 'Project name…' : 'Nombre del proyecto…';
+    const P=(es,en,ru)=>lang==='ru'?ru:lang==='en'?en:es;
+    const ph=(id,es,en,ru)=>{const e=document.getElementById(id); if(e) e.placeholder=P(es,en,ru);};
+    ph('fName','Nombre de la tarea…','Task name…','Название задачи…');
+    ph('pName','Nombre y apellido…','First and last name…','Имя и фамилия…');
+    ph('pRole','Ej: Coordinador de Flota','e.g. Fleet coordinator','Напр.: Координатор автопарка');
+    ph('projName','Nombre del proyecto…','Project name…','Название проекта…');
+    ['fDesc','eDesc'].forEach(i=>ph(i,'Paso a paso, para que otra persona pueda tomarla…','Step by step, so anyone can take it over…','Пошагово, чтобы задачу мог принять другой…'));
+    ['fBackup','eBackup'].forEach(i=>ph(i,'Persona que puede tomarla si el encargado no está…','Who can cover if the owner is away…','Кто заменит, если ответственного нет…'));
+    ['fContacts','eContacts'].forEach(i=>ph(i,'Nombre, teléfono, correo…','Name, phone, email…','Имя, телефон, эл. почта…'));
+    ['fLinks','eLinks'].forEach(i=>ph(i,'Un link por línea…','One link per line…','По одной ссылке на строку…'));
     fillSelects(lang);
     render();
     if(lastSyncState) setSync(lastSyncState);
     LS.set('gocab_dash_lang',lang);
   }
   function toggleLang(){ applyLang(LANG==='en'?'es':'en'); }
-  // Controlado por el switcher de idioma de gobills (arriba). es→es, en→en, ru→en (el reporte no tiene ruso)
-  window.setLang=function(l){ applyLang(l==='es'?'es':'en'); };
+  // Controlado por el switcher de idioma de gobills (arriba): es / en / ru
+  window.setLang=function(l){ applyLang(['es','en','ru'].includes(l)?l:'en'); };
 
   /* ---------- Estado compartido vía mini-DB en Drive (autoguardado) ---------- */
   const REPORT_DOC='operacionales';
@@ -1010,14 +1030,14 @@
   function setSync(s){
     lastSyncState=s;
     const el=document.getElementById('syncStatus'); if(!el) return;
-    const es=(LANG!=='en');
+    const T=(es,en,ru)=>LANG==='ru'?ru:LANG==='en'?en:es;
     const map={
-      saved:  es?'☁️ Guardado':'☁️ Saved',
-      saving: es?'⏳ Guardando…':'⏳ Saving…',
-      pending:es?'✎ Sin guardar…':'✎ Unsaved…',
-      synced: es?'🔄 Actualizado':'🔄 Updated',
-      offline:es?'⚠️ Sin conexión':'⚠️ Offline',
-      error:  es?'⚠️ Error al guardar':'⚠️ Save error'
+      saved:  T('☁️ Guardado','☁️ Saved','☁️ Сохранено'),
+      saving: T('⏳ Guardando…','⏳ Saving…','⏳ Сохранение…'),
+      pending:T('✎ Sin guardar…','✎ Unsaved…','✎ Не сохранено…'),
+      synced: T('🔄 Actualizado','🔄 Updated','🔄 Обновлено'),
+      offline:T('⚠️ Sin conexión','⚠️ Offline','⚠️ Нет связи'),
+      error:  T('⚠️ Error al guardar','⚠️ Save error','⚠️ Ошибка сохранения')
     };
     el.textContent=map[s]||''; el.dataset.state=s;
   }
