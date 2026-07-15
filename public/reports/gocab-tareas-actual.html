@@ -50,6 +50,8 @@
     font-family:inherit;font-size:13px;font-weight:700;padding:9px 15px;border-radius:10px;cursor:pointer}
   .lang:hover{background:rgba(255,255,255,.2)}
   .lang.save{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#241800;border-color:transparent}
+  .sync{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;white-space:nowrap;color:#eaf0ff;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18)}
+  .sync[data-state=error],.sync[data-state=offline]{color:#ffd7a1;border-color:rgba(255,180,120,.4)}
   .lang.save:hover{filter:brightness(1.06)}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--bg);
     font-size:13px;font-weight:700;padding:10px 18px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;
@@ -239,7 +241,8 @@
         <p data-es="Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas" data-en="Cross of the task sheet · by process and by person · drag &amp; create tasks">Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas</p>
       </div>
       <div class="hbtns">
-        <button class="lang save" id="saveBtn" onclick="saveSame()" title="Guardar los cambios en el archivo">💾 <span data-es="Guardar" data-en="Save">Guardar</span></button>
+        <span id="syncStatus" class="sync" title="Sincronización con la base compartida en Drive"></span>
+        <button class="lang save" id="saveBtn" onclick="saveSame()" title="Descargar una copia del archivo">💾 <span data-es="Guardar" data-en="Save">Guardar</span></button>
         <button class="lang" id="saveAsBtn" onclick="saveAs()" title="Guardar como archivo nuevo"><span data-es="Guardar como…" data-en="Save as…">Guardar como…</span></button>
         <button class="lang" id="themeBtn" onclick="toggleTheme()" title="Claro / oscuro">🌙</button>
         <button class="lang" id="langBtn" onclick="toggleLang()">🌐 English</button>
@@ -515,7 +518,8 @@
     return normalize(st);
   }
   let state=loadState();
-  const save=()=>LS.set(LS_KEY, JSON.stringify(state));
+  let remoteReady=false, saveTimer=null, saving=false, lastSyncState='';
+  function save(){ LS.set(LS_KEY, JSON.stringify(state)); if(remoteReady) scheduleRemoteSave(); }
   save();
 
   const cntPerson=name=>state.tasks.filter(t=>ownerKey(t.r)===name).length;
@@ -995,11 +999,76 @@
     document.getElementById('projName').placeholder = lang==='en' ? 'Project name…' : 'Nombre del proyecto…';
     fillSelects(lang);
     render();
+    if(lastSyncState) setSync(lastSyncState);
     LS.set('gocab_dash_lang',lang);
   }
   function toggleLang(){ applyLang(LANG==='en'?'es':'en'); }
+
+  /* ---------- Estado compartido vía mini-DB en Drive (autoguardado) ---------- */
+  const REPORT_DOC='operacionales';
+  const SYNC_API='/api/tareas?doc='+REPORT_DOC;
+  function setSync(s){
+    lastSyncState=s;
+    const el=document.getElementById('syncStatus'); if(!el) return;
+    const es=(LANG!=='en');
+    const map={
+      saved:  es?'☁️ Guardado':'☁️ Saved',
+      saving: es?'⏳ Guardando…':'⏳ Saving…',
+      pending:es?'✎ Sin guardar…':'✎ Unsaved…',
+      synced: es?'🔄 Actualizado':'🔄 Updated',
+      offline:es?'⚠️ Sin conexión':'⚠️ Offline',
+      error:  es?'⚠️ Error al guardar':'⚠️ Save error'
+    };
+    el.textContent=map[s]||''; el.dataset.state=s;
+  }
+  function scheduleRemoteSave(){
+    if(saveTimer) clearTimeout(saveTimer);
+    setSync('pending');
+    saveTimer=setTimeout(remoteSave, 1200);
+  }
+  async function remoteSave(){
+    saveTimer=null; saving=true; setSync('saving');
+    try{
+      state.updatedAt=Date.now();
+      const res=await fetch(SYNC_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
+      if(!res.ok) throw 0;
+      setSync('saved');
+    }catch(e){ setSync('error'); }
+    saving=false;
+  }
+  function editingNow(){
+    const m=document.getElementById('editModal'); if(m && !m.hidden) return true;
+    const a=document.activeElement;
+    return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+  }
+  async function pullRemote(seedIfEmpty){
+    const res=await fetch(SYNC_API+'&_='+Date.now());
+    const j=await res.json();
+    if(j && j.state && Array.isArray(j.state.tasks)){
+      if((j.state.updatedAt||0) > (state.updatedAt||0)){
+        state=normalize(j.state);
+        LS.set(LS_KEY, JSON.stringify(state));
+        render(); setSync('synced');
+      } else { setSync('saved'); }
+      return true;
+    }
+    if(seedIfEmpty){ await remoteSave(); return true; } // primera vez: siembra la base con los datos actuales
+    return false;
+  }
+  async function initRemote(){
+    try{ await pullRemote(true); remoteReady=true; startPolling(); }
+    catch(e){ setSync('offline'); }
+  }
+  function startPolling(){
+    setInterval(async ()=>{
+      if(saving || saveTimer || editingNow()) return;
+      try{ await pullRemote(false); }catch(e){}
+    }, 15000);
+  }
+
   applyTheme(THEME);
   applyLang(LANG);
+  initRemote();
 </script>
 </body>
 </html>
