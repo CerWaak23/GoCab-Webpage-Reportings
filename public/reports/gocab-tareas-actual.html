@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOCAB · Tareas Operacionales</title>
+<style>
+  /* Dark theme = default */
+  :root{
+    --navy:#0b0f1e; --navy2:#161d38;
+    --ink:#e9edf8; --muted:#93a0c0; --line:#28324e;
+    --card:#171e35; --paper:#121a2e; --bg:#0d1220;
+    --gold1:#ffd54a; --gold2:#ff8a3d;
+    --blue:#5b78f0; --teal:#17b6b0; --red:#f26363;
+    --amber:#f7b23c; --green:#33c07f; --violet:#a07cf7; --pink:#ec5fa0; --gray:#8593b3;
+    --shadow:0 12px 34px rgba(0,0,0,.42), 0 2px 8px rgba(0,0,0,.30);
+    --radius:16px;
+  }
+  /* Light theme override */
+  :root[data-theme="light"]{
+    --navy:#0f1424; --navy2:#1c2545;
+    --ink:#12192b; --muted:#64708c; --line:#e6eaf3;
+    --card:#ffffff; --paper:#f4f6fb; --bg:#eef1f8;
+    --blue:#4f6bed; --teal:#0ea5a5; --red:#ef4444;
+    --amber:#f59e0b; --green:#22a36b; --violet:#8b5cf6; --pink:#e0468f; --gray:#9aa6c2;
+    --shadow:0 10px 30px rgba(20,30,60,.10), 0 2px 8px rgba(20,30,60,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased;
+    padding:30px 22px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+
+  /* Header */
+  header{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:22px 26px;color:#fff;position:relative;overflow:hidden}
+  header::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,213,74,.18),transparent 70%)}
+  .hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:relative;z-index:1}
+  .logo{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-size:22px;font-weight:800;
+    background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#241800}
+  .htitle h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .htitle p{margin:3px 0 0;font-size:13px;color:#aeb9d8}
+  .htitle b{color:#ffd97a}
+  .hbtns{margin-left:auto;display:flex;gap:8px}
+  .lang{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;
+    font-family:inherit;font-size:13px;font-weight:700;padding:9px 15px;border-radius:10px;cursor:pointer}
+  .lang:hover{background:rgba(255,255,255,.2)}
+  .lang.save{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:#241800;border-color:transparent}
+  .lang.save:hover{filter:brightness(1.06)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--bg);
+    font-size:13px;font-weight:700;padding:10px 18px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;
+    transition:opacity .2s ease,transform .2s ease;z-index:60}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* edit-task modal */
+  .modal{position:fixed;inset:0;background:rgba(4,8,20,.6);display:flex;align-items:center;justify-content:center;z-index:80;padding:20px}
+  .modal[hidden]{display:none}
+  .modalcard{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;width:100%;max-width:500px;max-height:92vh;overflow:auto}
+  .modalcard h3{margin:0 0 6px;font-size:16px;font-weight:800;color:var(--ink)}
+  .modalcard label{display:block;font-size:10.5px;font-weight:800;color:var(--muted);margin:11px 0 5px;text-transform:uppercase;letter-spacing:.05em}
+  .modalcard input,.modalcard select,.modalcard textarea{width:100%;font-family:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 11px;outline:none}
+  .modalcard input:focus,.modalcard select:focus,.modalcard textarea:focus{border-color:var(--blue);background:var(--card)}
+  .modalcard textarea,.formcard textarea{resize:vertical;min-height:40px;line-height:1.45}
+  .modalcard .fgrid{grid-template-columns:1fr 1fr;margin:0}
+  .modalcard .factions{margin-top:16px}
+  .tli .docmark{font-size:11px;flex:none;opacity:.85;cursor:default}
+
+  /* KPI row */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
+  @media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;border:1px solid var(--line);color:var(--ink)}
+  .kpi .num{font-size:30px;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--ink)}
+  .kpi .lab{font-size:12px;color:var(--muted);margin-top:6px;font-weight:600}
+
+  /* Chart panels */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;border:1px solid var(--line)}
+  .ptop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:16px}
+  .ptop h2{margin:0;font-size:16px;font-weight:800}
+  .ptop .cap{font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+
+  .bar-row{display:grid;grid-template-columns:186px 1fr 30px;align-items:center;gap:11px;margin:9px 0}
+  .bar-lab{font-size:12px;font-weight:700;color:var(--ink);line-height:1.15}
+  .bar-lab small{display:block;font-weight:500;color:var(--muted);font-size:10px;margin-top:1px}
+  .bar-track{background:var(--paper);border-radius:6px;height:22px;border:1px solid var(--line);overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px 0 0 6px;min-width:4px;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .bar-val{font-size:13px;font-weight:800;text-align:left}
+  @media(max-width:560px){.bar-row{grid-template-columns:130px 1fr 26px}}
+
+  .note{font-size:11px;color:var(--muted);margin:14px 0 0;line-height:1.5;display:flex;gap:14px;flex-wrap:wrap}
+  .note i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle}
+
+  /* Section heading */
+  .sec{margin-top:26px}
+  .sec>.sh{margin:0 0 3px;font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:10px}
+  .sec>.ssub{margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5}
+  .secbtn{font-family:inherit;font-size:11.5px;font-weight:700;color:var(--ink);white-space:nowrap;
+    background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;box-shadow:var(--shadow)}
+  .secbtn:hover{background:var(--paper)}
+  .sec>.sh .secbtn{margin-left:auto}
+
+  /* Detail trees */
+  .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:900px){.tgrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.tgrid{grid-template-columns:1fr}}
+  .tgrid.people{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:760px){.tgrid.people{grid-template-columns:1fr}}
+  .tcard{background:var(--card);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--line);
+    padding:14px 15px;align-self:start;transition:box-shadow .15s ease,outline-color .15s ease}
+  .tcard.dropok{outline:2px dashed var(--blue);outline-offset:3px;background:rgba(91,120,240,.14)}
+  .tcard .th{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none}
+  .tcard .th .dot{width:12px;height:12px;border-radius:4px;flex:none}
+  .tcard .th .nm{font-weight:800;font-size:13.5px;line-height:1.15;min-width:0}
+  .tcard .th .nm small{display:block;font-weight:500;color:var(--muted);font-size:10.5px;margin-top:1px}
+  .tcard .th .meta{margin-left:auto;display:flex;align-items:center;gap:7px;flex:none}
+  .tcard .th .cnt{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800}
+  .tcard .th .delp{border:none;background:transparent;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;opacity:.5;padding:0 1px}
+  .tcard .th .delp:hover{color:var(--red);opacity:1}
+  .tcard .th .chev{font-size:11px;color:var(--muted);transition:transform .2s ease}
+  .tcard.collapsed .chev{transform:rotate(-90deg)}
+  .tcard.collapsed .tlist{display:none}
+  .tlist{list-style:none;margin:12px 0 2px;padding:0;display:grid;gap:7px;min-height:20px}
+  .tli{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--paper);border-radius:9px;
+    border:1px solid var(--line);border-left:3px solid var(--al)}
+  .tli.drag{cursor:grab}
+  .tli.drag:active{cursor:grabbing}
+  .tli.dragging{opacity:.4}
+  .tli.empty{justify-content:center;color:var(--muted);font-size:11px;font-style:italic;
+    border-style:dashed;border-left-color:var(--line);background:transparent}
+  .tli .ta{flex:1;min-width:0;font-size:12.3px;font-weight:600;color:var(--ink);line-height:1.25}
+  .tli .ta small{display:block;font-weight:500;color:var(--muted);font-size:10.3px;margin-top:1px}
+  .tli .grip{flex:none;cursor:grab;color:var(--muted);opacity:.55;font-size:13px;line-height:1;user-select:none;padding:0 1px}
+  .tli .grip:active{cursor:grabbing}
+  .tli .hrs{flex:none;width:46px;text-align:center;border:1px dashed var(--line);background:transparent;color:var(--muted);
+    font-family:inherit;font-size:10.5px;font-weight:800;line-height:1;border-radius:6px;padding:5px 4px;-moz-appearance:textfield}
+  .tli .hrs::-webkit-outer-spin-button,.tli .hrs::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .tli .hrs::placeholder{color:var(--muted);font-weight:700;opacity:.8}
+  .tli .hrs.set{border-style:solid;background:var(--card);color:var(--ink)}
+  .tli .hrs:focus{outline:none;border-style:solid;border-color:var(--blue);color:var(--ink)}
+  .tli .edit{border:none;background:transparent;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;padding:0 2px;flex:none;opacity:.6}
+  .tli .edit:hover{color:var(--blue);opacity:1}
+  .tli .del{border:none;background:transparent;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;flex:none;opacity:.6}
+  .tli .del:hover{color:var(--red)}
+  .fgroup.dropok{outline:1.5px dashed var(--blue);outline-offset:2px;border-radius:9px;background:rgba(91,120,240,.10)}
+  /* periodicity groups inside a person card */
+  .fgroup+.fgroup{margin-top:2px}
+  .fglabel{display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 7px;padding:7px 2px 0;border-top:1px dashed var(--line)}
+  .fgroup:first-child .fglabel{border-top:none;padding-top:0}
+  .gtasks{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+
+  /* Create-task form */
+  .formcard{background:var(--card);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--line);padding:18px 20px}
+  .formcard label{display:block;font-size:10.5px;font-weight:800;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+  .formcard input,.formcard select,.formcard textarea{width:100%;font-family:inherit;font-size:13px;color:var(--ink);
+    background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 11px;outline:none}
+  .formcard input:focus,.formcard select:focus,.formcard textarea:focus{border-color:var(--blue);background:var(--card)}
+  .frow{margin-bottom:12px}
+  .fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  @media(max-width:820px){.fgrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.fgrid{grid-template-columns:1fr}}
+  .fgrid.two{grid-template-columns:1fr 1fr}
+  @media(max-width:520px){.fgrid.two{grid-template-columns:1fr}}
+  .factions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .addbtn{background:linear-gradient(135deg,#4f6bed,#3f56d1);color:#fff;border:none;border-radius:10px;
+    padding:10px 18px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+  .addbtn:hover{filter:brightness(1.06)}
+
+  /* Insights */
+  .insights{margin-top:26px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:20px 22px;border:1px solid var(--line)}
+  .insights h2{margin:0 0 12px;font-size:16px;font-weight:800}
+  .insights ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+  .insights li{position:relative;padding:11px 14px 11px 40px;background:var(--paper);border-radius:11px;
+    border:1px solid var(--line);font-size:13px;line-height:1.5;color:var(--ink)}
+  .insights li::before{content:attr(data-ico);position:absolute;left:12px;top:10px;font-size:16px}
+  .insights li b{color:var(--ink)}
+
+  .foot{text-align:center;color:#8592b5;font-size:12px;margin-top:22px;line-height:1.6}
+
+  /* projects */
+  .projnew{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .projnew input{flex:1;min-width:200px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 11px;outline:none}
+  .projnew input:focus{border-color:var(--blue)}
+  .projgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  @media(max-width:760px){.projgrid{grid-template-columns:1fr}}
+  .projcard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;align-self:start}
+  .projhead{display:flex;align-items:center;gap:8px}
+  .projname{flex:1;min-width:0;font-weight:800;font-size:14px;color:var(--ink)}
+  .projname small{font-weight:600;color:var(--muted);font-size:11px;margin-left:7px}
+  .projhead .delp{flex:none;border:none;background:transparent;color:var(--muted);font-size:16px;line-height:1;cursor:pointer;opacity:.5;padding:0 2px}
+  .projhead .delp:hover{color:var(--red);opacity:1}
+  .progress{height:7px;background:var(--paper);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:10px 0 12px}
+  .progressbar{height:100%;background:linear-gradient(90deg,#4f6bed,#22a36b);border-radius:99px;transition:width .4s ease}
+  .projtasks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+  .ptask{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 9px}
+  .ptask label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink)}
+  .ptask input[type=checkbox]{width:15px;height:15px;accent-color:var(--green);flex:none;cursor:pointer}
+  .ptask .done{text-decoration:line-through;color:var(--muted)}
+  .ptask .who{font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;flex:none}
+  .ptask .pdel{flex:none;border:none;background:transparent;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;opacity:.5;padding:0 1px}
+  .ptask .pdel:hover{color:var(--red);opacity:1}
+  .projadd{display:flex;gap:7px;margin-top:11px}
+  .projadd input{flex:1;min-width:0;font-family:inherit;font-size:12px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 9px;outline:none}
+  .projadd select{flex:none;max-width:130px;font-family:inherit;font-size:12px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 6px;outline:none}
+  .projadd input:focus,.projadd select:focus{border-color:var(--blue)}
+  .projadd .addbtn{flex:none;padding:8px 13px;font-size:14px}
+  /* deleted-tasks history */
+  .trashlist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .trashrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 12px;box-shadow:var(--shadow)}
+  .trashrow .tt{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--ink);line-height:1.25}
+  .trashrow .tt small{display:block;font-weight:500;color:var(--muted);font-size:10.5px;margin-top:2px}
+  .trashrow .restore{flex:none;white-space:nowrap;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:inherit;font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:8px;cursor:pointer}
+  .trashrow .restore:hover{border-color:var(--green);color:var(--green)}
+  .trashrow .purge{flex:none;border:none;background:transparent;color:var(--muted);font-size:16px;line-height:1;cursor:pointer;opacity:.6;padding:0 2px}
+  .trashrow .purge:hover{color:var(--red);opacity:1}
+  .trash-empty{list-style:none;color:var(--muted);font-size:12.5px;font-style:italic}
+  @media print{
+    :root{--bg:#fff;--card:#fff;--paper:#fff;--ink:#000;--muted:#333;--line:#ccc}
+    body{background:#fff;padding:0}
+    .lang,.secbtn,.del,.formcard{display:none}
+    header,.kpi,.panel,.insights,.tcard{box-shadow:none;border:1px solid #ccc}
+    .tcard.collapsed .tlist{display:grid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="hrow">
+      <div class="logo">G</div>
+      <div class="htitle">
+        <h1 data-es="Tareas Operacionales" data-en="Operational Tasks">Tareas Operacionales</h1>
+        <p data-es="Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas" data-en="Cross of the task sheet · by process and by person · drag &amp; create tasks">Cruce de las tareas de la planilla · por proceso y por persona · arrastra y crea tareas</p>
+      </div>
+      <div class="hbtns">
+        <button class="lang save" id="saveBtn" onclick="saveSame()" title="Guardar los cambios en el archivo">💾 <span data-es="Guardar" data-en="Save">Guardar</span></button>
+        <button class="lang" id="saveAsBtn" onclick="saveAs()" title="Guardar como archivo nuevo"><span data-es="Guardar como…" data-en="Save as…">Guardar como…</span></button>
+        <button class="lang" id="themeBtn" onclick="toggleTheme()" title="Claro / oscuro">🌙</button>
+        <button class="lang" id="langBtn" onclick="toggleLang()">🌐 English</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="num" id="kpiTotal">36</div><div class="lab" data-es="Tareas totales" data-en="Total tasks">Tareas totales</div></div>
+      <div class="kpi"><div class="num" id="kpiProc">12</div><div class="lab" data-es="Procesos" data-en="Processes">Procesos</div></div>
+      <div class="kpi"><div class="num" id="kpiPeople">5</div><div class="lab" data-es="Personas con tareas" data-en="People with tasks">Personas con tareas</div></div>
+      <div class="kpi"><div class="num" id="kpiDaily">8</div><div class="lab" data-es="Tareas diarias" data-en="Daily tasks">Tareas diarias</div></div>
+    </div>
+  </header>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="ptop">
+        <h2 data-es="Tareas por proceso" data-en="Tasks by process">Tareas por proceso</h2>
+        <span class="cap" id="capProc">36 tareas · 12 procesos</span>
+      </div>
+      <div id="chartProcess"></div>
+    </div>
+    <div class="panel">
+      <div class="ptop">
+        <h2 data-es="Tareas por persona" data-en="Tasks by person">Tareas por persona</h2>
+        <span class="cap" data-es="responsable directo" data-en="direct owner">responsable directo</span>
+      </div>
+      <div id="chartPeople"></div>
+      <p class="note">
+        <span><i style="background:var(--red)"></i><span data-es="Sobrecarga (10+)" data-en="Overloaded (10+)">Sobrecarga (10+)</span></span>
+        <span><i style="background:var(--amber)"></i><span data-es="Carga alta" data-en="High load">Carga alta</span></span>
+        <span><i style="background:var(--green)"></i><span data-es="Carga sana" data-en="Healthy load">Carga sana</span></span>
+        <span><i style="background:var(--teal)"></i><span data-es="Compartida (coordinadores)" data-en="Shared (coordinators)">Compartida (coordinadores)</span></span>
+      </p>
+    </div>
+  </div>
+
+  <!-- PROCESS TREE -->
+  <div class="sec">
+    <p class="sh"><span data-es="🗂️ Procesos y sus tareas" data-en="🗂️ Processes and their tasks">🗂️ Procesos y sus tareas</span><button class="secbtn collapser" data-grid="treeProcess" onclick="toggleSection('treeProcess',this)">▾ Contraer todo</button></p>
+    <p class="ssub" data-es="Cada proceso con el detalle de sus tareas. Haz clic en un proceso para plegarlo." data-en="Each process with its task detail. Click a process to collapse it.">Cada proceso con el detalle de sus tareas. Haz clic en un proceso para plegarlo.</p>
+    <div class="tgrid" id="treeProcess"></div>
+  </div>
+
+  <!-- PEOPLE TREE -->
+  <div class="sec">
+    <p class="sh"><span data-es="🧑‍💼 Personas y sus tareas" data-en="🧑‍💼 People and their tasks">🧑‍💼 Personas y sus tareas</span><button class="secbtn collapser" data-grid="treePeople" onclick="toggleSection('treePeople',this)">▾ Contraer todo</button></p>
+    <p class="ssub" data-es="Arrastra una tarea de una persona a otra para reasignarla. La “×” la elimina. Todo se guarda en este navegador." data-en="Drag a task from one person to another to reassign it. The “×” deletes it. Everything is saved in this browser.">Arrastra una tarea de una persona a otra para reasignarla. La “×” la elimina. Todo se guarda en este navegador.</p>
+    <div class="tgrid people" id="treePeople"></div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="sec">
+    <p class="sh"><span data-es="🚀 Proyectos" data-en="🚀 Projects">🚀 Proyectos</span></p>
+    <p class="ssub" data-es="Crea un proyecto y dentro sus tareas con responsable. Marca las hechas para ir viendo el avance." data-en="Create a project and add its tasks with an owner. Check off the done ones to track progress.">Crea un proyecto y dentro sus tareas con responsable. Marca las hechas para ir viendo el avance.</p>
+    <div class="projnew">
+      <input id="projName" placeholder="Nombre del proyecto…" onkeydown="if(event.key==='Enter')createProject()">
+      <button class="addbtn" onclick="createProject()" data-es="＋ Crear proyecto" data-en="＋ Create project">＋ Crear proyecto</button>
+    </div>
+    <div class="projgrid" id="projGrid"></div>
+  </div>
+
+  <!-- ADD PERSON -->
+  <div class="sec">
+    <p class="sh"><span data-es="🧑 Agregar persona" data-en="🧑 Add person">🧑 Agregar persona</span></p>
+    <p class="ssub" data-es="Crea una persona y aparecerá su tarjeta en “Personas y sus tareas”, lista para arrastrarle tareas." data-en="Create a person and their card will appear under “People and their tasks”, ready to receive dragged tasks.">Crea una persona y aparecerá su tarjeta en “Personas y sus tareas”, lista para arrastrarle tareas.</p>
+    <div class="formcard">
+      <div class="fgrid two">
+        <div><label data-es="Nombre" data-en="Name">Nombre</label><input id="pName" placeholder="Nombre y apellido…"></div>
+        <div><label data-es="Cargo" data-en="Role">Cargo</label><input id="pRole" placeholder="Ej: Coordinador de Flota"></div>
+      </div>
+      <div class="factions"><button class="addbtn" onclick="createPerson()" data-es="＋ Agregar persona" data-en="＋ Add person">＋ Agregar persona</button></div>
+    </div>
+  </div>
+
+  <!-- CREATE TASK -->
+  <div class="sec">
+    <p class="sh"><span data-es="➕ Crear tarea" data-en="➕ Create task">➕ Crear tarea</span></p>
+    <p class="ssub" data-es="Agrega una tarea nueva y asígnala a un proceso, una persona y una periodicidad." data-en="Add a new task and assign it to a process, a person and a periodicity.">Agrega una tarea nueva y asígnala a un proceso, una persona y una periodicidad.</p>
+    <div class="formcard">
+      <div class="frow">
+        <label data-es="Tarea" data-en="Task">Tarea</label>
+        <input id="fName" placeholder="Nombre de la tarea…">
+      </div>
+      <div class="fgrid">
+        <div><label data-es="Proceso" data-en="Process">Proceso</label><select id="fProc"></select></div>
+        <div><label data-es="Persona" data-en="Person">Persona</label><select id="fPerson"></select></div>
+        <div><label data-es="Periodicidad" data-en="Periodicity">Periodicidad</label><select id="fFreq"></select></div>
+        <div><label data-es="Horas / semana" data-en="Hours / week">Horas / semana</label><input id="fHours" type="number" min="0" step="0.5" placeholder="0"></div>
+      </div>
+      <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done">Descripción</label>
+      <textarea id="fDesc" rows="2" placeholder="Paso a paso, para que otra persona pueda tomarla…"></textarea>
+      <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover" style="margin-top:12px">Backup / respaldo</label>
+      <input id="fBackup" placeholder="Persona que puede tomarla si el encargado no está…">
+      <label data-es="Contactos" data-en="Contacts">Contactos</label>
+      <textarea id="fContacts" rows="2" placeholder="Nombre, teléfono, correo…"></textarea>
+      <label data-es="Links" data-en="Links">Links</label>
+      <textarea id="fLinks" rows="2" placeholder="Un link por línea…"></textarea>
+      <div class="factions" style="margin-top:14px">
+        <button class="addbtn" onclick="createTask()" data-es="＋ Agregar tarea" data-en="＋ Add task">＋ Agregar tarea</button>
+        <button class="secbtn" onclick="resetData()" data-es="↺ Restablecer datos originales" data-en="↺ Reset to original data">↺ Restablecer datos originales</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETED TASKS HISTORY -->
+  <div class="sec">
+    <p class="sh"><span data-es="🗑️ Tareas eliminadas" data-en="🗑️ Deleted tasks">🗑️ Tareas eliminadas</span><button class="secbtn" onclick="emptyTrash()" data-es="Vaciar historial" data-en="Empty history">Vaciar historial</button></p>
+    <p class="ssub" data-es="Historial de tareas borradas. Puedes restablecer cualquiera por si alguien la eliminó por error." data-en="History of deleted tasks. Restore any of them in case someone removed one by mistake.">Historial de tareas borradas. Puedes restablecer cualquiera por si alguien la eliminó por error.</p>
+    <ul class="trashlist" id="trashList"></ul>
+  </div>
+
+  <p class="foot">
+    <span data-es="GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador" data-en="GOCAB · internal operations map · changes are saved in this browser">GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador</span>
+  </p>
+
+</div>
+
+<div id="editModal" class="modal" hidden>
+  <div class="modalcard">
+    <h3 data-es="Editar tarea" data-en="Edit task">Editar tarea</h3>
+    <label data-es="Tarea" data-en="Task">Tarea</label>
+    <input id="eName">
+    <div class="fgrid">
+      <div><label data-es="Proceso" data-en="Process">Proceso</label><select id="eProc"></select></div>
+      <div><label data-es="Persona" data-en="Person">Persona</label><select id="ePerson"></select></div>
+      <div><label data-es="Periodicidad" data-en="Periodicity">Periodicidad</label><select id="eFreq"></select></div>
+      <div><label data-es="Horas / semana" data-en="Hours / week">Horas / semana</label><input id="eHours" type="number" min="0" step="0.5" placeholder="0"></div>
+    </div>
+    <label data-es="Descripción — qué es y cómo se hace" data-en="Description — what it is and how it's done">Descripción</label>
+    <textarea id="eDesc" rows="3" placeholder="Paso a paso, para que otra persona pueda tomarla…"></textarea>
+    <label data-es="Backup / respaldo — quién puede cubrir" data-en="Backup — who can cover">Backup / respaldo</label>
+    <input id="eBackup" placeholder="Persona que puede tomarla si el encargado no está…">
+    <label data-es="Contactos" data-en="Contacts">Contactos</label>
+    <textarea id="eContacts" rows="2" placeholder="Nombre, teléfono, correo…"></textarea>
+    <label data-es="Links" data-en="Links">Links</label>
+    <textarea id="eLinks" rows="2" placeholder="Un link por línea…"></textarea>
+    <div class="factions">
+      <button class="addbtn" onclick="saveEdit()" data-es="Guardar cambios" data-en="Save changes">Guardar cambios</button>
+      <button class="secbtn" onclick="closeEdit()" data-es="Cancelar" data-en="Cancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script type="application/json" id="embeddedState">{"tasks":[{"id":"t1","h":0,"p":"Operaciones","a":"Morning Routine","ae":"Morning Routine","r":"Coordinadores de Flota","f":"Diaria"},{"id":"t2","h":0,"p":"Administración de Conductores","a":"Actualización de datos en Fleet","ae":"Update data in Fleet","r":"Joy Varela","f":"Según demanda"},{"id":"t3","h":0,"p":"Finanzas","a":"Creación de link de pago SumUp","ae":"Create SumUp payment link","r":"Joy Varela","f":"Según demanda"},{"id":"t5","h":0,"p":"Finanzas","a":"Modificación de montos de renta","ae":"Adjust rent amounts","r":"Joy Varela","f":"Según demanda"},{"id":"t6","h":0,"p":"Administración de Conductores","a":"Incorporación de usuarios en Fleet","ae":"Add users in Fleet","r":"Joy Varela","f":"Según demanda"},{"id":"t7","h":0,"p":"Finanzas","a":"Pago a proveedores","ae":"Pay suppliers","r":"Andrés Cerda","f":"Semanal"},{"id":"t8","h":0,"p":"Finanzas","a":"Pagos misceláneos","ae":"Miscellaneous payments","r":"Andrés Cerda","f":"Diaria"},{"id":"t9","h":0,"p":"Finanzas","a":"Registro de pagos","ae":"Record payments","r":"Andrés Cerda","f":"Diaria"},{"id":"t10","h":0,"p":"Operaciones","a":"Relación con GPS","ae":"GPS provider liaison","r":"Andrés Cerda","f":"Según demanda"},{"id":"t11","h":0,"p":"Operaciones","a":"Relación con Talleres","ae":"Workshop liaison","r":"Pablo González","f":"Según demanda"},{"id":"t12","h":0,"p":"Operaciones","a":"Relación con Seguro","ae":"Insurance liaison","r":"Pablo González","f":"Según demanda"},{"id":"t13","h":0,"p":"Recursos Humanos","a":"Presentación a nuevos conductores","ae":"New-driver presentation","r":"Andrés Cerda","f":"Según agenda"},{"id":"t14","h":0,"p":"Operaciones","a":"Entrega de vehículos","ae":"Vehicle handover","r":"Andrés Cerda","f":"Según agenda"},{"id":"t15","h":0,"p":"Operaciones","a":"Relación con lavado de autos","ae":"Car-wash liaison","r":"Andrés Cerda","f":"Según demanda"},{"id":"t16","h":0,"p":"Recursos Humanos","a":"Calendarización de nuevos conductores","ae":"Schedule new drivers","r":"Joy Varela","f":"Según demanda"},{"id":"t17","h":0,"p":"Atención al Cliente","a":"Responder WhatsApp de nuevos conductores","ae":"Answer new-driver WhatsApp","r":"Joy Varela","f":"Diaria"},{"id":"t18","h":0,"p":"Comercial","a":"Relación con Marketing","ae":"Marketing liaison","r":"Andrés Cerda","f":"Según demanda"},{"id":"t19","h":0,"p":"Mejora Continua","a":"Buscar automatizaciones","ae":"Find automations","r":"Andrés Cerda","f":"Mensual"},{"id":"t20","h":0,"p":"Tecnología","a":"Proyectos con TI","ae":"IT projects","r":"Shamil Tokarev","f":"Según proyecto"},{"id":"t21","h":0,"p":"Operaciones","a":"Organización de entrega de autos nuevos","ae":"Organize new-car handovers","r":"Andrés Cerda","f":"Según demanda"},{"id":"t22","h":0,"p":"Compras","a":"Negociación con proveedores","ae":"Supplier negotiation","r":"Felipe Castañeda","f":"Según demanda"},{"id":"t23","h":0,"p":"Administración","a":"Relación con contadores","ae":"Accountant liaison","r":"Andrés Cerda","f":"Mensual"},{"id":"t24","h":0,"p":"Administración","a":"Relación con abogados","ae":"Lawyer liaison","r":"Andrés Cerda","f":"Según demanda"},{"id":"t25","h":0,"p":"Dirección","a":"Nuevos proyectos","ae":"New projects","r":"Andrés Cerda","f":"Según planificación"},{"id":"t26","h":0,"p":"Cobranza","a":"Corte de energía de autos por mora","ae":"Cut power on overdue cars","r":"Coordinadores de Flota","f":"Según demanda"},{"id":"t27","h":0,"p":"Cobranza","a":"Supervisión de pagos semanales de arriendo","ae":"Supervise weekly rent payments","r":"Coordinadores de Flota","f":"Diaria"},{"id":"t28","h":0,"p":"Cobranza","a":"Notificación de pagos de clientes","ae":"Notify client payments","r":"Coordinadores de Flota","f":"Diaria"},{"id":"t29","h":0,"p":"Administración","a":"Elaboración de contratos de arriendo","ae":"Draft rental contracts","r":"Coordinadores de Flota","f":"Según demanda"},{"id":"t30","h":0,"p":"Administración","a":"Seguimiento de firma de contratos","ae":"Track contract signing","r":"Coordinadores de Flota","f":"Diaria"},{"id":"t31","h":0,"p":"Administración de Conductores","a":"Evaluación de requisitos de ingreso","ae":"Assess entry requirements","r":"Coordinadores de Flota","f":"Según demanda"},{"id":"t32","h":0,"p":"Comercial","a":"Captación de nuevos conductores","ae":"Recruit new drivers","r":"Coordinadores de Flota","f":"Semanal"},{"id":"t33","h":0,"p":"Operaciones","a":"Control del estado operativo de la flota","ae":"Monitor fleet operational status","r":"Coordinadores de Flota","f":"Diaria"},{"id":"t34","h":0,"p":"Operaciones","a":"Coordinación de mantenciones preventivas","ae":"Coordinate preventive maintenance","r":"Pablo González","f":"Semanal"},{"id":"t35","h":0,"p":"Operaciones","a":"Gestión de ingresos a taller por garantías","ae":"Manage warranty workshop entries","r":"Pablo González","f":"Según demanda"},{"id":"t36","h":0,"p":"Cobranza","a":"Control y conciliación de cobros TAG","ae":"Control & reconcile TAG charges","r":"Joy Varela","f":"Semanal"}],"seq":1,"hv":1,"people":[],"docId":"doc_gocab_actual"}</script>
+<script>
+  /* =========================================================================
+     SEED DATA — crossed from the operations sheet (36 tasks)
+     a = task name (ES) · ae = task name (EN)
+     r:'Coordinadores de Flota' = shared fleet-coordinator work (Pablo + Joy)
+     ========================================================================= */
+  const PROCESS=[
+    {key:'Operaciones',                  es:'Operaciones',        en:'Operations',              c:'var(--blue)'},
+    {key:'Finanzas',                     es:'Finanzas',           en:'Finance',                 c:'var(--green)'},
+    {key:'Administración',               es:'Administración',     en:'Administration',          c:'var(--violet)'},
+    {key:'Cobranza',                     es:'Cobranza',           en:'Collections',             c:'var(--red)'},
+    {key:'Administración de Conductores',es:'Adm. de Conductores',en:'Driver Administration',   c:'var(--teal)'},
+    {key:'Recursos Humanos',             es:'Recursos Humanos',   en:'Human Resources',         c:'var(--amber)'},
+    {key:'Comercial',                    es:'Comercial',          en:'Commercial',              c:'var(--pink)'},
+    {key:'Atención al Cliente',          es:'Atención al Cliente',en:'Customer Service',        c:'#0ea5a5'},
+    {key:'Mejora Continua',              es:'Mejora Continua',    en:'Continuous Improvement',  c:'#8b5cf6'},
+    {key:'Tecnología',                   es:'Tecnología',         en:'Technology',              c:'#4f6bed'},
+    {key:'Compras',                      es:'Compras',            en:'Procurement',             c:'#f59e0b'},
+    {key:'Dirección',                    es:'Dirección',          en:'Management',              c:'#64708c'}
+  ];
+  const PEOPLE=[
+    {name:'Andrés Cerda',           es:'Gerente de Operaciones', en:'Operations Manager', c:'var(--red)'},
+    {name:'Coordinadores de Flota', enName:'Fleet Coordinators', es:'Pablo + Joy · según autos asignados', en:'Pablo + Joy · by assigned cars', c:'var(--teal)'},
+    {name:'Joy Varela',             es:'Coordinador de Flota',   en:'Fleet coordinator',  c:'var(--amber)'},
+    {name:'Pablo González',         es:'Coordinador de Flota',   en:'Fleet coordinator',  c:'var(--green)'},
+    {name:'Felipe Castañeda',       es:'Gerente de País',        en:'Country Manager',    c:'var(--green)'},
+    {name:'Shamil Tokarev',         es:'Equipo Producto HQ',     en:'HQ Product Team',    c:'var(--green)'}
+  ];
+  const FREQ={
+    'Diaria':'Daily','Según demanda':'On demand','Semanal':'Weekly','Semanal (viernes)':'Weekly (Fri)',
+    'Según agenda':'As scheduled','Mensual':'Monthly','Según proyecto':'Per project','Según planificación':'As planned'
+  };
+  const SEED_TASKS=[
+    {p:'Operaciones',                  a:'Morning Routine',                            ae:'Morning Routine',              r:'Coordinadores de Flota', f:'Diaria'},
+    {p:'Administración de Conductores',a:'Actualización de datos en Fleet',            ae:'Update data in Fleet',         r:'Joy Varela',             f:'Según demanda'},
+    {p:'Finanzas',                     a:'Creación de link de pago SumUp',             ae:'Create SumUp payment link',    r:'Joy Varela',             f:'Según demanda'},
+    {p:'Finanzas',                     a:'Creación de cuentas TAG',                    ae:'Create TAG accounts',          r:'Joy Varela',             f:'Semanal (viernes)'},
+    {p:'Finanzas',                     a:'Modificación de montos de renta',            ae:'Adjust rent amounts',          r:'Joy Varela',             f:'Según demanda'},
+    {p:'Administración de Conductores',a:'Incorporación de usuarios en Fleet',         ae:'Add users in Fleet',           r:'Joy Varela',             f:'Según demanda'},
+    {p:'Finanzas',                     a:'Pago a proveedores',                         ae:'Pay suppliers',                r:'Andrés Cerda',           f:'Semanal'},
+    {p:'Finanzas',                     a:'Pagos misceláneos',                          ae:'Miscellaneous payments',       r:'Andrés Cerda',           f:'Diaria'},
+    {p:'Finanzas',                     a:'Registro de pagos',                          ae:'Record payments',              r:'Andrés Cerda',           f:'Diaria'},
+    {p:'Operaciones',                  a:'Relación con GPS',                           ae:'GPS provider liaison',         r:'Andrés Cerda',           f:'Según demanda'},
+    {p:'Operaciones',                  a:'Relación con Talleres',                      ae:'Workshop liaison',             r:'Pablo González',         f:'Según demanda'},
+    {p:'Operaciones',                  a:'Relación con Seguro',                        ae:'Insurance liaison',            r:'Pablo González',         f:'Según demanda'},
+    {p:'Recursos Humanos',            a:'Presentación a nuevos conductores',          ae:'New-driver presentation',      r:'Andrés Cerda',           f:'Según agenda'},
+    {p:'Operaciones',                  a:'Entrega de vehículos',                       ae:'Vehicle handover',             r:'Andrés Cerda',           f:'Según agenda'},
+    {p:'Operaciones',                  a:'Relación con lavado de autos',               ae:'Car-wash liaison',             r:'Andrés Cerda',           f:'Según demanda'},
+    {p:'Recursos Humanos',            a:'Calendarización de nuevos conductores',      ae:'Schedule new drivers',         r:'Joy Varela',             f:'Según demanda'},
+    {p:'Atención al Cliente',          a:'Responder WhatsApp de nuevos conductores',   ae:'Answer new-driver WhatsApp',   r:'Joy Varela',             f:'Diaria'},
+    {p:'Comercial',                    a:'Relación con Marketing',                     ae:'Marketing liaison',            r:'Andrés Cerda',           f:'Según demanda'},
+    {p:'Mejora Continua',              a:'Buscar automatizaciones',                    ae:'Find automations',             r:'Andrés Cerda',           f:'Mensual'},
+    {p:'Tecnología',                   a:'Proyectos con TI',                           ae:'IT projects',                  r:'Shamil Tokarev',         f:'Según proyecto'},
+    {p:'Operaciones',                  a:'Organización de entrega de autos nuevos',    ae:'Organize new-car handovers',   r:'Andrés Cerda',           f:'Según demanda'},
+    {p:'Compras',                      a:'Negociación con proveedores',                ae:'Supplier negotiation',         r:'Felipe Castañeda',       f:'Según demanda'},
+    {p:'Administración',               a:'Relación con contadores',                    ae:'Accountant liaison',           r:'Andrés Cerda',           f:'Mensual'},
+    {p:'Administración',               a:'Relación con abogados',                      ae:'Lawyer liaison',               r:'Andrés Cerda',           f:'Según demanda'},
+    {p:'Dirección',                    a:'Nuevos proyectos',                           ae:'New projects',                 r:'Andrés Cerda',           f:'Según planificación'},
+    {p:'Cobranza',                     a:'Corte de energía de autos por mora',         ae:'Cut power on overdue cars',    r:'Coordinadores de Flota', f:'Según demanda'},
+    {p:'Cobranza',                     a:'Supervisión de pagos semanales de arriendo', ae:'Supervise weekly rent payments',r:'Coordinadores de Flota', f:'Diaria'},
+    {p:'Cobranza',                     a:'Notificación de pagos de clientes',          ae:'Notify client payments',       r:'Coordinadores de Flota', f:'Diaria'},
+    {p:'Administración',               a:'Elaboración de contratos de arriendo',       ae:'Draft rental contracts',       r:'Coordinadores de Flota', f:'Según demanda'},
+    {p:'Administración',               a:'Seguimiento de firma de contratos',          ae:'Track contract signing',       r:'Coordinadores de Flota', f:'Diaria'},
+    {p:'Administración de Conductores',a:'Evaluación de requisitos de ingreso',        ae:'Assess entry requirements',    r:'Coordinadores de Flota', f:'Según demanda'},
+    {p:'Comercial',                    a:'Captación de nuevos conductores',            ae:'Recruit new drivers',          r:'Coordinadores de Flota', f:'Semanal'},
+    {p:'Operaciones',                  a:'Control del estado operativo de la flota',   ae:'Monitor fleet operational status',r:'Coordinadores de Flota',f:'Diaria'},
+    {p:'Operaciones',                  a:'Coordinación de mantenciones preventivas',   ae:'Coordinate preventive maintenance',r:'Pablo González',        f:'Semanal'},
+    {p:'Operaciones',                  a:'Gestión de ingresos a taller por garantías', ae:'Manage warranty workshop entries',r:'Pablo González',        f:'Según demanda'},
+    {p:'Cobranza',                     a:'Control y conciliación de cobros TAG',       ae:'Control & reconcile TAG charges',r:'Joy Varela',            f:'Semanal'}
+  ];
+
+  const ownerKey=r=>(r==='Coordinador asignado')?'Coordinadores de Flota':r;
+  const ownerLabel=(r,lang)=>{
+    const k=ownerKey(r);
+    if(k==='Coordinadores de Flota') return lang==='en'?'Fleet Coordinators':'Coordinadores de Flota';
+    return k;
+  };
+  const procLabel=(key,lang)=>{const p=PROCESS.find(x=>x.key===key);return p?(lang==='en'?p.en:p.es):key;};
+  const freqLabel=(f,lang)=>lang==='en'?(FREQ[f]||f):f;
+  const pName=(d,lang)=>(lang==='en'&&d.enName)?d.enName:d.name;
+
+  /* ---------- State + persistence ---------- */
+  const LS={
+    get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+    set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  };
+  /* hours per week are entered by the user — no assumed values */
+  const freshSeed=()=>SEED_TASKS.map((t,i)=>({id:'t'+(i+1),h:0,...t}));
+  function normalize(st){
+    if(typeof st.seq!=='number') st.seq=1;
+    if(!Array.isArray(st.tasks)) st.tasks=freshSeed();
+    if(!Array.isArray(st.people)) st.people=[];
+    if(!Array.isArray(st.trash)) st.trash=[];
+    if(!Array.isArray(st.projects)) st.projects=[];
+    st.tasks.forEach(t=>{ if(typeof t.h!=='number') t.h=0; });
+    return st;
+  }
+  function readEmbedded(){
+    try{
+      const el=document.getElementById('embeddedState');
+      if(el && el.textContent.trim()){
+        const o=JSON.parse(el.textContent);
+        if(o && Array.isArray(o.tasks)) return o;
+      }
+    }catch(e){}
+    return null;
+  }
+  let LS_KEY='gocab_tasks_v3';
+  function loadState(){
+    const emb=readEmbedded();
+    if(emb){
+      // this file carries its own data — autosave under a key unique to this document
+      LS_KEY='gocab_doc_'+(emb.docId||'x');
+      let st=emb;
+      const raw=LS.get(LS_KEY);
+      if(raw){ try{ const o=JSON.parse(raw); if(o&&Array.isArray(o.tasks)) st=o; }catch(e){} }
+      st.docId=emb.docId;
+      return normalize(st);
+    }
+    let st=null;
+    const raw=LS.get(LS_KEY);
+    if(raw){ try{ const o=JSON.parse(raw); if(o&&Array.isArray(o.tasks)) st=o; }catch(e){} }
+    if(!st) st={tasks:freshSeed(), seq:1, hv:1};
+    // one-time: clear any hours a previous version had pre-filled, so you set your own
+    if(st.hv!==1){ st.tasks.forEach(t=>{ t.h=0; }); st.hv=1; }
+    return normalize(st);
+  }
+  let state=loadState();
+  const save=()=>LS.set(LS_KEY, JSON.stringify(state));
+  save();
+
+  const cntPerson=name=>state.tasks.filter(t=>ownerKey(t.r)===name).length;
+  const cntProc=key=>state.tasks.filter(t=>t.p===key).length;
+
+  /* ---------- Rendering ---------- */
+  const FREQ_ORDER=['Diaria','Semanal','Semanal (viernes)','Mensual','Según agenda','Según demanda','Según proyecto','Según planificación'];
+  const fmtH=n=>`${Math.round(n*10)/10}h`;
+
+  // process tree row (flat: shows owner · frequency)
+  function taskRow(t,lang,color){
+    const act=lang==='en'?(t.ae||t.a):t.a;
+    return `<li class="tli" style="--al:${color}"><div class="ta">${act}<small>${ownerLabel(t.r,lang)} · ${freqLabel(t.f,lang)}</small></div></li>`;
+  }
+  // person tree row (draggable, shows process + editable hours badge)
+  function personTaskRow(t,lang,color){
+    const act=lang==='en'?(t.ae||t.a):t.a;
+    const hasDoc=!!(t.desc||t.contacts||t.links||t.backup);
+    return `<li class="tli" style="--al:${color}" ondblclick="taskDblClick(event,'${t.id}')" title="${lang==='en'?'Double-click to document':'Doble clic para documentar'}">`+
+      `<span class="grip" draggable="true" data-id="${t.id}" ondragstart="dragStart(event)" ondragend="dragEnd(event)" title="${lang==='en'?'Drag to reassign':'Arrastra para reasignar'}">⠿</span>`+
+      `<div class="ta">${act}<small>${procLabel(t.p,lang)}</small></div>`+
+      (hasDoc?`<span class="docmark" title="${lang==='en'?'Documented':'Documentada'}">📄</span>`:'')+
+      `<input class="hrs${t.h>0?' set':''}" type="number" min="0" step="0.5" value="${t.h>0?t.h:''}" placeholder="+ h" title="${lang==='en'?'Hours per week':'Horas por semana'}" onchange="setHours('${t.id}',this.value)">`+
+      `<button class="edit" title="${lang==='en'?'Edit / document':'Editar / documentar'}" onclick="editTask('${t.id}')">✎</button>`+
+      `<button class="del" title="${lang==='en'?'Delete':'Eliminar'}" onclick="delTask('${t.id}',event)">×</button></li>`;
+  }
+  function taskDblClick(e,id){ if(e.target.closest('input,button,.grip')) return; editTask(id); }
+  // person card body: tasks grouped by periodicity (each group is a drop zone that changes frequency)
+  function personBody(tasks,lang,color,ownerName){
+    if(!tasks.length) return `<div class="tli empty">${lang==='en'?'Drop tasks here':'Arrastra tareas aquí'}</div>`;
+    const groups={};
+    tasks.forEach(t=>{(groups[t.f]=groups[t.f]||[]).push(t);});
+    const freqs=Object.keys(groups).sort((a,b)=>{
+      const ia=FREQ_ORDER.indexOf(a), ib=FREQ_ORDER.indexOf(b);
+      return (ia<0?99:ia)-(ib<0?99:ib);
+    });
+    return freqs.map(f=>{
+      const items=groups[f].slice().sort((a,b)=>(b.h||0)-(a.h||0));
+      const hrs=items.reduce((s,t)=>s+(t.h||0),0);
+      return `<div class="fgroup" data-owner="${ownerName}" data-freq="${f}" ondragover="dragOverGroup(event)" ondragleave="dragLeaveGroup(event)" ondrop="dropOnGroup(event)">`+
+        `<div class="fglabel"><span>${freqLabel(f,lang)}</span><span>· ${items.length}${hrs>0?' · '+fmtH(hrs):''}</span></div>`+
+        `<ul class="gtasks">${items.map(t=>personTaskRow(t,lang,color)).join('')}</ul></div>`;
+    }).join('');
+  }
+  function treeCard(color,name,sub,tasks,lang,mode,ownerName,removable){
+    const subHtml=sub?`<small>${sub}</small>`:'';
+    let body, listTag='ul', drop='';
+    if(mode==='ppl'){
+      body=personBody(tasks,lang,color,ownerName); listTag='div';
+      drop=` data-owner="${ownerName}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropTask(event)"`;
+    }else{
+      body = tasks.length
+        ? tasks.map(t=>taskRow(t,lang,color)).join('')
+        : `<li class="tli empty">${lang==='en'?'Drop tasks here':'Arrastra tareas aquí'}</li>`;
+    }
+    const on=String(ownerName).replace(/'/g,"\\'");
+    const del = removable ? `<button class="delp" title="${lang==='en'?'Remove person':'Eliminar persona'}" onclick="delPerson('${on}',event)">×</button>` : '';
+    const cid=(mode==='ppl'?'u:':'p:')+ownerName;
+    const cidEsc=cid.replace(/'/g,"\\'");
+    const collCls=collapsed.has(cid)?' collapsed':'';
+    return `<div class="tcard${collCls}" data-cid="${cid}"${drop}><div class="th" onclick="toggleCard('${cidEsc}',this)">`+
+      `<span class="dot" style="background:${color}"></span>`+
+      `<div class="nm">${name}${subHtml}</div>`+
+      `<div class="meta">${del}<span class="cnt">${tasks.length}</span><span class="chev">▾</span></div>`+
+      `</div><${listTag} class="tlist">${body}</${listTag}></div>`;
+  }
+
+  /* collapse state (survives re-renders); processes start collapsed */
+  const collapsed=new Set();
+  PROCESS.forEach(p=>collapsed.add('p:'+p.key));
+  function toggleCard(cid, el){
+    const card=el.closest('.tcard');
+    const willCollapse=!card.classList.contains('collapsed');
+    card.classList.toggle('collapsed');
+    if(willCollapse) collapsed.add(cid); else collapsed.delete(cid);
+  }
+  function setSectionBtn(gridId){
+    const btn=document.querySelector('.secbtn.collapser[data-grid="'+gridId+'"]');
+    if(!btn) return;
+    const cards=[...document.getElementById(gridId).children];
+    const anyOpen=cards.some(c=>!c.classList.contains('collapsed'));
+    setBtnLabel(btn, !anyOpen);
+  }
+
+  function render(){
+    const lang=LANG;
+    const total=state.tasks.length;
+    const procUsed=new Set(state.tasks.map(t=>t.p)).size;
+    const peopleUsed=getPeople().filter(p=>p.name!=='Coordinadores de Flota' && cntPerson(p.name)>0).length;
+    const daily=state.tasks.filter(t=>t.f==='Diaria').length;
+    document.getElementById('kpiTotal').textContent=total;
+    document.getElementById('kpiProc').textContent=procUsed;
+    document.getElementById('kpiPeople').textContent=peopleUsed;
+    document.getElementById('kpiDaily').textContent=daily;
+    document.getElementById('capProc').textContent = lang==='en'
+      ? `${total} tasks · ${procUsed} processes` : `${total} tareas · ${procUsed} procesos`;
+
+    // charts (sorted by live count)
+    const procs=PROCESS.map(p=>({...p,n:cntProc(p.key)})).sort((a,b)=>b.n-a.n);
+    const pMax=Math.max(1,...procs.map(d=>d.n));
+    document.getElementById('chartProcess').innerHTML=procs.map(d=>{
+      const lab=lang==='en'?d.en:d.es, w=(d.n/pMax*100).toFixed(1);
+      return `<div class="bar-row"><div class="bar-lab">${lab}</div>`+
+        `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:linear-gradient(90deg,#4f6bed,#12b6b0)"></div></div>`+
+        `<div class="bar-val" style="color:var(--blue)">${d.n}</div></div>`;
+    }).join('');
+    const ppl=getPeople().map(p=>({...p,n:cntPerson(p.name)})).sort((a,b)=>b.n-a.n);
+    const nMax=Math.max(1,...ppl.map(d=>d.n));
+    document.getElementById('chartPeople').innerHTML=ppl.map(d=>{
+      const role=lang==='en'?d.en:d.es, w=(d.n/nMax*100).toFixed(1);
+      const hrs=state.tasks.filter(t=>ownerKey(t.r)===d.name).reduce((s,t)=>s+(t.h||0),0);
+      const small=`${role}${hrs>0?' · '+fmtH(hrs)+'/'+(lang==='en'?'wk':'sem'):''}`;
+      return `<div class="bar-row"><div class="bar-lab">${pName(d,lang)}<small>${small}</small></div>`+
+        `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${d.c}"></div></div>`+
+        `<div class="bar-val" style="color:${d.c}">${d.n}</div></div>`;
+    }).join('');
+
+    // trees
+    document.getElementById('treeProcess').innerHTML=procs.map(pr=>{
+      const tasks=state.tasks.filter(t=>t.p===pr.key);
+      return treeCard(pr.c, lang==='en'?pr.en:pr.es, '', tasks, lang, 'proc', pr.key);
+    }).join('');
+    document.getElementById('treePeople').innerHTML=ppl.map(pp=>{
+      const tasks=state.tasks.filter(t=>ownerKey(t.r)===pp.name);
+      const th=tasks.reduce((s,t)=>s+(t.h||0),0);
+      const sub=`${lang==='en'?pp.en:pp.es}${th>0?` · ${fmtH(th)}/${lang==='en'?'wk':'sem'}`:''}`;
+      return treeCard(pp.c, pName(pp,lang), sub, tasks, lang, 'ppl', pp.name, pp.custom);
+    }).join('');
+
+    fillSelects(lang);
+    setSectionBtn('treeProcess'); setSectionBtn('treePeople');
+    renderProjects();
+    renderTrash();
+  }
+
+  /* ---------- Drag & drop ---------- */
+  let dragId=null;
+  function dragStart(e){
+    const li=e.currentTarget.closest('.tli');
+    dragId=e.currentTarget.dataset.id;
+    e.dataTransfer.effectAllowed='move';
+    try{e.dataTransfer.setData('text/plain',dragId);}catch(_){}
+    if(li) li.classList.add('dragging');
+  }
+  function dragEnd(e){
+    const li=e.currentTarget.closest('.tli'); if(li) li.classList.remove('dragging');
+    document.querySelectorAll('.dropok').forEach(x=>x.classList.remove('dropok')); dragId=null;
+  }
+  function dragOver(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; e.currentTarget.classList.add('dropok'); }
+  function dragLeave(e){ if(!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('dropok'); }
+  function dropTask(e){
+    e.preventDefault();
+    const card=e.currentTarget; card.classList.remove('dropok');
+    const owner=card.dataset.owner;
+    const id=dragId||(e.dataTransfer&&e.dataTransfer.getData('text/plain'));
+    const t=state.tasks.find(x=>x.id===id);
+    if(t && owner && ownerKey(t.r)!==owner){ t.r=owner; save(); render(); }
+    dragId=null;
+  }
+  // dropping on a periodicity group changes the task's frequency (and person, if different)
+  function dragOverGroup(e){
+    e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect='move';
+    e.currentTarget.classList.add('dropok');
+    const c=e.currentTarget.closest('.tcard'); if(c) c.classList.remove('dropok');
+  }
+  function dragLeaveGroup(e){ if(!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('dropok'); }
+  function dropOnGroup(e){
+    e.preventDefault(); e.stopPropagation();
+    const g=e.currentTarget; g.classList.remove('dropok');
+    const owner=g.dataset.owner, freq=g.dataset.freq;
+    const id=dragId||(e.dataTransfer&&e.dataTransfer.getData('text/plain'));
+    const t=state.tasks.find(x=>x.id===id);
+    if(t){
+      let ch=false;
+      if(owner && ownerKey(t.r)!==owner){ t.r=owner; ch=true; }
+      if(freq && t.f!==freq){ t.f=freq; ch=true; }
+      if(ch){ save(); render(); }
+    }
+    dragId=null;
+  }
+
+  /* ---------- Create / delete / reset ---------- */
+  /* ---------- People (seed + custom) ---------- */
+  const PALETTE=['#4f6bed','#0ea5a5','#f59e0b','#8b5cf6','#e0468f','#22a36b','#ef4444','#12b6b0','#e08706','#7c4de0'];
+  function getPeople(){ return PEOPLE.concat(state.people||[]); }
+  function createPerson(){
+    const nEl=document.getElementById('pName'), rEl=document.getElementById('pRole');
+    const name=nEl.value.trim(); if(!name){ nEl.focus(); return; }
+    if(getPeople().some(p=>p.name.toLowerCase()===name.toLowerCase())){
+      alert(LANG==='en'?'That name already exists.':'Ese nombre ya existe.'); return;
+    }
+    const role=rEl.value.trim();
+    const c=PALETTE[(state.people.length)%PALETTE.length];
+    state.people.push({name, es:role||(LANG==='en'?'Team member':'Miembro del equipo'), en:role||'Team member', c, custom:true});
+    save(); nEl.value=''; rEl.value=''; render();
+  }
+  function delPerson(name,ev){
+    if(ev) ev.stopPropagation();
+    if(cntPerson(name)>0){
+      alert(LANG==='en'?'Move this person’s tasks to someone else first.':'Primero reasigna las tareas de esta persona a otra.'); return;
+    }
+    if(!confirm(LANG==='en'?`Remove ${name}?`:`¿Eliminar a ${name}?`)) return;
+    state.people=state.people.filter(p=>p.name!==name);
+    save(); render();
+  }
+
+  function createTask(){
+    const el=document.getElementById('fName');
+    const name=el.value.trim();
+    if(!name){ el.focus(); return; }
+    const g=id=>document.getElementById(id);
+    state.tasks.push({
+      id:'u'+(state.seq++),
+      p:g('fProc').value,
+      a:name, ae:name,
+      r:g('fPerson').value,
+      f:g('fFreq').value,
+      h:(parseFloat(g('fHours').value)||0),
+      desc:g('fDesc').value.trim(),
+      backup:g('fBackup').value.trim(),
+      contacts:g('fContacts').value.trim(),
+      links:g('fLinks').value.trim()
+    });
+    save();
+    ['fName','fDesc','fBackup','fContacts','fLinks'].forEach(k=>g(k).value='');
+    render();
+  }
+  function setHours(id,val){
+    const t=state.tasks.find(x=>x.id===id); if(!t) return;
+    const n=parseFloat(String(val).replace(',','.'));
+    t.h=(!isNaN(n)&&n>=0)?n:0;
+    save(); render();
+  }
+  /* ---------- Edit an existing task ---------- */
+  let editingId=null;
+  function editTask(id){
+    const t=state.tasks.find(x=>x.id===id); if(!t) return;
+    editingId=id;
+    const lang=LANG;
+    document.getElementById('eName').value = lang==='en'?(t.ae||t.a):t.a;
+    document.getElementById('eProc').innerHTML = PROCESS.map(p=>opt(p.key, lang==='en'?p.en:p.es, p.key===t.p)).join('');
+    document.getElementById('ePerson').innerHTML = getPeople().map(p=>opt(p.name, pName(p,lang), p.name===ownerKey(t.r))).join('');
+    document.getElementById('eFreq').innerHTML = Object.keys(FREQ).map(k=>opt(k, lang==='en'?FREQ[k]:k, k===t.f)).join('');
+    document.getElementById('eHours').value = t.h>0?t.h:'';
+    document.getElementById('eDesc').value = t.desc||'';
+    document.getElementById('eBackup').value = t.backup||'';
+    document.getElementById('eContacts').value = t.contacts||'';
+    document.getElementById('eLinks').value = t.links||'';
+    document.getElementById('editModal').hidden=false;
+  }
+  function saveEdit(){
+    const t=state.tasks.find(x=>x.id===editingId); if(!t){ closeEdit(); return; }
+    const name=document.getElementById('eName').value.trim();
+    if(!name){ document.getElementById('eName').focus(); return; }
+    t.a=name; t.ae=name;
+    t.p=document.getElementById('eProc').value;
+    t.r=document.getElementById('ePerson').value;
+    t.f=document.getElementById('eFreq').value;
+    const h=parseFloat(document.getElementById('eHours').value);
+    t.h=(!isNaN(h)&&h>=0)?h:0;
+    t.desc=document.getElementById('eDesc').value.trim();
+    t.backup=document.getElementById('eBackup').value.trim();
+    t.contacts=document.getElementById('eContacts').value.trim();
+    t.links=document.getElementById('eLinks').value.trim();
+    save(); closeEdit(); render();
+  }
+  function closeEdit(){ editingId=null; document.getElementById('editModal').hidden=true; }
+  function delTask(id,ev){
+    if(ev) ev.stopPropagation();
+    const t=state.tasks.find(x=>x.id===id); if(!t) return;
+    const msg=LANG==='en'?`Delete task "${t.ae||t.a}"? It will go to the history and can be restored.`:`¿Eliminar la tarea "${t.a}"? Quedará en el historial y podrás restablecerla.`;
+    if(!confirm(msg)) return;
+    state.tasks=state.tasks.filter(x=>x.id!==id);
+    t.deletedAt=Date.now();
+    state.trash.unshift(t);
+    save(); render();
+  }
+  /* ---------- Deleted-tasks history (trash) ---------- */
+  function fmtDate(ms){
+    if(!ms) return '';
+    const d=new Date(ms), p=n=>String(n).padStart(2,'0');
+    return `${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function restoreTask(id){
+    const i=state.trash.findIndex(x=>x.id===id); if(i<0) return;
+    const t=state.trash.splice(i,1)[0];
+    delete t.deletedAt;
+    if(!getPeople().some(p=>p.name===ownerKey(t.r))) t.r=PEOPLE[0].name; // safety if that person was removed
+    state.tasks.push(t);
+    save(); render();
+  }
+  function purgeTask(id){
+    const t=state.trash.find(x=>x.id===id); if(!t) return;
+    if(!confirm(LANG==='en'?`Permanently delete "${t.ae||t.a}"? This cannot be undone.`:`¿Eliminar definitivamente "${t.a}"? No se puede deshacer.`)) return;
+    state.trash=state.trash.filter(x=>x.id!==id); save(); render();
+  }
+  function emptyTrash(){
+    if(!state.trash.length) return;
+    if(!confirm(LANG==='en'?'Empty the deleted-tasks history? This cannot be undone.':'¿Vaciar el historial de tareas eliminadas? No se puede deshacer.')) return;
+    state.trash=[]; save(); render();
+  }
+  function renderTrash(){
+    const lang=LANG, el=document.getElementById('trashList'); if(!el) return;
+    if(!state.trash.length){ el.innerHTML=`<li class="trash-empty">${lang==='en'?'No deleted tasks.':'No hay tareas eliminadas.'}</li>`; return; }
+    el.innerHTML=state.trash.map(t=>{
+      const act=lang==='en'?(t.ae||t.a):t.a;
+      const when=t.deletedAt?` · ${lang==='en'?'deleted':'eliminada'} ${fmtDate(t.deletedAt)}`:'';
+      const meta=`${procLabel(t.p,lang)} · ${ownerLabel(t.r,lang)} · ${freqLabel(t.f,lang)}${when}`;
+      return `<li class="trashrow"><div class="tt">${act}<small>${meta}</small></div>`+
+        `<button class="restore" onclick="restoreTask('${t.id}')">↩ ${lang==='en'?'Restore':'Restablecer'}</button>`+
+        `<button class="purge" title="${lang==='en'?'Delete permanently':'Eliminar definitivamente'}" onclick="purgeTask('${t.id}')">×</button></li>`;
+    }).join('');
+  }
+
+  /* ---------- Projects (each with its own tasks + owner + progress) ---------- */
+  function createProject(){
+    const el=document.getElementById('projName'); const name=el.value.trim(); if(!name){ el.focus(); return; }
+    state.projects.push({id:'P'+(state.seq++), name, tasks:[]});
+    save(); el.value=''; render();
+  }
+  function delProject(id){
+    const p=state.projects.find(x=>x.id===id); if(!p) return;
+    if(!confirm(LANG==='en'?`Delete project "${p.name}" and its tasks?`:`¿Eliminar el proyecto "${p.name}" y sus tareas?`)) return;
+    state.projects=state.projects.filter(x=>x.id!==id); save(); render();
+  }
+  function addProjTask(projId){
+    const p=state.projects.find(x=>x.id===projId); if(!p) return;
+    const nEl=document.getElementById('ptname_'+projId); const name=nEl.value.trim(); if(!name){ nEl.focus(); return; }
+    const r=document.getElementById('ptperson_'+projId).value;
+    p.tasks.push({id:'PT'+(state.seq++), name, r, done:false});
+    save(); render();
+  }
+  function toggleProjTask(projId,taskId){
+    const p=state.projects.find(x=>x.id===projId); if(!p) return;
+    const t=p.tasks.find(x=>x.id===taskId); if(!t) return;
+    t.done=!t.done; save(); render();
+  }
+  function delProjTask(projId,taskId){
+    const p=state.projects.find(x=>x.id===projId); if(!p) return;
+    p.tasks=p.tasks.filter(x=>x.id!==taskId); save(); render();
+  }
+  function renderProjects(){
+    const lang=LANG, grid=document.getElementById('projGrid'); if(!grid) return;
+    if(!state.projects.length){ grid.innerHTML=`<p class="trash-empty">${lang==='en'?'No projects yet. Create one above.':'Aún no hay proyectos. Crea uno arriba.'}</p>`; return; }
+    grid.innerHTML=state.projects.map(p=>{
+      const total=p.tasks.length, done=p.tasks.filter(t=>t.done).length, pct=total?Math.round(done/total*100):0;
+      const people=getPeople().map(pp=>opt(pp.name, pName(pp,lang), false)).join('');
+      const tasks=p.tasks.length ? p.tasks.map(t=>
+        `<li class="ptask"><label><input type="checkbox" ${t.done?'checked':''} onchange="toggleProjTask('${p.id}','${t.id}')"><span class="${t.done?'done':''}">${t.name}</span></label>`+
+        `<span class="who">👤 ${ownerLabel(t.r,lang)}</span>`+
+        `<button class="pdel" title="${lang==='en'?'Delete':'Eliminar'}" onclick="delProjTask('${p.id}','${t.id}')">×</button></li>`
+      ).join('') : `<li class="trash-empty" style="padding:3px 2px">${lang==='en'?'No tasks yet.':'Sin tareas aún.'}</li>`;
+      return `<div class="projcard">`+
+        `<div class="projhead"><div class="projname">${p.name}<small>${done}/${total} · ${pct}%</small></div>`+
+        `<button class="delp" title="${lang==='en'?'Delete project':'Eliminar proyecto'}" onclick="delProject('${p.id}')">×</button></div>`+
+        `<div class="progress"><div class="progressbar" style="width:${pct}%"></div></div>`+
+        `<ul class="projtasks">${tasks}</ul>`+
+        `<div class="projadd"><input id="ptname_${p.id}" placeholder="${lang==='en'?'New project task…':'Nueva tarea del proyecto…'}" onkeydown="if(event.key==='Enter')addProjTask('${p.id}')">`+
+        `<select id="ptperson_${p.id}">${people}</select>`+
+        `<button class="addbtn" onclick="addProjTask('${p.id}')">＋</button></div>`+
+      `</div>`;
+    }).join('');
+  }
+  /* ---------- Save the report as an HTML file ---------- */
+  let fileHandle=null, lastName='gocab-tareas.html', toastT=null;
+  function flash(msg){
+    const el=document.getElementById('toast'); if(!el) return;
+    el.textContent=msg; el.classList.add('show');
+    if(toastT) clearTimeout(toastT);
+    toastT=setTimeout(()=>el.classList.remove('show'),1800);
+  }
+  function buildHTML(){
+    if(!state.docId) state.docId='doc'+Date.now();
+    const el=document.getElementById('embeddedState');
+    const prev=el?el.textContent:'';
+    // escape < so a task/person name can never close the script tag
+    if(el) el.textContent=JSON.stringify(state).replace(/</g,'\\u003c');
+    const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+    if(el) el.textContent=prev;
+    return html;
+  }
+  function downloadHTML(html, name){
+    const blob=new Blob([html],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  // Save as… — lets you name/locate a new file (and remembers it for “Save”)
+  async function saveAs(){
+    const html=buildHTML();
+    if(window.showSaveFilePicker){
+      try{
+        const h=await window.showSaveFilePicker({suggestedName:lastName,types:[{description:'HTML',accept:{'text/html':['.html']}}]});
+        const w=await h.createWritable(); await w.write(html); await w.close();
+        fileHandle=h; lastName=h.name||lastName;
+        flash(LANG==='en'?'Saved ✓':'Guardado ✓'); return;
+      }catch(e){ if(e&&e.name==='AbortError') return; /* not available here → download */ }
+    }
+    let name=prompt(LANG==='en'?'File name:':'Nombre del archivo:', lastName);
+    if(name===null) return;
+    name=(name.trim()||'gocab-tareas'); if(!/\.html?$/i.test(name)) name+='.html';
+    lastName=name; downloadHTML(html,name);
+    flash(LANG==='en'?'Downloaded ✓':'Descargado ✓');
+  }
+  // Save — overwrites the same file without a new one (needs a handle from a prior Save as…)
+  async function saveSame(){
+    const html=buildHTML();
+    if(fileHandle){
+      try{ const w=await fileHandle.createWritable(); await w.write(html); await w.close();
+        flash(LANG==='en'?'Saved ✓':'Guardado ✓'); return;
+      }catch(e){ /* handle lost → fall through */ }
+    }
+    if(window.showSaveFilePicker){ return saveAs(); }
+    // browser can't overwrite in place → re-download with the same name
+    downloadHTML(html,lastName);
+    flash(LANG==='en'?'Downloaded ✓':'Descargado ✓');
+  }
+  function resetData(){
+    const msg=LANG==='en'?'Restore the original 36 tasks? Your changes will be lost.'
+                         :'¿Restablecer las 36 tareas originales? Se perderán tus cambios.';
+    if(!confirm(msg)) return;
+    state={tasks:freshSeed(), seq:1}; save(); render();
+  }
+
+  /* ---------- Collapse / expand all ---------- */
+  function setBtnLabel(btn, collapsed){
+    btn.textContent = collapsed
+      ? (LANG==='en'?'▸ Expand all':'▸ Expandir todo')
+      : (LANG==='en'?'▾ Collapse all':'▾ Contraer todo');
+  }
+  function toggleSection(gridId, btn){
+    const cards=[...document.getElementById(gridId).children];
+    const anyOpen=cards.some(c=>!c.classList.contains('collapsed'));
+    cards.forEach(c=>{
+      c.classList.toggle('collapsed', anyOpen);
+      const cid=c.dataset.cid;
+      if(cid){ if(anyOpen) collapsed.add(cid); else collapsed.delete(cid); }
+    });
+    setBtnLabel(btn, anyOpen);
+  }
+
+  /* ---------- Create-form selects ---------- */
+  function opt(v,txt,sel){return `<option value="${v}"${sel?' selected':''}>${txt}</option>`;}
+  function fillSelects(lang){
+    const fp=document.getElementById('fProc'), fpe=document.getElementById('fPerson'), ff=document.getElementById('fFreq');
+    const pv=fp.value, pev=fpe.value, fv=ff.value;
+    fp.innerHTML=PROCESS.map(p=>opt(p.key, lang==='en'?p.en:p.es, p.key===pv)).join('');
+    fpe.innerHTML=getPeople().map(p=>opt(p.name, pName(p,lang), p.name===pev)).join('');
+    ff.innerHTML=Object.keys(FREQ).map(k=>opt(k, lang==='en'?FREQ[k]:k, k===fv)).join('');
+  }
+
+  /* ---------- Theme (dark / light) ---------- */
+  let THEME=LS.get('gocab_theme')||'dark';
+  function applyTheme(t){
+    THEME=t;
+    document.documentElement.setAttribute('data-theme',t);
+    document.getElementById('themeBtn').textContent = t==='dark' ? '☀️' : '🌙';
+    LS.set('gocab_theme',t);
+  }
+  function toggleTheme(){ applyTheme(THEME==='dark'?'light':'dark'); }
+
+  /* ---------- Language ---------- */
+  let LANG=LS.get('gocab_dash_lang')||'es';
+  function applyLang(lang){
+    LANG=lang;
+    document.documentElement.lang=lang;
+    document.querySelectorAll('[data-es]').forEach(el=>{
+      const v=el.getAttribute('data-'+lang);
+      if(v==null) return;
+      if(v.indexOf('<')>-1) el.innerHTML=v; else el.textContent=v;
+    });
+    document.getElementById('langBtn').textContent = lang==='en' ? '🌐 Español' : '🌐 English';
+    document.getElementById('fName').placeholder = lang==='en' ? 'Task name…' : 'Nombre de la tarea…';
+    document.getElementById('pName').placeholder = lang==='en' ? 'First and last name…' : 'Nombre y apellido…';
+    document.getElementById('pRole').placeholder = lang==='en' ? 'e.g. Fleet coordinator' : 'Ej: Coordinador de Flota';
+    document.getElementById('projName').placeholder = lang==='en' ? 'Project name…' : 'Nombre del proyecto…';
+    fillSelects(lang);
+    render();
+    LS.set('gocab_dash_lang',lang);
+  }
+  function toggleLang(){ applyLang(LANG==='en'?'es':'en'); }
+  applyTheme(THEME);
+  applyLang(LANG);
+</script>
+</body>
+</html>
