@@ -27,14 +27,16 @@ function fileNameFor(doc) {
 }
 
 async function findFile(drive, name) {
+  // Tolera extensiones extra (ej. Windows agrega ".txt" → "tareas-operacionales.json.txt")
   const res = await drive.files.list({
-    q: `'${FOLDER_ID}' in parents and name='${name}' and trashed=false`,
+    q: `'${FOLDER_ID}' in parents and name contains '${name}' and trashed=false`,
     fields: 'files(id,name,modifiedTime)',
     supportsAllDrives: true,
     includeItemsFromAllDrives: true,
-    pageSize: 1,
+    pageSize: 10,
   });
-  return (res.data.files && res.data.files[0]) || null;
+  const files = res.data.files || [];
+  return files.find((f) => f.name === name) || files[0] || null;
 }
 
 // GET /api/tareas?doc=operacionales  → { exists, state, modifiedTime }
@@ -43,15 +45,6 @@ export async function GET(req) {
     const doc = new URL(req.url).searchParams.get('doc');
     const name = fileNameFor(doc);
     const drive = getDrive();
-    if (new URL(req.url).searchParams.get('debug')) {
-      const list = await drive.files.list({
-        q: `'${FOLDER_ID}' in parents and trashed=false`,
-        fields: 'files(id,name,mimeType,capabilities/canEdit)',
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-      });
-      return NextResponse.json({ folder: FOLDER_ID, sees: list.data.files || [] }, { headers: noCache });
-    }
     const file = await findFile(drive, name);
     if (!file) {
       return NextResponse.json({ exists: false, state: null }, { headers: noCache });
