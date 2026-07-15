@@ -50,6 +50,28 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
           </svg>
         </Link>
 
+        <Link
+          href="/reports/tareas"
+          className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-amber-500/40 hover:bg-gray-900/80 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t.tareas_title}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t.tareas_sub}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-gray-600 group-hover:text-amber-400 transition"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+
         {isManager && <Link
           href="/reports/financial"
           className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-green-500/40 hover:bg-gray-900/80 transition"
