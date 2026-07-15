@@ -244,7 +244,6 @@
         <span id="syncStatus" class="sync" title="Sincronización con la base compartida en Drive"></span>
         <button class="lang" id="saveAsBtn" onclick="saveAs()" title="Descargar una copia del reporte (respaldo)">⬇️ <span data-es="Descargar copia" data-en="Download copy">Descargar copia</span></button>
         <button class="lang" id="themeBtn" onclick="toggleTheme()" title="Claro / oscuro">🌙</button>
-        <button class="lang" id="langBtn" onclick="toggleLang()">🌐 English</button>
       </div>
     </div>
 
@@ -982,7 +981,7 @@
   function toggleTheme(){ applyTheme(THEME==='dark'?'light':'dark'); }
 
   /* ---------- Language ---------- */
-  let LANG=LS.get('gocab_dash_lang')||'es';
+  let LANG=(function(){ try{ const g=localStorage.getItem('gocab_lang'); if(g) return g==='es'?'es':'en'; }catch(e){} return LS.get('gocab_dash_lang')||'es'; })();
   function applyLang(lang){
     LANG=lang;
     document.documentElement.lang=lang;
@@ -991,7 +990,7 @@
       if(v==null) return;
       if(v.indexOf('<')>-1) el.innerHTML=v; else el.textContent=v;
     });
-    document.getElementById('langBtn').textContent = lang==='en' ? '🌐 Español' : '🌐 English';
+    const _lb=document.getElementById('langBtn'); if(_lb) _lb.textContent = lang==='en' ? '🌐 Español' : '🌐 English';
     document.getElementById('fName').placeholder = lang==='en' ? 'Task name…' : 'Nombre de la tarea…';
     document.getElementById('pName').placeholder = lang==='en' ? 'First and last name…' : 'Nombre y apellido…';
     document.getElementById('pRole').placeholder = lang==='en' ? 'e.g. Fleet coordinator' : 'Ej: Coordinador de Flota';
@@ -1002,6 +1001,8 @@
     LS.set('gocab_dash_lang',lang);
   }
   function toggleLang(){ applyLang(LANG==='en'?'es':'en'); }
+  // Controlado por el switcher de idioma de gobills (arriba). es→es, en→en, ru→en (el reporte no tiene ruso)
+  window.setLang=function(l){ applyLang(l==='es'?'es':'en'); };
 
   /* ---------- Estado compartido vía mini-DB en Drive (autoguardado) ---------- */
   const REPORT_DOC='operacionales';

@@ -36,7 +36,7 @@ export default async function TareasReport() {
 
           {/* Right: controls */}
           <div className="flex items-center gap-2 shrink-0">
-            <LangSwitcher />
+            <LangSwitcher iframeSelector="iframe" />
             <LogoutButton />
           </div>
         </div>
