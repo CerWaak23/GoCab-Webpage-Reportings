@@ -43,6 +43,15 @@ export async function GET(req) {
     const doc = new URL(req.url).searchParams.get('doc');
     const name = fileNameFor(doc);
     const drive = getDrive();
+    if (new URL(req.url).searchParams.get('debug')) {
+      const list = await drive.files.list({
+        q: `'${FOLDER_ID}' in parents and trashed=false`,
+        fields: 'files(id,name,mimeType,capabilities/canEdit)',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+      });
+      return NextResponse.json({ folder: FOLDER_ID, sees: list.data.files || [] }, { headers: noCache });
+    }
     const file = await findFile(drive, name);
     if (!file) {
       return NextResponse.json({ exists: false, state: null }, { headers: noCache });
