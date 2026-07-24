@@ -1417,10 +1417,18 @@ function renderEvolTable(){
     driverSet[drv]=true;
   });
 
-  // All weeks from both charges and payments, sorted, take last 8
+  // All weeks from charges, payments, AND file upload dates.
+  // The snapshot anchor ensures the latest uploaded file always creates a column
+  // even when no payment deltas were detected on that day.
   var allWeekSet={};
   Object.keys(chargeMap).forEach(function(w){allWeekSet[w]=true;});
   Object.keys(payMap).forEach(function(w){allWeekSet[w]=true;});
+  SNAPSHOTS.forEach(function(snap){
+    var d=parseDate(snap.date);if(!d||isNaN(d))return;
+    var wk=evolLabel(d);if(!wk)return;
+    allWeekSet[wk]=true;
+    if(!weekDates[wk])weekDates[wk]=d;
+  });
   var allWeeks=Object.keys(allWeekSet).sort(function(a,b){
     var da=weekDates[a]||new Date(0),db=weekDates[b]||new Date(0);return da-db;
   }); // no slice — show all weeks (horizontal scroll handles overflow)
