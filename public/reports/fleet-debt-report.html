@@ -791,10 +791,11 @@ function isInFleet(normalizedDriver){
 async function loadData(){
   show('loadingWrap');
   try{
+    var _ts=Date.now();
     var results=await Promise.all([
-      fetch('/api/bills'),
-      fetch('/api/fleet'),
-      (function(){var ac=typeof AbortController!=='undefined'?new AbortController():null;var t=ac?setTimeout(function(){ac.abort();},25000):null;return fetch('/api/tolls',ac?{signal:ac.signal}:{}).then(function(r){if(t)clearTimeout(t);return r;}).catch(function(){if(t)clearTimeout(t);return{ok:false};});})()
+      fetch('/api/bills?_='+_ts,{cache:'no-store'}),
+      fetch('/api/fleet?_='+_ts,{cache:'no-store'}),
+      (function(){var ac=typeof AbortController!=='undefined'?new AbortController():null;var t=ac?setTimeout(function(){ac.abort();},25000):null;return fetch('/api/tolls?_='+_ts,ac?{signal:ac.signal,cache:'no-store'}:{cache:'no-store'}).then(function(r){if(t)clearTimeout(t);return r;}).catch(function(){if(t)clearTimeout(t);return{ok:false};});})()
     ]);
     var billsJson=await results[0].json();
     var fleetJson=await results[1].json();

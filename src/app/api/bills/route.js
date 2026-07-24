@@ -75,6 +75,7 @@ export async function GET() {
       q: `'${BILLS_FOLDER_ID}' in parents and trashed=false`,
       fields: 'files(id,name,mimeType,modifiedTime)',
       orderBy: 'modifiedTime asc',
+      quotaUser: `gc-${Date.now()}`, // bypass Google Drive server-side cache
     });
 
     const files = listRes.data.files || [];
