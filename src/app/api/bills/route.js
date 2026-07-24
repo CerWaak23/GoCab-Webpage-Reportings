@@ -71,14 +71,22 @@ export async function GET() {
     const drive = google.drive({ version: 'v3', auth });
 
     // Files ordered oldest→newest so each iteration overwrites with fresher data
-    const listRes = await drive.files.list({
-      q: `'${BILLS_FOLDER_ID}' in parents and trashed=false`,
-      fields: 'files(id,name,mimeType,modifiedTime)',
-      orderBy: 'modifiedTime asc',
-      quotaUser: `gc-${Date.now()}`, // bypass Google Drive server-side cache
-    });
-
-    const files = listRes.data.files || [];
+    // Paginate through ALL files — Drive API returns max 1000 per page.
+    // Without pagination, files beyond page 1 (newest uploads) are silently dropped.
+    const files = [];
+    let pageToken;
+    do {
+      const listRes = await drive.files.list({
+        q: `'${BILLS_FOLDER_ID}' in parents and trashed=false`,
+        fields: 'files(id,name,mimeType,modifiedTime),nextPageToken',
+        orderBy: 'modifiedTime asc',
+        pageSize: 1000,
+        quotaUser: `gc-${Date.now()}`,
+        ...(pageToken ? { pageToken } : {}),
+      });
+      (listRes.data.files || []).forEach(f => files.push(f));
+      pageToken = listRes.data.nextPageToken;
+    } while (pageToken);
     const billsMap = new Map();      // ref → latest bill state
     const paymentEvents = [];        // payment deltas detected between file versions
     const snapshots = [];            // recovery-rate snapshot after each file
