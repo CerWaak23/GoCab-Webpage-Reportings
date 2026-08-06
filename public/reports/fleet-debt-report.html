@@ -324,6 +324,15 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     </div>
   </div>
 
+  <!-- Weekly payment breakdown — va debajo de los graficos, antes de la tabla de evolucion -->
+  <div class="section wk-section" id="weeklySection" style="display:none">
+    <div class="wk-section-hdr">
+      <div class="wk-section-title">📅 Desglose Semanal de Cobranza</div>
+      <div class="wk-section-sub">De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda</div>
+    </div>
+    <div class="wk-grid" id="wkGrid"></div>
+  </div>
+
   <!-- Evolution table -->
   <div class="section card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
@@ -341,15 +350,6 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     <div class="evol-scroll">
       <table class="evol-table" id="evolTable"></table>
     </div>
-  </div>
-
-    <!-- Weekly payment breakdown -->
-  <div class="section wk-section" id="weeklySection" style="display:none">
-    <div class="wk-section-hdr">
-      <div class="wk-section-title">📅 Desglose Semanal de Cobranza</div>
-      <div class="wk-section-sub">De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda</div>
-    </div>
-    <div class="wk-grid" id="wkGrid"></div>
   </div>
 
   <!-- Fired drivers cards -->
