@@ -49,14 +49,6 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .kpi-teal .kpi-value{color:#2dd4bf}
 .kpi-gray .kpi-value{color:#9ca3af}
 
-/* Rate bars */
-.rbar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:11px}
-.rbar{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:15px 17px}
-.rbar-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#6b7280;margin-bottom:5px}
-.rbar-val{font-size:22px;font-weight:700;color:#e2e8f0;margin-bottom:7px}
-.rbar-track{height:5px;border-radius:3px;background:#1f2937;overflow:hidden}
-.rbar-fill{height:100%;border-radius:3px;transition:width .4s}
-.rbar-sub{font-size:11px;color:#4b5563;margin-top:6px}
 
 /* Charts row */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
@@ -246,11 +238,15 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     </div>
   </div>
 
-  <!-- Global type filter — afecta KPIs, gráficos, tablas y desglose semanal -->
+  <!-- Filtros globales — afectan KPIs, gráficos, tablas y desglose semanal -->
   <div class="gtf-bar">
     <span class="gtf-label" id="gtfLabel">Filtrar por tipo</span>
     <div class="gtf-chips" id="gtfChips"></div>
     <span class="gtf-note" id="gtfNote"></span>
+  </div>
+  <div class="gtf-bar" id="gtfCoordBar" style="display:none">
+    <span class="gtf-label" id="gtfCoordLabel">Coordinador</span>
+    <div class="gtf-chips" id="gtfCoordChips"></div>
   </div>
 
   <!-- 6 KPI cards — layout matches original -->
@@ -281,56 +277,9 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <div class="kpi-sub" id="kpiOpenBillsSub">—</div>
       </div>
       <div class="kpi-card kpi-teal">
-        <div class="kpi-label" data-i18n="kpi_active_debt">Deuda Conductores Activos</div>
-        <div class="kpi-value" id="kpiActivePending">—</div>
-        <div class="kpi-sub" id="kpiActivePendingSub">—</div>
-      </div>
-      <div class="kpi-card kpi-teal">
         <div class="kpi-label" data-i18n="kpi_recovery_pct">% Recuperación Activos</div>
         <div class="kpi-value" id="kpiFiredDebt">—</div>
         <div class="kpi-sub" id="kpiFiredDebtSub">—</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4 Rate bars -->
-  <div class="section">
-    <div class="rbar-grid">
-      <div class="rbar">
-        <div class="rbar-label" data-i18n="rbar_total">Cobranza Total</div>
-        <div class="rbar-track"><div class="rbar-fill" id="rbarTotalFill" style="width:0;background:#818cf8"></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <div class="rbar-val" id="rbarTotal">—</div>
-          <div id="rbarTotalDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
-        </div>
-        <div class="rbar-sub" id="rbarTotalSub">—</div>
-      </div>
-      <div class="rbar">
-        <div class="rbar-label" data-i18n="rbar_active">Cobranza Solo Activos</div>
-        <div class="rbar-track"><div class="rbar-fill" id="rbarActiveFill" style="width:0;background:#34d399"></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <div class="rbar-val" id="rbarActive">—</div>
-          <div id="rbarActiveDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
-        </div>
-        <div class="rbar-sub" id="rbarActiveSub">—</div>
-      </div>
-      <div class="rbar">
-        <div class="rbar-label" data-i18n="rbar_weekly">Tasa Cobranza Semanal Neta</div>
-        <div class="rbar-track"><div class="rbar-fill" id="rbarWeeklyFill" style="width:0;background:#fbbf24"></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <div class="rbar-val" id="rbarWeekly">—</div>
-          <div id="rbarWeeklyDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
-        </div>
-        <div class="rbar-sub" id="rbarWeeklySub">—</div>
-      </div>
-      <div class="rbar">
-        <div class="rbar-label" data-i18n="rbar_fired">Exposición Deuda Despedidos</div>
-        <div class="rbar-track"><div class="rbar-fill" id="rbarFiredFill" style="width:0;background:#f87171"></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <div class="rbar-val" id="rbarFired">—</div>
-          <div id="rbarFiredDelta" style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;display:none"></div>
-        </div>
-        <div class="rbar-sub" id="rbarFiredSub">—</div>
       </div>
     </div>
   </div>
@@ -470,6 +419,8 @@ var SNAPSHOTS = [];
 var DRIVERS = [];
 var FILTERED = [];
 var FLEET_NAMES = []; // normalized names from fleet control sheet
+var FLEET_ROWS = []; // [{nameNorm, coordinador, patente}] — planilla Control Flota
+var _coordFilter = null; // coordinador seleccionado (columna E), null = todos
 var LANG = 'es';
 var CUR = 'CLP';
 var _typeFilter = null;
@@ -508,7 +459,7 @@ var T = {
       driver:'Conductor',vehicle:'Vehículo',bills:'Facturas',total_amount:'Total',
       paid_col:'Pagado',pending_debt:'Deuda Pend.',recovery:'Recuperación',main_type:'Tipo',
       all_types:'Todos',all_statuses:'Todos los estados',search:'Buscar conductor...',
-      filter_by_type:'Filtrar por tipo',filter_active_note:'Todo el reporte está filtrado · las comparaciones con el snapshot anterior se ocultan',
+      filter_by_type:'Filtrar por tipo',filter_by_coord:'Coordinador',filter_active_note:'Todo el reporte está filtrado',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -517,7 +468,6 @@ var T = {
       bills_label:'facturas',total_label:'total emitido',fired_pending:'pendiente cesados',
       kpi_total_charged:'Total Facturado',kpi_total_paid:'Total Cobrado',kpi_pending:'Deuda Pendiente',
       kpi_open_collections:'Conductores Activos',kpi_active_debt:'Deuda Conductores Activos',kpi_recovery_pct:'% Recuperación Activos',
-      rbar_total:'Cobranza Total',rbar_active:'Cobranza Solo Activos',rbar_weekly:'Tasa Cobranza Semanal Neta',rbar_fired:'Exposición Deuda Despedidos',
       chart_pending_by_type:'Deuda Pendiente por Tipo',chart_pending_sub:'Conductores activos · saldo sin cobrar según categoría',
       chart_charges_title:'Cobros, pagos y saldo neto',chart_charges_sub:'Conductores activos · cobros (rojo) y pagos (verde) · línea = saldo acumulado',
       period_weekly:'Semanal',period_daily:'Diario',
@@ -548,7 +498,7 @@ var T = {
       driver:'Driver',vehicle:'Vehicle',bills:'Bills',total_amount:'Total',
       paid_col:'Paid',pending_debt:'Pending Debt',recovery:'Recovery',main_type:'Type',
       all_types:'All',all_statuses:'All statuses',search:'Search driver...',
-      filter_by_type:'Filter by type',filter_active_note:'The whole report is filtered · previous-snapshot comparisons are hidden',
+      filter_by_type:'Filter by type',filter_by_coord:'Coordinator',filter_active_note:'The whole report is filtered',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -557,7 +507,6 @@ var T = {
       bills_label:'bills',total_label:'total charged',fired_pending:'fired pending',
       kpi_total_charged:'Total Charged',kpi_total_paid:'Total Paid',kpi_pending:'Pending Debt',
       kpi_open_collections:'Active Drivers',kpi_active_debt:'Active Driver Debt',kpi_recovery_pct:'% Active Recovery',
-      rbar_total:'Total Collection',rbar_active:'Active Only',rbar_weekly:'Net Weekly Rate',rbar_fired:'Fired Driver Exposure',
       chart_pending_by_type:'Pending Debt by Type',chart_pending_sub:'Active drivers · pending balance by category',
       chart_charges_title:'Charges, Payments & Balance',chart_charges_sub:'Active drivers · charges (red) & payments (green) · line = running balance',
       period_weekly:'Weekly',period_daily:'Daily',
@@ -588,7 +537,7 @@ var T = {
       driver:'Водитель',vehicle:'Транспорт',bills:'Счета',total_amount:'Итого',
       paid_col:'Оплачено',pending_debt:'Задолженность',recovery:'Погашение',main_type:'Тип',
       all_types:'Все',all_statuses:'Все статусы',search:'Поиск водителя...',
-      filter_by_type:'Фильтр по типу',filter_active_note:'Весь отчёт отфильтрован · сравнения с предыдущим снимком скрыты',
+      filter_by_type:'Фильтр по типу',filter_by_coord:'Координатор',filter_active_note:'Весь отчёт отфильтрован',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -597,7 +546,6 @@ var T = {
       bills_label:'счетов',total_label:'начислено итого',fired_pending:'долг уволенных',
       kpi_total_charged:'Начислено',kpi_total_paid:'Оплачено',kpi_pending:'Задолженность',
       kpi_open_collections:'Активные водители',kpi_active_debt:'Долг активных водителей',kpi_recovery_pct:'% Погашения',
-      rbar_total:'Общее погашение',rbar_active:'Только активные',rbar_weekly:'Недельный темп',rbar_fired:'Долг уволенных',
       chart_pending_by_type:'Долг по типу',chart_pending_sub:'Активные водители · долг по категориям',
       chart_charges_title:'Начисления, платежи и сальдо',chart_charges_sub:'Активные водители · начисления (красный) и платежи (зелёный) · линия = сальдо',
       period_weekly:'Недельно',period_daily:'Дневно',
@@ -700,18 +648,35 @@ function normalizeName(s){
 // Handles longer names in bills vs. shorter names in fleet sheet, e.g.:
 //   bills: "FABIAN ANDRES ROLDAN ORTIZ"  fleet: "FABIAN ROLDAN"
 // → all fleet words appear in the bill name → same person.
+function namesMatch(fleetName,billName){
+  if(fleetName===billName) return true; // exact match fast path
+  var fWords=fleetName.split(' '),dWords=billName.split(' ');
+  // All fleet-sheet words present in bill name (fleet name is shorter/incomplete)
+  if(fWords.every(function(w){return dWords.indexOf(w)>=0;})) return true;
+  // All bill words present in fleet name (bill name is shorter — less common)
+  if(dWords.every(function(w){return fWords.indexOf(w)>=0;})) return true;
+  return false;
+}
+
 function isInFleet(normalizedDriver){
   if(!FLEET_NAMES.length) return false;
-  var dWords=normalizedDriver.split(' ');
-  return FLEET_NAMES.some(function(fn){
-    if(fn===normalizedDriver) return true; // exact match fast path
-    var fWords=fn.split(' ');
-    // All fleet-sheet words present in bill name (fleet name is shorter/incomplete)
-    if(fWords.every(function(w){return dWords.indexOf(w)>=0;})) return true;
-    // All bill words present in fleet name (bill name is shorter — less common)
-    if(dWords.every(function(w){return fWords.indexOf(w)>=0;})) return true;
-    return false;
-  });
+  return FLEET_NAMES.some(function(fn){return namesMatch(fn,normalizedDriver);});
+}
+
+// Coordinador del conductor segun la columna E de la planilla Control Flota.
+// Usa el mismo match difuso que isInFleet, porque los nombres en Bills suelen
+// traer mas palabras que los de la planilla. Cachea por nombre: se consulta una
+// vez por cada multa y evento de pago.
+var _coordCache={};
+function coordOf(normalizedDriver){
+  if(Object.prototype.hasOwnProperty.call(_coordCache,normalizedDriver))return _coordCache[normalizedDriver];
+  var found='';
+  for(var i=0;i<FLEET_ROWS.length;i++){
+    var fr=FLEET_ROWS[i];
+    if(fr.nameNorm&&namesMatch(fr.nameNorm,normalizedDriver)){found=fr.coordinador||'';break;}
+  }
+  _coordCache[normalizedDriver]=found;
+  return found;
 }
 
 async function loadData(){
@@ -726,13 +691,17 @@ async function loadData(){
     var fleetJson=await results[1].json();
     if(billsJson.error){showError(billsJson.error);return;}
     // ALL_* = datos crudos. BILLS/PAYMENT_EVENTS son la vista filtrada por tipo
-    // que consumen todos los renders — ver applyTypeScope().
+    // que consumen todos los renders — ver applyScope().
     ALL_BILLS=billsJson.bills||[];
     ALL_PAYMENT_EVENTS=billsJson.paymentEvents||[];
     SNAPSHOTS=billsJson.snapshots||[];
-    applyTypeScope();
     var fleetDrivers=fleetJson.drivers||[];
     FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
+    FLEET_ROWS=fleetDrivers.map(function(d){
+      return {nameNorm:normalizeName(d.conductor),coordinador:String(d.coordinador||'').trim(),patente:d.patente||''};
+    });
+    _coordCache={};
+    applyScope(); // depende de FLEET_ROWS: debe correr despues de cargar la planilla
     console.log('[Fleet] Conductores activos en sheet ('+FLEET_NAMES.length+'):', FLEET_NAMES.join(' | '));
     // Render data-quality warnings if any files had suspicious data
     var dataWarnings=billsJson.dataWarnings||[];
@@ -826,7 +795,7 @@ function fillSelect(id,opts,all){
 }
 
 function getFiltered(){
-  // El tipo ya viene aplicado en BILLS/DRIVERS por applyTypeScope() — aca solo estado y texto
+  // Tipo y coordinador ya vienen aplicados en BILLS/DRIVERS por applyScope() — aca solo estado y texto
   var fs=(document.getElementById('filterStatus')||{}).value||'';
   var ftext=((document.getElementById('filterText')||{}).value||'').toLowerCase();
   var matchingDrivers=null;
@@ -853,7 +822,8 @@ function applyFilters(){
 function clearAllFilters(){
   var st=document.getElementById('filterStatus');if(st)st.value='';
   var ft=document.getElementById('filterText');if(ft)ft.value='';
-  setTypeFilter(null);
+  _typeFilter=null;_coordFilter=null;
+  refiltrar();
 }
 
 /* ── FILTRO GLOBAL POR TIPO ────────────────────────────────────────────────
@@ -867,14 +837,20 @@ function clearAllFilters(){
    pueden desagregar por tipo. Con un filtro activo se ocultan las comparaciones
    que dependen de ellos (los chips "↑ +Xpp" / "snapshot anterior") en vez de
    mostrar un delta que compararia peras con manzanas. */
-function applyTypeScope(){
+function applyScope(){
+  var bills=ALL_BILLS,pays=ALL_PAYMENT_EVENTS;
   if(_typeFilter){
-    BILLS=ALL_BILLS.filter(function(b){return classifyType(b.type)===_typeFilter;});
-    PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.filter(function(p){return classifyType(p.type)===_typeFilter;});
-  }else{
-    BILLS=ALL_BILLS;
-    PAYMENT_EVENTS=ALL_PAYMENT_EVENTS;
+    bills=bills.filter(function(b){return classifyType(b.type)===_typeFilter;});
+    pays=pays.filter(function(p){return classifyType(p.type)===_typeFilter;});
   }
+  if(_coordFilter){
+    // El coordinador viene de la planilla, que va por patente-conductor: filtrar por
+    // coordinador equivale a quedarse con los conductores (y sus patentes) a su cargo.
+    bills=bills.filter(function(b){return coordOf(normalizeName(b.driver))===_coordFilter;});
+    pays=pays.filter(function(p){return coordOf(normalizeName(p.driver))===_coordFilter;});
+  }
+  BILLS=bills;
+  PAYMENT_EVENTS=pays;
 }
 
 // Orden fijo de los chips; solo se muestran los tipos presentes en los datos
@@ -898,17 +874,46 @@ function renderTypeFilterBar(){
   });
   box.innerHTML=html;
   setText('gtfLabel',t('filter_by_type'));
-  setText('gtfNote',_typeFilter?t('filter_active_note'):'');
+  setText('gtfNote',(_typeFilter||_coordFilter)?t('filter_active_note'):'');
 }
 
 function setTypeFilter(tp){
   // Volver a tocar el chip activo equivale a "Todos"
   if(tp===_typeFilter)tp=null;
   _typeFilter=tp;
+  refiltrar();
+}
+
+function setCoordFilter(c){
+  if(c===_coordFilter)c=null;
+  _coordFilter=c;
+  refiltrar();
+}
+
+function refiltrar(){
   _page=1;
-  applyTypeScope();
+  applyScope();
   aggregateDrivers();
   renderAll();
+}
+
+function renderCoordFilterBar(){
+  var bar=document.getElementById('gtfCoordBar'),box=document.getElementById('gtfCoordChips');
+  if(!bar||!box)return;
+  var coords=[];
+  FLEET_ROWS.forEach(function(fr){
+    if(fr.coordinador&&coords.indexOf(fr.coordinador)<0)coords.push(fr.coordinador);
+  });
+  coords.sort();
+  // Sin coordinadores cargados en la planilla, la barra no se muestra
+  if(!coords.length){bar.style.display='none';return;}
+  bar.style.display='';
+  var html='<button class="gtf-chip'+(_coordFilter?'':' active')+'" onclick="setCoordFilter(null)">'+t('all_types')+'</button>';
+  coords.forEach(function(c){
+    html+='<button class="gtf-chip'+(_coordFilter===c?' active':'')+'" onclick="setCoordFilter('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'+esc(c)+'</button>';
+  });
+  box.innerHTML=html;
+  setText('gtfCoordLabel',t('filter_by_coord'));
 }
 
 // Compatibilidad: el donut y otros puntos siguen llamando clearTypeFilter()
@@ -955,7 +960,6 @@ function renderKPIs(){
   var activePct=activeCharged>0?Math.round(activePaid/activeCharged*100):0;
   var weekPct=weekCharged>0?Math.round(weekPaid/weekCharged*100):0;
   var totalPending=totalCharged-totalPaid;
-  var firedExp=totalPending>0?Math.round(firedPending/totalPending*100):0;
 
   var driversWithDebt=DRIVERS.filter(function(d){return d.pending>0;});
   var activeWithDebt=DRIVERS.filter(function(d){return d.isActive&&d.pending>0;});
@@ -972,58 +976,8 @@ function renderKPIs(){
   // Row 2: active-only breakdown
   setText('kpiOpenBills',activeDrv);
   setText('kpiOpenBillsSub',activeWithDebt.length+' '+t('kpi_with_pending'));
-  setText('kpiActivePending',fmtAmt(runningActivePending));
-  setText('kpiActivePendingSub',runningActiveWithDebtCnt+' '+t('kpi_active_with_debt'));
   setText('kpiFiredDebt',activePct+'%');
   setText('kpiFiredDebtSub',fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
-
-  // Snapshot comparison: use second-to-last vs last file snapshot.
-  // Los snapshots son totales globales del API: no se pueden desagregar por tipo,
-  // asi que con un filtro activo se omite la comparacion en vez de mezclar universos.
-  var prevSnap=(!_typeFilter&&SNAPSHOTS.length>=2)?SNAPSHOTS[SNAPSHOTS.length-2]:null;
-  var prevTotalPct=prevSnap&&prevSnap.totalCharged>0?Math.round(prevSnap.totalPaid/prevSnap.totalCharged*100):null;
-
-  function setBar(valId,fillId,subId,deltaId,pct,subText,prevPct){
-    setText(valId,pct+'%');
-    var fill=document.getElementById(fillId);if(fill)fill.style.width=Math.min(100,pct)+'%';
-    setText(subId,subText);
-    // Sin dato previo, el chip de delta se esconde (puede venir visible de un render anterior)
-    if(deltaId&&(prevPct===null||prevPct===undefined)){
-      var delH=document.getElementById(deltaId);if(delH)delH.style.display='none';
-    }
-    if(deltaId&&prevPct!==null&&prevPct!==undefined){
-      var del=document.getElementById(deltaId);
-      if(del){
-        var diff=Math.round((pct-prevPct)*10)/10;
-        var sign=diff>=0?'↑ +':'↓ ';
-        del.textContent=sign+Math.abs(diff)+'pp';
-        del.style.background=diff>=0?'#052e16':'#2d0a0a';
-        del.style.color=diff>=0?'#34d399':'#f87171';
-        del.style.border='1px solid '+(diff>=0?'#064e3b':'#7f1d1d');
-        del.style.display='inline-block';
-        setText(subId,t('snapshot_prev')+' '+prevPct+'%');
-      }
-    }
-  }
-
-  setBar('rbarTotal','rbarTotalFill','rbarTotalSub','rbarTotalDelta',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged),prevTotalPct);
-  setBar('rbarActive','rbarActiveFill','rbarActiveSub','rbarActiveDelta',activePct,fmtAmt(activePaid)+' / '+fmtAmt(activeCharged),prevTotalPct);
-  // Weekly rate: bills from last 30 days
-  var month30=new Date(new Date().getTime()-30*24*60*60*1000);
-  var period30Bills=BILLS.filter(function(b){var d=parseDate(b.createdAt);return d&&d>=month30;});
-  var p30charged=period30Bills.reduce(function(s,b){return s+parseAmt(b.amount);},0);
-  var p30paid=period30Bills.reduce(function(s,b){return s+parseAmt(b.paidAmount);},0);
-  var weekPct30=p30charged>0?Math.round(p30paid/p30charged*100):0;
-  // Previous weekly rate from second-to-last snapshot period
-  var prevWeekPct=null;
-  if(!_typeFilter&&SNAPSHOTS.length>=3){
-    var snapPrev2=SNAPSHOTS[SNAPSHOTS.length-3];var snapPrev1=SNAPSHOTS[SNAPSHOTS.length-2];
-    var dCharged=snapPrev1.totalCharged-snapPrev2.totalCharged;
-    var dPaid=snapPrev1.totalPaid-snapPrev2.totalPaid;
-    if(dCharged>0)prevWeekPct=Math.round(dPaid/dCharged*100);
-  }
-  setBar('rbarWeekly','rbarWeeklyFill','rbarWeeklySub','rbarWeeklyDelta',weekPct30,t('weekly_period_sub'),prevWeekPct);
-  setBar('rbarFired','rbarFiredFill','rbarFiredSub','rbarFiredDelta',firedExp,fmtAmt(firedPending)+' '+t('fired_pending'),null);
 
   // Recommended KPIs
   var withPending=DRIVERS.filter(function(d){return d.pending>0;});
@@ -1305,7 +1259,7 @@ function renderMixedChart(){
 function renderEvolTable(){
   var tbl=document.getElementById('evolTable');if(!tbl)return;
 
-  // BILLS/PAYMENT_EVENTS ya vienen filtrados por tipo desde applyTypeScope()
+  // BILLS/PAYMENT_EVENTS ya vienen filtrados por tipo y coordinador desde applyScope()
   var srcBills=BILLS;
   var srcPayments=PAYMENT_EVENTS;
 
@@ -1679,6 +1633,7 @@ function renderAll(){
   renderKPIs();renderDonut();renderMixedChart();renderEvolTable();renderDriversTable(FILTERED);
   renderWeeklyBreakdown();
   renderTypeFilterBar();
+  renderCoordFilterBar();
   applyI18n();
 }
 

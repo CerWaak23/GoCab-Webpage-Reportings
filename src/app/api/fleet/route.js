@@ -31,7 +31,7 @@ export async function GET(request) {
     const rows = res.data.values || [];
     if (rows.length < 2) return NextResponse.json({ drivers: [] });
 
-    // Row 0 is header: CONDUCTOR, PATENTE, FECHA DE INICIO, ...
+    // Row 0 is header: Name, Vehicles, Created At, Tipe, Coordinator
     const drivers = rows.slice(1)
       .filter(r => r[0])
       .map(r => ({
@@ -39,6 +39,7 @@ export async function GET(request) {
         patente: String(r[1] || '').trim(),
         fechaInicio: String(r[2] || '').trim(),
         nota: String(r[3] || '').trim(),
+        coordinador: String(r[4] || '').trim(), // columna E — filtro de coordinador del reporte
       }));
 
     const noCache = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
