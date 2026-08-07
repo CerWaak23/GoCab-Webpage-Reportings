@@ -9,9 +9,11 @@
 
 const USERS = [
   { name: 'Joy Varela',      email: 'joy.varela@gocab.io',      role: 'Coordinador de Flota'    },
+  { name: 'Pablo González',  email: 'pablogonzalez@gocab.io',   role: 'Coordinador de Flota'    },
+  { name: 'Paula Flores',    email: 'paula.flores@gocab.io',    role: 'Coordinadora de Flota'   },
   { name: 'Artem Tokarev',   email: 'artem.tokarev@gocab.io',   role: 'Gerente de Producto'     },
   { name: 'Andrés Cerda',    email: 'andres.cerda@gocab.io',    role: 'Gerente de Operaciones'  },
-  { name: 'Felipe Catalan',  email: 'felipe.catalan@gocab.io',  role: 'Gerente de Pais'         },
+  { name: 'Felipe Catalan',  email: 'felipe@gocab.io',          role: 'Gerente de Pais'         },
 ];
 
 /**
@@ -40,15 +42,9 @@ export function getUserByEmail(email) {
     return { ...found, isManager: isManager(found.role) };
   }
 
-  // Usuario @gocab.io no registrado: acceso básico
-  if (email.endsWith('@gocab.io')) {
-    return {
-      name: email.split('@')[0],
-      email,
-      role: 'Colaborador',
-      isManager: false,
-    };
-  }
-
+  // Sin fallback por dominio: un @gocab.io que no esté en USERS NO tiene acceso.
+  // Antes esta función devolvía un usuario sintético con rol "Colaborador" para
+  // cualquier dirección terminada en @gocab.io, así que bastaba inventar un correo
+  // del dominio para entrar al portal. Para dar acceso, agregar la persona a USERS.
   return null;
 }
