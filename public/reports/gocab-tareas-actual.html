@@ -1471,14 +1471,16 @@
         body=`<div class="pbody">${tags}${pasos}${cont}
           <div style="display:flex;gap:6px;margin-top:2px">
             <button class="minibtn" onclick="nuevoPaso('${p.id}',event)">＋ Paso</button>
-            <button class="minibtn" onclick="editarProtocolo('${p.id}',event)">Editar protocolo</button>
           </div></div>`;
       }
+      // El botón de editar va en la cabecera y no dentro del cuerpo: si solo está
+      // al desplegar, no hay forma de editar ni eliminar sin abrir el protocolo.
       return `<div class="pcard${abierto?' open':''}">
         <div class="phead" onclick="toggleProto('${p.id}')">
           <span class="caret">${abierto?'▾':'▸'}</span>
           <span class="pn">${pesc(p.nombre)}</span>
           <span class="pmeta">${meta}</span>
+          <button class="minibtn" onclick="editarProtocolo('${p.id}',event)">Editar</button>
         </div>${body}</div>`;
     }).join('');
   }
