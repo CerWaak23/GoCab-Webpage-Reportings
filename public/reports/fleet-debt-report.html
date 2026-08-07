@@ -121,7 +121,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .bar-fill{height:100%;border-radius:2px;background:#34d399;transition:width .3s}
 .type-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
 .dot-energy{background:#60a5fa}.dot-toll{background:#34d399}.dot-repair{background:#fbbf24}
-.dot-admin{background:#f87171}.dot-other{background:#9ca3af}
+.dot-admin{background:#f87171}.dot-other{background:#9ca3af}.dot-multa{background:#a78bfa}
 
 /* Filter chip */
 .filter-chip{display:inline-flex;align-items:center;gap:6px;background:#1e3a5f;border:1px solid #2563eb44;color:#93c5fd;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;margin-bottom:10px}
@@ -303,6 +303,19 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <div class="kpi-sub" id="kpiFiredDebtSub">—</div>
       </div>
     </div>
+    <!-- Multas: viven en su propio archivo, así que tienen tarjetas propias -->
+    <div class="kpi-grid" style="margin-top:11px">
+      <div class="kpi-card" style="border-color:#7c3aed44;background:#120d1f">
+        <div class="kpi-label" style="color:#a78bfa" data-i18n="kpi_multas_impagas">Total Multas Impagas</div>
+        <div class="kpi-value" id="kpiMultas" style="color:#a78bfa">—</div>
+        <div class="kpi-sub" id="kpiMultasSub">—</div>
+      </div>
+      <div class="kpi-card" style="border-color:#7c3aed44;background:#120d1f">
+        <div class="kpi-label" style="color:#a78bfa" data-i18n="kpi_multas_deuda">Deuda de Conductores por Multas</div>
+        <div class="kpi-value" id="kpiMultasDeuda" style="color:#a78bfa">—</div>
+        <div class="kpi-sub" id="kpiMultasDeudaSub">—</div>
+      </div>
+    </div>
   </div>
 
   <!-- Charts row -->
@@ -457,6 +470,8 @@ var ALL_PAYMENT_EVENTS = [];
 var BILLS = [];                // vista filtrada por _typeFilter — la que usan todos los renders
 var PAYMENT_EVENTS = [];
 var SNAPSHOTS = [];
+var MULTAS = [];          // multas crudas, para las tarjetas propias
+var MULTAS_TOTALS = null;
 var DRIVERS = [];
 var FILTERED = [];
 var FLEET_NAMES = []; // normalized names from fleet control sheet
@@ -473,19 +488,24 @@ var _sortDir = -1;
 var _mixedChart = null;
 var _donutChart = null;
 
+// 'multa' va primero y ya no es sinónimo de administrativo: Administrativo son
+// pagos extra de gestión (sacar el auto de corrales, permisos), y las multas de
+// tránsito vienen de su propio archivo. Compartir categoría las volvía
+// indistinguibles justo en el filtro que sirve para separarlas.
 var TYPE_MAP = {
+  multa:['multa','fine','infracción','infraccion','parte'],
   energy:['energy','energía','energia','luz','electricidad','carga'],
   toll:['toll','peaje','autopista'],
   reparation:['reparation','reparación','reparacion','repair','taller','mantención','mantencion','mecánica'],
-  administrative:['administrative','administrativo','admin','multa','permiso','licencia']
+  administrative:['administrative','administrativo','admin','permiso','licencia']
 };
 var TYPE_LABELS = {
-  es:{energy:'Energía',toll:'Peaje',reparation:'Reparación',administrative:'Administrativo',other:'Otro'},
-  en:{energy:'Energy',toll:'Toll',reparation:'Repair',administrative:'Administrative',other:'Other'},
-  ru:{energy:'Энергия',toll:'Пошлина',reparation:'Ремонт',administrative:'Административные',other:'Прочее'}
+  es:{multa:'Multas',energy:'Energía',toll:'Peaje',reparation:'Reparación',administrative:'Administrativo',other:'Otro'},
+  en:{multa:'Fines',energy:'Energy',toll:'Toll',reparation:'Repair',administrative:'Administrative',other:'Other'},
+  ru:{multa:'Штрафы',energy:'Энергия',toll:'Пошлина',reparation:'Ремонт',administrative:'Административные',other:'Прочее'}
 };
-var TYPE_COLORS = {energy:'#60a5fa',toll:'#34d399',reparation:'#fbbf24',administrative:'#f87171',other:'#9ca3af'};
-var TYPE_DOT = {energy:'dot-energy',toll:'dot-toll',reparation:'dot-repair',administrative:'dot-admin',other:'dot-other'};
+var TYPE_COLORS = {multa:'#a78bfa',energy:'#60a5fa',toll:'#34d399',reparation:'#fbbf24',administrative:'#f87171',other:'#9ca3af'};
+var TYPE_DOT = {multa:'dot-multa',energy:'dot-energy',toll:'dot-toll',reparation:'dot-repair',administrative:'dot-admin',other:'dot-other'};
 
 var T = {
   es:{title:'Reporte de Deudas de Flota',sub:'conductores activos y cesados',refresh:'Actualizar',
@@ -501,6 +521,8 @@ var T = {
       paid_col:'Pagado',pending_debt:'Deuda Pend.',recovery:'Recuperación',main_type:'Tipo',
       all_types:'Todos',all_statuses:'Todos los estados',search:'Buscar conductor...',
       filter_by_type:'Filtrar por tipo',filter_by_coord:'Coordinador',filter_active_note:'Todo el reporte está filtrado',
+      kpi_multas_impagas:'Total Multas Impagas',kpi_multas_deuda:'Deuda de Conductores por Multas',
+      kpi_multas_sub:'multas sin pagar',kpi_multas_deuda_sub:'conductores activos con multas',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -540,6 +562,8 @@ var T = {
       paid_col:'Paid',pending_debt:'Pending Debt',recovery:'Recovery',main_type:'Type',
       all_types:'All',all_statuses:'All statuses',search:'Search driver...',
       filter_by_type:'Filter by type',filter_by_coord:'Coordinator',filter_active_note:'The whole report is filtered',
+      kpi_multas_impagas:'Total Unpaid Fines',kpi_multas_deuda:'Driver Debt from Fines',
+      kpi_multas_sub:'unpaid fines',kpi_multas_deuda_sub:'active drivers with fines',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -579,6 +603,8 @@ var T = {
       paid_col:'Оплачено',pending_debt:'Задолженность',recovery:'Погашение',main_type:'Тип',
       all_types:'Все',all_statuses:'Все статусы',search:'Поиск водителя...',
       filter_by_type:'Фильтр по типу',filter_by_coord:'Координатор',filter_active_note:'Весь отчёт отфильтрован',
+      kpi_multas_impagas:'Неоплаченные штрафы',kpi_multas_deuda:'Долг водителей по штрафам',
+      kpi_multas_sub:'неоплаченных штрафов',kpi_multas_deuda_sub:'активных водителей со штрафами',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -726,16 +752,27 @@ async function loadData(){
     var _ts=Date.now();
     var results=await Promise.all([
       fetch('/api/bills?_='+_ts,{cache:'no-store'}),
-      fetch('/api/fleet?_='+_ts,{cache:'no-store'})
+      fetch('/api/fleet?_='+_ts,{cache:'no-store'}),
+      // Las multas viven en otra carpeta y otro formato, pero se normalizan a la
+      // misma forma que un bill para que entren en todas las agregaciones que ya
+      // existen. Si fallan, el reporte sigue funcionando sin ellas.
+      fetch('/api/multas?_='+_ts,{cache:'no-store'}).catch(function(){return{ok:false};})
     ]);
     var billsJson=await results[0].json();
     var fleetJson=await results[1].json();
+    var multasJson=results[2]&&results[2].ok?await results[2].json().catch(function(){return null;}):null;
     if(billsJson.error){showError(billsJson.error);return;}
     // ALL_* = datos crudos. BILLS/PAYMENT_EVENTS son la vista filtrada por tipo
     // que consumen todos los renders — ver applyScope().
     ALL_BILLS=billsJson.bills||[];
     ALL_PAYMENT_EVENTS=billsJson.paymentEvents||[];
     SNAPSHOTS=billsJson.snapshots||[];
+    MULTAS=(multasJson&&multasJson.fines)||[];
+    MULTAS_TOTALS=(multasJson&&multasJson.totals)||null;
+    if(multasJson&&multasJson.error)console.warn('[Multas]',multasJson.error);
+    // Las multas se suman como cargos más: mismo shape, type 'Multa'
+    ALL_BILLS=ALL_BILLS.concat(MULTAS);
+    ALL_PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.concat((multasJson&&multasJson.paymentEvents)||[]);
     var fleetDrivers=fleetJson.drivers||[];
     FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
     FLEET_ROWS=fleetDrivers.map(function(d){
@@ -895,7 +932,7 @@ function applyScope(){
 }
 
 // Orden fijo de los chips; solo se muestran los tipos presentes en los datos
-var TYPE_ORDER=['toll','administrative','reparation','energy','other'];
+var TYPE_ORDER=['toll','multa','administrative','reparation','energy','other'];
 
 function renderTypeFilterBar(){
   var box=document.getElementById('gtfChips');if(!box)return;
@@ -1020,6 +1057,28 @@ function renderKPIs(){
   setText('kpiFiredDebt',activePct+'%');
   setText('kpiFiredDebtSub',fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
 
+  // Multas: siempre sobre el universo completo de multas, sin importar el chip de
+  // tipo — si no, al filtrar por Peaje estas dos tarjetas quedarían en cero y
+  // parecería que no hay multas.
+  var multasImpagas=MULTAS.filter(function(m){return (m.amount-m.paidAmount)>0;});
+  var montoImpago=multasImpagas.reduce(function(s,m){return s+(m.amount-m.paidAmount);},0);
+  setText('kpiMultas',fmtAmt(montoImpago));
+  setText('kpiMultasSub',multasImpagas.length+' de '+MULTAS.length+' '+t('kpi_multas_sub'));
+
+  // De esas multas, las que caen sobre conductores que siguen activos: es lo
+  // efectivamente cobrable hoy, en línea con el resto del reporte.
+  var activosSet={};
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activosSet[d.driver]=true;});
+  var deudaActivos=0,drvActivosConMulta={};
+  multasImpagas.forEach(function(m){
+    var k=normalizeName(m.driver);
+    if(!activosSet[k])return;
+    deudaActivos+=(m.amount-m.paidAmount);
+    drvActivosConMulta[k]=true;
+  });
+  setText('kpiMultasDeuda',fmtAmt(deudaActivos));
+  setText('kpiMultasDeudaSub',Object.keys(drvActivosConMulta).length+' '+t('kpi_multas_deuda_sub'));
+
   // Recommended KPIs
   var withPending=DRIVERS.filter(function(d){return d.pending>0;});
   var avgPending=withPending.length>0?withPending.reduce(function(s,d){return s+d.pending;},0)/withPending.length:0;
@@ -1118,8 +1177,11 @@ function renderDonut(){
   // Active drivers only — fired shown separately in Despedidos section
   var srcDriverSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){srcDriverSet[d.driver]=true;});
-  var typeKeys=['energy','toll','reparation','administrative','other'];
-  var typePending={energy:0,toll:0,reparation:0,administrative:0,other:0};
+  // Se deriva de TYPE_ORDER para que agregar una categoría (multas) no obligue a
+  // acordarse de tocar también el donut
+  var typeKeys=TYPE_ORDER.slice();
+  var typePending={};
+  typeKeys.forEach(function(k){typePending[k]=0;});
   // accumulate pending (amount - paidAmount) per bill, grouped by type
   BILLS.forEach(function(b){
     var drvKey=normalizeName(b.driver);
