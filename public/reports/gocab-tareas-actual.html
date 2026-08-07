@@ -221,6 +221,59 @@
   .trashrow .purge{flex:none;border:none;background:transparent;color:var(--muted);font-size:16px;line-height:1;cursor:pointer;opacity:.6;padding:0 2px}
   .trashrow .purge:hover{color:var(--red);opacity:1}
   .trash-empty{list-style:none;color:var(--muted);font-size:12.5px;font-style:italic}
+
+  /* protocolos + casos */
+  .pbox{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--paper)}
+  .pbar{display:flex;gap:8px;padding:9px 11px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .pbar input,.pbar select{font-family:inherit;font-size:12px;color:var(--ink);background:var(--paper);
+    border:1px solid var(--line);border-radius:9px;padding:7px 10px;outline:none}
+  .pbar input:focus,.pbar select:focus{border-color:var(--blue)}
+  .pbar .grow{flex:1;min-width:130px}
+  /* el alto va en vh para aprovechar pantallas grandes sin comerse un notebook */
+  .pscroll{max-height:46vh;min-height:150px;overflow-y:auto;padding:10px 11px;display:grid;gap:8px}
+  .pcard{border:1px solid var(--line);border-radius:11px;background:var(--card)}
+  .pcard.open{border-color:var(--blue)}
+  .phead{display:flex;align-items:center;gap:9px;padding:11px 13px;cursor:pointer}
+  .phead .caret{color:var(--muted);font-size:11px;flex:none;width:10px}
+  .phead .pn{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--ink)}
+  .phead .pmeta{flex:none;font-size:11px;color:var(--muted)}
+  .pbody{padding:0 13px 13px 32px;display:grid;gap:9px}
+  .vtags{display:flex;gap:6px;flex-wrap:wrap}
+  .vtag{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:7px;border:1px solid var(--line);color:var(--muted)}
+  .vtag.on{border-color:var(--blue);color:var(--blue)}
+  .pstep{border-left:2px solid var(--line);padding:0 0 0 12px}
+  .pstep.var{border-left-color:var(--blue)}
+  .pstep .st{font-size:12.5px;font-weight:700;color:var(--ink);display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
+  .pstep .sd{font-size:12px;color:var(--muted);line-height:1.55;margin-top:2px;white-space:pre-wrap}
+  .pstep .sm{font-size:10.5px;color:var(--muted);margin-top:4px;opacity:.85}
+  .stag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:rgba(91,120,240,.16);color:var(--blue)}
+  .pcontacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px}
+  .pcontact{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:12px}
+  .pcontact b{display:block;font-size:12px;color:var(--ink)}
+  .pcontact span{color:var(--muted);font-size:11.5px}
+  .prow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--card)}
+  .prow.done{opacity:.62}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .prow .ct{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink)}
+  .prow .ct small{display:block;font-weight:500;color:var(--muted);font-size:10.5px;margin-top:2px}
+  .cprog{flex:none;width:74px}
+  .ctrack{height:5px;border-radius:3px;background:var(--paper);overflow:hidden}
+  .cfill{height:100%;border-radius:3px}
+  .cprog small{display:block;text-align:right;font-size:10px;color:var(--muted);margin-top:3px}
+  .ckstep{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .ckstep:last-child{border-bottom:none}
+  .ckstep input[type=checkbox]{margin-top:3px;width:15px;height:15px;flex:none;accent-color:var(--green);cursor:pointer}
+  .ckstep .cb{flex:1;min-width:0}
+  .ckstep .cn{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .ckstep.hecho .cn{text-decoration:line-through;color:var(--muted)}
+  .ckstep .cd{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:2px;white-space:pre-wrap}
+  .ckstep .cw{font-size:10.5px;color:var(--green);margin-top:3px}
+  .ckstep textarea{width:100%;margin-top:5px;font-family:inherit;font-size:11.5px;color:var(--ink);
+    background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;outline:none;resize:vertical}
+  .minibtn{font-family:inherit;font-size:10.5px;font-weight:700;color:var(--muted);background:transparent;
+    border:1px solid var(--line);border-radius:7px;padding:3px 8px;cursor:pointer}
+  .minibtn:hover{color:var(--ink);border-color:var(--blue)}
+  .pempty{color:var(--muted);font-size:12.5px;font-style:italic;padding:6px 2px}
   @media print{
     :root{--bg:#fff;--card:#fff;--paper:#fff;--ink:#000;--muted:#333;--line:#ccc}
     body{background:#fff;padding:0}
@@ -353,6 +406,37 @@
     <ul class="trashlist" id="trashList"></ul>
   </div>
 
+  <!-- PROTOCOLOS OPERACIONALES -->
+  <div class="sec">
+    <p class="sh"><span data-es="📋 Protocolos operacionales" data-en="📋 Operational protocols" data-ru="📋 Операционные протоколы">📋 Protocolos operacionales</span><button class="secbtn" onclick="nuevoProtocolo()" data-es="＋ Nuevo protocolo" data-en="＋ New protocol" data-ru="＋ Новый протокол">＋ Nuevo protocolo</button></p>
+    <p class="ssub" data-es="Qué hacer paso a paso cuando pasa algo fuera de la rutina. Cada caso real queda registrado abajo con quién hizo qué y cuándo." data-en="Step-by-step guides for anything outside the routine. Every real case is logged below with who did what and when." data-ru="Пошаговые инструкции для нештатных ситуаций. Каждый случай фиксируется ниже: кто, что и когда.">Qué hacer paso a paso cuando pasa algo fuera de la rutina. Cada caso real queda registrado abajo con quién hizo qué y cuándo.</p>
+    <div class="pbox">
+      <div class="pbar">
+        <input class="grow" id="protoQ" oninput="renderProtos()" placeholder="Buscar paso, contacto, texto…">
+        <span id="protoSync" style="align-self:center;font-size:11px;color:var(--muted);white-space:nowrap"></span>
+      </div>
+      <div class="pscroll" id="protoList"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <p class="sh"><span data-es="🗂️ Casos" data-en="🗂️ Cases" data-ru="🗂️ Случаи">🗂️ Casos</span><button class="secbtn" onclick="nuevoCaso()" data-es="＋ Abrir caso" data-en="＋ Open case" data-ru="＋ Открыть случай">＋ Abrir caso</button></p>
+    <p class="ssub" data-es="Historial de cada vez que aplicamos un protocolo. Los pasos quedan congelados como estaban al abrir el caso." data-en="History of every time a protocol was applied. Steps are frozen as they were when the case was opened." data-ru="История применения протоколов. Шаги фиксируются на момент открытия случая.">Historial de cada vez que aplicamos un protocolo. Los pasos quedan congelados como estaban al abrir el caso.</p>
+    <div class="pbox">
+      <div class="pbar">
+        <input class="grow" id="casoQ" oninput="renderCasos()" placeholder="Patente, conductor, nota…">
+        <select id="casoProto" onchange="renderCasos()"></select>
+        <select id="casoEstado" onchange="renderCasos()">
+          <option value="">Todos</option>
+          <option value="abierto">Abiertos</option>
+          <option value="cerrado">Cerrados</option>
+        </select>
+        <span id="casoSync" style="align-self:center;font-size:11px;color:var(--muted);white-space:nowrap"></span>
+      </div>
+      <div class="pscroll" id="casoList"></div>
+    </div>
+  </div>
+
   <p class="foot">
     <span data-es="GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador" data-en="GOCAB · internal operations map · changes are saved in this browser" data-ru="GOCAB · внутренняя карта операций · изменения сохраняются в браузере">GOCAB · mapa interno de operaciones · los cambios se guardan en este navegador</span>
   </p>
@@ -381,6 +465,74 @@
     <div class="factions">
       <button class="addbtn" onclick="saveEdit()" data-es="Guardar cambios" data-en="Save changes" data-ru="Сохранить изменения">Guardar cambios</button>
       <button class="secbtn" onclick="closeEdit()" data-es="Cancelar" data-en="Cancel" data-ru="Отмена">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="protoModal" class="modal" hidden>
+  <div class="modalcard">
+    <h3 id="protoModalTitle">Protocolo</h3>
+    <label>Nombre</label>
+    <input id="pNombre" placeholder="Pérdida total de vehículo">
+    <label>Variantes — una por línea, en blanco si no hay</label>
+    <textarea id="pVariantes" rows="2" placeholder="Taller Bruno Fritsch&#10;Taller Kaufmann"></textarea>
+    <label>Contactos — uno por línea, formato Nombre | dato</label>
+    <textarea id="pContactos" rows="3" placeholder="Grúas Vera | +56 9 8123 4567&#10;Liquidador HDI | m.soto@hdi.cl"></textarea>
+    <div class="factions">
+      <button class="addbtn" onclick="guardarProtocolo()">Guardar</button>
+      <button class="secbtn" onclick="cerrarModal('protoModal')">Cancelar</button>
+      <button class="secbtn" id="pBorrar" onclick="borrarProtocolo()" style="margin-left:auto;color:var(--red)">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div id="pasoModal" class="modal" hidden>
+  <div class="modalcard">
+    <h3 id="pasoModalTitle">Paso</h3>
+    <label>Título — lo que se ve en el checklist</label>
+    <input id="sTitulo" placeholder="Avisar a la aseguradora">
+    <label>Descripción — a quién llamar, qué decir, qué pasa después</label>
+    <textarea id="sDesc" rows="5" placeholder="Llamar dentro de las primeras 24 h. Pedir número de siniestro…"></textarea>
+    <div class="fgrid">
+      <div><label>Responsable</label><input id="sResp" placeholder="Ops manager"></div>
+      <div><label>Plazo en días</label><input id="sDias" type="number" min="0" step="1" placeholder="1"></div>
+    </div>
+    <label>Aplica a</label>
+    <select id="sVariante"></select>
+    <div class="factions">
+      <button class="addbtn" onclick="guardarPaso()">Guardar</button>
+      <button class="secbtn" onclick="cerrarModal('pasoModal')">Cancelar</button>
+      <button class="secbtn" id="sBorrar" onclick="borrarPaso()" style="margin-left:auto;color:var(--red)">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div id="casoModal" class="modal" hidden>
+  <div class="modalcard">
+    <h3>Abrir caso</h3>
+    <label>Protocolo</label>
+    <select id="cProto" onchange="refrescarVariantesCaso()"></select>
+    <label>Variante</label>
+    <select id="cVariante"></select>
+    <div class="fgrid">
+      <div><label>Patente</label><input id="cPatente" placeholder="VSBJ-40"></div>
+      <div><label>Conductor</label><input id="cConductor" placeholder="Renato Cuellar"></div>
+    </div>
+    <div class="factions">
+      <button class="addbtn" onclick="crearCaso()">Abrir caso</button>
+      <button class="secbtn" onclick="cerrarModal('casoModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="detalleModal" class="modal" hidden>
+  <div class="modalcard" style="max-width:620px">
+    <h3 id="dTitulo">Caso</h3>
+    <p id="dSub" style="margin:-6px 0 12px;font-size:12px;color:var(--muted)"></p>
+    <div id="dPasos"></div>
+    <div class="factions" style="margin-top:14px">
+      <button class="secbtn" onclick="cerrarModal('detalleModal')">Cerrar</button>
+      <button class="secbtn" id="dBorrar" onclick="borrarCaso()" style="margin-left:auto;color:var(--red)">Eliminar caso</button>
     </div>
   </div>
 </div>
@@ -1090,9 +1242,377 @@
     }, 15000);
   }
 
+  /* ═══════════ PROTOCOLOS OPERACIONALES + CASOS ═══════════
+     Dos mini-bases separadas de las tareas: los protocolos casi no cambian y los
+     casos crecen sin techo, así que comparten el endpoint pero no el archivo.
+     Al abrir un caso se congela una copia de los pasos vigentes: si mañana el
+     protocolo cambia, los casos ya cerrados siguen contando su propia historia. */
+  const PROTO_API='/api/tareas?doc=protocolos';
+  const CASO_API='/api/tareas?doc=casos';
+  let PROTOS={protocolos:[],updatedAt:0};
+  let CASOS={casos:[],updatedAt:0};
+  let ME=null;                 // usuario de la sesión, para firmar quién marcó cada paso
+  let protoAbierto=null;       // solo un protocolo desplegado a la vez
+  let editandoProto=null, editandoPaso=null, casoAbierto=null;
+  let pSaveTimer=null, cSaveTimer=null;
+
+  const pesc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const nid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const quienSoy=()=>ME&&ME.name?ME.name:'—';
+
+  async function cargarMe(){
+    try{ const r=await fetch('/api/me',{cache:'no-store'}); const j=await r.json(); ME=j.user||null; }catch(e){ ME=null; }
+  }
+
+  async function pullProtos(){
+    try{
+      const r=await fetch(PROTO_API+'&_='+Date.now()); const j=await r.json();
+      if(j&&j.state&&Array.isArray(j.state.protocolos)&&(j.state.updatedAt||0)>(PROTOS.updatedAt||0)){
+        PROTOS=j.state; renderProtos(); llenarSelectProtos();
+      }
+    }catch(e){}
+  }
+  async function pullCasos(){
+    try{
+      const r=await fetch(CASO_API+'&_='+Date.now()); const j=await r.json();
+      if(j&&j.state&&Array.isArray(j.state.casos)&&(j.state.updatedAt||0)>(CASOS.updatedAt||0)){
+        CASOS=j.state; renderCasos();
+      }
+    }catch(e){}
+  }
+  /* Un fallo al guardar tiene que verse: si el archivo de Drive no existe o la
+     service account no puede escribirlo, el trabajo recién escrito se perdería
+     en silencio al recargar. El estado queda a la vista y el error explica qué hacer. */
+  function estadoGuardado(sel,txt,color){
+    const el=document.getElementById(sel); if(!el) return;
+    el.textContent=txt; el.style.color=color||'var(--muted)';
+  }
+  async function enviar(api,payload,sel){
+    estadoGuardado(sel,'Guardando…');
+    try{
+      const r=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      if(!r.ok){
+        const j=await r.json().catch(()=>({}));
+        const falta=String(j.error||'').includes('storage quota');
+        estadoGuardado(sel,falta?'⚠ No se pudo guardar: falta el archivo en Drive':'⚠ Error al guardar','var(--red)');
+        return;
+      }
+      estadoGuardado(sel,'☁️ Guardado','var(--green)');
+    }catch(e){ estadoGuardado(sel,'⚠ Sin conexión','var(--red)'); }
+  }
+  function guardarProtos(){
+    PROTOS.updatedAt=Date.now();
+    estadoGuardado('protoSync','✎ Sin guardar…');
+    if(pSaveTimer) clearTimeout(pSaveTimer);
+    pSaveTimer=setTimeout(()=>{ pSaveTimer=null; enviar(PROTO_API,PROTOS,'protoSync'); },700);
+  }
+  function guardarCasos(){
+    CASOS.updatedAt=Date.now();
+    estadoGuardado('casoSync','✎ Sin guardar…');
+    if(cSaveTimer) clearTimeout(cSaveTimer);
+    cSaveTimer=setTimeout(()=>{ cSaveTimer=null; enviar(CASO_API,CASOS,'casoSync'); },700);
+  }
+
+  function cerrarModal(id){ const m=document.getElementById(id); if(m) m.hidden=true; }
+
+  /* ---------- Protocolos ---------- */
+  function nuevoProtocolo(){
+    editandoProto=null;
+    document.getElementById('protoModalTitle').textContent='Nuevo protocolo';
+    document.getElementById('pNombre').value='';
+    document.getElementById('pVariantes').value='';
+    document.getElementById('pContactos').value='';
+    document.getElementById('pBorrar').style.display='none';
+    document.getElementById('protoModal').hidden=false;
+    document.getElementById('pNombre').focus();
+  }
+  function editarProtocolo(id,ev){
+    if(ev) ev.stopPropagation();
+    const p=PROTOS.protocolos.find(x=>x.id===id); if(!p) return;
+    editandoProto=id;
+    document.getElementById('protoModalTitle').textContent='Editar protocolo';
+    document.getElementById('pNombre').value=p.nombre||'';
+    document.getElementById('pVariantes').value=(p.variantes||[]).join('\n');
+    document.getElementById('pContactos').value=(p.contactos||[]).map(c=>c.nombre+' | '+c.dato).join('\n');
+    document.getElementById('pBorrar').style.display='';
+    document.getElementById('protoModal').hidden=false;
+  }
+  function guardarProtocolo(){
+    const nombre=document.getElementById('pNombre').value.trim();
+    if(!nombre){ alert('Ponle un nombre al protocolo.'); return; }
+    const variantes=document.getElementById('pVariantes').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const contactos=document.getElementById('pContactos').value.split('\n').map(s=>s.trim()).filter(Boolean).map(l=>{
+      const i=l.indexOf('|');
+      return i<0?{nombre:l,dato:''}:{nombre:l.slice(0,i).trim(),dato:l.slice(i+1).trim()};
+    });
+    if(editandoProto){
+      const p=PROTOS.protocolos.find(x=>x.id===editandoProto);
+      Object.assign(p,{nombre,variantes,contactos});
+    }else{
+      const p={id:nid('p'),nombre,variantes,contactos,pasos:[],creadoPor:quienSoy(),creadoEl:Date.now()};
+      PROTOS.protocolos.push(p); protoAbierto=p.id;
+    }
+    guardarProtos(); cerrarModal('protoModal'); renderProtos(); llenarSelectProtos();
+  }
+  function borrarProtocolo(){
+    const p=PROTOS.protocolos.find(x=>x.id===editandoProto); if(!p) return;
+    const usados=CASOS.casos.filter(c=>c.protoId===p.id).length;
+    const aviso=usados?`Hay ${usados} caso(s) abiertos o cerrados con este protocolo. Los casos NO se borran y conservan sus pasos. ¿Eliminar el protocolo igual?`:'¿Eliminar este protocolo?';
+    if(!confirm(aviso)) return;
+    PROTOS.protocolos=PROTOS.protocolos.filter(x=>x.id!==p.id);
+    guardarProtos(); cerrarModal('protoModal'); renderProtos(); llenarSelectProtos();
+  }
+  function toggleProto(id){ protoAbierto=protoAbierto===id?null:id; renderProtos(); }
+
+  /* ---------- Pasos ---------- */
+  function nuevoPaso(protoId,ev){
+    if(ev) ev.stopPropagation();
+    editandoPaso={protoId,pasoId:null};
+    document.getElementById('pasoModalTitle').textContent='Nuevo paso';
+    document.getElementById('sTitulo').value='';
+    document.getElementById('sDesc').value='';
+    document.getElementById('sResp').value='';
+    document.getElementById('sDias').value='';
+    llenarSelectVariantes(protoId,'');
+    document.getElementById('sBorrar').style.display='none';
+    document.getElementById('pasoModal').hidden=false;
+    document.getElementById('sTitulo').focus();
+  }
+  function editarPaso(protoId,pasoId,ev){
+    if(ev) ev.stopPropagation();
+    const p=PROTOS.protocolos.find(x=>x.id===protoId); if(!p) return;
+    const s=p.pasos.find(x=>x.id===pasoId); if(!s) return;
+    editandoPaso={protoId,pasoId};
+    document.getElementById('pasoModalTitle').textContent='Editar paso';
+    document.getElementById('sTitulo').value=s.titulo||'';
+    document.getElementById('sDesc').value=s.desc||'';
+    document.getElementById('sResp').value=s.resp||'';
+    document.getElementById('sDias').value=s.dias==null?'':s.dias;
+    llenarSelectVariantes(protoId,s.variante||'');
+    document.getElementById('sBorrar').style.display='';
+    document.getElementById('pasoModal').hidden=false;
+  }
+  function llenarSelectVariantes(protoId,sel){
+    const p=PROTOS.protocolos.find(x=>x.id===protoId);
+    const el=document.getElementById('sVariante');
+    el.innerHTML='<option value="">Todas las variantes</option>'+
+      (p&&p.variantes||[]).map(v=>`<option value="${pesc(v)}"${v===sel?' selected':''}>Solo ${pesc(v)}</option>`).join('');
+  }
+  function guardarPaso(){
+    const titulo=document.getElementById('sTitulo').value.trim();
+    if(!titulo){ alert('El paso necesita un título.'); return; }
+    const dias=document.getElementById('sDias').value;
+    const datos={
+      titulo,
+      desc:document.getElementById('sDesc').value.trim(),
+      resp:document.getElementById('sResp').value.trim(),
+      dias:dias===''?null:Number(dias),
+      variante:document.getElementById('sVariante').value
+    };
+    const p=PROTOS.protocolos.find(x=>x.id===editandoPaso.protoId); if(!p) return;
+    if(editandoPaso.pasoId) Object.assign(p.pasos.find(x=>x.id===editandoPaso.pasoId),datos);
+    else p.pasos.push({id:nid('s'),...datos});
+    guardarProtos(); cerrarModal('pasoModal'); renderProtos();
+  }
+  function borrarPaso(){
+    if(!confirm('¿Eliminar este paso? Los casos ya abiertos lo conservan.')) return;
+    const p=PROTOS.protocolos.find(x=>x.id===editandoPaso.protoId); if(!p) return;
+    p.pasos=p.pasos.filter(x=>x.id!==editandoPaso.pasoId);
+    guardarProtos(); cerrarModal('pasoModal'); renderProtos();
+  }
+  function moverPaso(protoId,pasoId,dir,ev){
+    if(ev) ev.stopPropagation();
+    const p=PROTOS.protocolos.find(x=>x.id===protoId); if(!p) return;
+    const i=p.pasos.findIndex(x=>x.id===pasoId), j=i+dir;
+    if(i<0||j<0||j>=p.pasos.length) return;
+    const t=p.pasos[i]; p.pasos[i]=p.pasos[j]; p.pasos[j]=t;
+    guardarProtos(); renderProtos();
+  }
+
+  function protoCoincide(p,q){
+    if(!q) return true;
+    const blob=[p.nombre,(p.variantes||[]).join(' '),
+      (p.pasos||[]).map(s=>[s.titulo,s.desc,s.resp].join(' ')).join(' '),
+      (p.contactos||[]).map(c=>c.nombre+' '+c.dato).join(' ')].join(' ').toLowerCase();
+    return blob.indexOf(q)>=0;
+  }
+
+  function renderProtos(){
+    const el=document.getElementById('protoList'); if(!el) return;
+    const q=(document.getElementById('protoQ').value||'').trim().toLowerCase();
+    const lista=PROTOS.protocolos.filter(p=>protoCoincide(p,q));
+    if(!lista.length){
+      el.innerHTML=`<div class="pempty">${PROTOS.protocolos.length?'Ningún protocolo coincide con la búsqueda.':'Todavía no hay protocolos. Crea el primero con “Nuevo protocolo”.'}</div>`;
+      return;
+    }
+    el.innerHTML=lista.map(p=>{
+      const abierto=protoAbierto===p.id;
+      const nv=(p.variantes||[]).length;
+      const meta=`${(p.pasos||[]).length} paso${(p.pasos||[]).length===1?'':'s'}`+(nv?` · ${nv} variante${nv===1?'':'s'}`:'');
+      let body='';
+      if(abierto){
+        const tags=nv?`<div class="vtags">${p.variantes.map(v=>`<span class="vtag">${pesc(v)}</span>`).join('')}</div>`:'';
+        const pasos=(p.pasos||[]).length?p.pasos.map((s,i)=>{
+          const tag=s.variante?`<span class="stag">solo ${pesc(s.variante)}</span>`:'';
+          const sm=[s.resp?`👤 ${pesc(s.resp)}`:'',s.dias!=null?`⏱ ${s.dias} día${s.dias===1?'':'s'}`:''].filter(Boolean).join(' · ');
+          return `<div class="pstep${s.variante?' var':''}">
+            <div class="st"><span>${i+1}. ${pesc(s.titulo)}</span>${tag}
+              <span style="margin-left:auto;display:flex;gap:4px">
+                <button class="minibtn" onclick="moverPaso('${p.id}','${s.id}',-1,event)" title="Subir">↑</button>
+                <button class="minibtn" onclick="moverPaso('${p.id}','${s.id}',1,event)" title="Bajar">↓</button>
+                <button class="minibtn" onclick="editarPaso('${p.id}','${s.id}',event)">Editar</button>
+              </span></div>
+            ${s.desc?`<div class="sd">${pesc(s.desc)}</div>`:''}
+            ${sm?`<div class="sm">${sm}</div>`:''}
+          </div>`;
+        }).join(''):'<div class="pempty">Sin pasos todavía.</div>';
+        const cont=(p.contactos||[]).length?`<div><div class="sm" style="margin-bottom:6px">Contactos del protocolo</div>
+          <div class="pcontacts">${p.contactos.map(c=>`<div class="pcontact"><b>${pesc(c.nombre)}</b><span>${pesc(c.dato)}</span></div>`).join('')}</div></div>`:'';
+        body=`<div class="pbody">${tags}${pasos}${cont}
+          <div style="display:flex;gap:6px;margin-top:2px">
+            <button class="minibtn" onclick="nuevoPaso('${p.id}',event)">＋ Paso</button>
+            <button class="minibtn" onclick="editarProtocolo('${p.id}',event)">Editar protocolo</button>
+          </div></div>`;
+      }
+      return `<div class="pcard${abierto?' open':''}">
+        <div class="phead" onclick="toggleProto('${p.id}')">
+          <span class="caret">${abierto?'▾':'▸'}</span>
+          <span class="pn">${pesc(p.nombre)}</span>
+          <span class="pmeta">${meta}</span>
+        </div>${body}</div>`;
+    }).join('');
+  }
+
+  /* ---------- Casos ---------- */
+  function llenarSelectProtos(){
+    const opts=PROTOS.protocolos.map(p=>`<option value="${p.id}">${pesc(p.nombre)}</option>`).join('');
+    const f=document.getElementById('casoProto');
+    if(f){ const prev=f.value; f.innerHTML='<option value="">Todos los protocolos</option>'+opts; f.value=prev; }
+    const c=document.getElementById('cProto');
+    if(c) c.innerHTML=opts;
+  }
+  function nuevoCaso(){
+    if(!PROTOS.protocolos.length){ alert('Primero crea un protocolo.'); return; }
+    llenarSelectProtos(); refrescarVariantesCaso();
+    document.getElementById('cPatente').value='';
+    document.getElementById('cConductor').value='';
+    document.getElementById('casoModal').hidden=false;
+  }
+  function refrescarVariantesCaso(){
+    const p=PROTOS.protocolos.find(x=>x.id===document.getElementById('cProto').value);
+    const el=document.getElementById('cVariante');
+    el.innerHTML='<option value="">Sin variante</option>'+
+      (p&&p.variantes||[]).map(v=>`<option value="${pesc(v)}">${pesc(v)}</option>`).join('');
+  }
+  function crearCaso(){
+    const p=PROTOS.protocolos.find(x=>x.id===document.getElementById('cProto').value);
+    if(!p) return;
+    const variante=document.getElementById('cVariante').value;
+    // Congela los pasos vigentes: el protocolo puede cambiar, este caso ya no.
+    const pasos=(p.pasos||[]).filter(s=>!s.variante||s.variante===variante)
+      .map(s=>({id:s.id,titulo:s.titulo,desc:s.desc,resp:s.resp,dias:s.dias,hecho:false,fecha:null,quien:null,nota:''}));
+    if(!pasos.length){ alert('Ese protocolo no tiene pasos para esa variante.'); return; }
+    CASOS.casos.unshift({
+      id:nid('c'),protoId:p.id,protoNombre:p.nombre,variante,
+      patente:document.getElementById('cPatente').value.trim(),
+      conductor:document.getElementById('cConductor').value.trim(),
+      abiertoEl:Date.now(),abiertoPor:quienSoy(),cerradoEl:null,pasos
+    });
+    guardarCasos(); cerrarModal('casoModal'); renderCasos();
+  }
+  function abrirCaso(id){
+    casoAbierto=id; pintarDetalle();
+    document.getElementById('detalleModal').hidden=false;
+  }
+  function pintarDetalle(){
+    const c=CASOS.casos.find(x=>x.id===casoAbierto); if(!c) return;
+    const hechos=c.pasos.filter(s=>s.hecho).length;
+    document.getElementById('dTitulo').textContent=[c.patente,c.conductor].filter(Boolean).join(' · ')||'Caso';
+    document.getElementById('dSub').textContent=
+      `${c.protoNombre}${c.variante?' · '+c.variante:''} · abierto ${fmtDate(c.abiertoEl)} por ${c.abiertoPor||'—'}`+
+      (c.cerradoEl?` · cerrado ${fmtDate(c.cerradoEl)}`:'')+` · ${hechos} de ${c.pasos.length}`;
+    document.getElementById('dPasos').innerHTML=c.pasos.map((s,i)=>`
+      <div class="ckstep${s.hecho?' hecho':''}">
+        <input type="checkbox" ${s.hecho?'checked':''} onchange="marcarPaso('${c.id}','${s.id}',this.checked)">
+        <div class="cb">
+          <div class="cn">${i+1}. ${pesc(s.titulo)}</div>
+          ${s.desc?`<div class="cd">${pesc(s.desc)}</div>`:''}
+          ${s.hecho?`<div class="cw">✓ ${pesc(s.quien||'—')} · ${fmtDate(s.fecha)}</div>`:''}
+          <textarea rows="1" placeholder="Nota…" onchange="notaPaso('${c.id}','${s.id}',this.value)">${pesc(s.nota||'')}</textarea>
+        </div>
+      </div>`).join('');
+  }
+  function marcarPaso(casoId,pasoId,checked){
+    const c=CASOS.casos.find(x=>x.id===casoId); if(!c) return;
+    const s=c.pasos.find(x=>x.id===pasoId); if(!s) return;
+    s.hecho=checked;
+    // Firma automática: quién y cuándo salen de la sesión, no se escriben a mano
+    s.quien=checked?quienSoy():null;
+    s.fecha=checked?Date.now():null;
+    c.cerradoEl=c.pasos.every(x=>x.hecho)?Date.now():null;
+    guardarCasos(); pintarDetalle(); renderCasos();
+  }
+  function notaPaso(casoId,pasoId,val){
+    const c=CASOS.casos.find(x=>x.id===casoId); if(!c) return;
+    const s=c.pasos.find(x=>x.id===pasoId); if(!s) return;
+    s.nota=val; guardarCasos(); renderCasos();
+  }
+  function borrarCaso(){
+    if(!confirm('¿Eliminar este caso del historial? No se puede deshacer.')) return;
+    CASOS.casos=CASOS.casos.filter(x=>x.id!==casoAbierto);
+    guardarCasos(); cerrarModal('detalleModal'); renderCasos();
+  }
+
+  function renderCasos(){
+    const el=document.getElementById('casoList'); if(!el) return;
+    const q=(document.getElementById('casoQ').value||'').trim().toLowerCase();
+    const fp=document.getElementById('casoProto').value;
+    const fe=document.getElementById('casoEstado').value;
+    const lista=CASOS.casos.filter(c=>{
+      if(fp&&c.protoId!==fp) return false;
+      if(fe==='abierto'&&c.cerradoEl) return false;
+      if(fe==='cerrado'&&!c.cerradoEl) return false;
+      if(!q) return true;
+      // la búsqueda entra también a las notas: ahí queda el detalle que uno recuerda a medias
+      const blob=[c.patente,c.conductor,c.protoNombre,c.variante,c.abiertoPor,
+        c.pasos.map(s=>s.nota+' '+s.titulo).join(' ')].join(' ').toLowerCase();
+      return blob.indexOf(q)>=0;
+    }).sort((a,b)=>(a.cerradoEl?1:0)-(b.cerradoEl?1:0)||b.abiertoEl-a.abiertoEl);
+    if(!lista.length){
+      el.innerHTML=`<div class="pempty">${CASOS.casos.length?'Ningún caso coincide con el filtro.':'Todavía no hay casos registrados.'}</div>`;
+      return;
+    }
+    el.innerHTML=lista.map(c=>{
+      const hechos=c.pasos.filter(s=>s.hecho).length,tot=c.pasos.length;
+      const pct=tot?Math.round(hechos/tot*100):0;
+      const color=c.cerradoEl?'var(--gray)':pct>=67?'var(--green)':pct>=34?'var(--amber)':'var(--red)';
+      const dias=Math.max(0,Math.round(((c.cerradoEl||Date.now())-c.abiertoEl)/86400000));
+      const sub=`${pesc(c.protoNombre)}${c.variante?' · '+pesc(c.variante):''} · `+
+        (c.cerradoEl?`cerrado en ${dias} día${dias===1?'':'s'}`:`abierto hace ${dias} día${dias===1?'':'s'}`);
+      return `<div class="prow${c.cerradoEl?' done':''}" onclick="abrirCaso('${c.id}')" style="cursor:pointer">
+        <span class="dot" style="background:${color}"></span>
+        <div class="ct">${pesc([c.patente,c.conductor].filter(Boolean).join(' · ')||'Caso sin identificar')}<small>${sub}</small></div>
+        <div class="cprog"><div class="ctrack"><div class="cfill" style="width:${pct}%;background:${color}"></div></div>
+          <small>${hechos} de ${tot}</small></div>
+      </div>`;
+    }).join('');
+  }
+
+  async function initProtocolos(){
+    await cargarMe();
+    await pullProtos(); await pullCasos();
+    renderProtos(); renderCasos(); llenarSelectProtos();
+    setInterval(()=>{
+      const alguno=['protoModal','pasoModal','casoModal','detalleModal'].some(i=>!document.getElementById(i).hidden);
+      if(alguno||pSaveTimer||cSaveTimer) return; // no pisar lo que se está editando
+      pullProtos(); pullCasos();
+    },20000);
+  }
+
   applyTheme(THEME);
   applyLang(LANG);
   initRemote();
+  initProtocolos();
 </script>
 </body>
 </html>
