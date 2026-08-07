@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 
 const FLEET_SHEET_ID = '15yNGkyE1kkk8E0yiLLMmahz-G048vwgy2NWN8xYmiFw';
 const FLEET_SHEET_NAME = 'Vehiculos y ConductoresII';
+const TALLER_SHEET_NAME = 'VEHÍCULOS EN TALLER';
 
 function getAuth() {
   const email = process.env.GOOGLE_CLIENT_EMAIL;
@@ -53,8 +54,37 @@ export async function GET(request) {
       coordinador: iCoord >= 0 ? String(r[iCoord] || '').trim() : '',
     }));
 
+    // ── Vehículos en taller ───────────────────────────────────────────────────
+    // Hoja aparte de la misma planilla. Si falla o no existe, el resto del
+    // endpoint sigue sirviendo: la flota no depende de esto.
+    let taller = [];
+    try {
+      const tRes = await sheets.spreadsheets.values.get({
+        spreadsheetId: FLEET_SHEET_ID,
+        range: TALLER_SHEET_NAME,
+        quotaUser: `gc-${Date.now()}`,
+      });
+      const tRows = tRes.data.values || [];
+      taller = tRows.slice(1)
+        .filter((r) => String(r[0] || '').trim())
+        .map((r) => ({
+          patente: String(r[0] || '').trim().toUpperCase().replace(/[-\s]/g, ''),
+          estado: String(r[1] || '').trim(),
+          ingreso: String(r[2] || '').trim(),
+          // "SIN FECHA" es el marcador que usa la planilla cuando el taller
+          // todavía no compromete una salida: se normaliza a vacío para que el
+          // reporte no tenga que conocer esa convención.
+          egreso: /sin\s*fecha/i.test(String(r[3] || '')) ? '' : String(r[3] || '').trim(),
+          taller: String(r[4] || '').trim(),
+          observaciones: String(r[5] || '').trim(),
+          ultimoConductor: String(r[6] || '').trim(),
+        }));
+    } catch (e) {
+      taller = [];
+    }
+
     const noCache = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
-    return NextResponse.json({ drivers, _fetchedAt: new Date().toISOString() }, { headers: noCache });
+    return NextResponse.json({ drivers, taller, _fetchedAt: new Date().toISOString() }, { headers: noCache });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

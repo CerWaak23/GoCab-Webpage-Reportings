@@ -166,6 +166,17 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   align-items:center;justify-content:center;font-size:10px;line-height:1;color:transparent;flex-shrink:0}
 .gtf-chip.active .gtf-box{background:#2563eb;border-color:#2563eb;color:#fff}
 .gtf-sep{width:1px;align-self:stretch;background:#1f2937;margin:0 4px}
+/* Vehículos en taller */
+.taller-tbl{border-collapse:collapse;font-size:11.5px;width:100%}
+.taller-tbl th{background:#0f1623;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.05em;padding:7px 10px;border:1px solid #1a2030;text-align:left;white-space:nowrap}
+.taller-tbl td{padding:7px 10px;border:1px solid #1a2030;vertical-align:top;color:#d1d5db}
+.taller-tbl tr.sinfecha td{background:#160d02}
+.taller-tbl .pat{font-weight:700;color:#f9fafb;white-space:nowrap}
+.taller-tbl .obs{color:#9ca3af;font-size:11px;line-height:1.45;min-width:220px}
+.taller-tbl .nofecha{color:#fbbf24;font-weight:700;white-space:nowrap}
+.taller-tbl .confecha{color:#34d399;white-space:nowrap}
+.taller-tbl .dias{font-weight:700;white-space:nowrap}
 .verMas{background:#111827;border:1px solid #374151;color:#93c5fd;border-radius:8px;padding:6px 16px;
   font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
 .verMas:hover{border-color:#2563eb;background:#0f1a2a}
@@ -322,6 +333,11 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <div class="kpi-value" id="kpiMultasDeuda" style="color:#a78bfa">—</div>
         <div class="kpi-sub" id="kpiMultasDeudaSub">—</div>
       </div>
+      <div class="kpi-card" id="kpiTallerCard" style="border-color:#b4530944;background:#1a1005">
+        <div class="kpi-label" style="color:#fbbf24" data-i18n="kpi_taller">Autos en Taller</div>
+        <div class="kpi-value" id="kpiTaller" style="color:#fbbf24">—</div>
+        <div class="kpi-sub" id="kpiTallerSub">—</div>
+      </div>
     </div>
   </div>
 
@@ -390,6 +406,20 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     </div>
     <div class="evol-scroll">
       <table class="evol-table" id="evolTable"></table>
+    </div>
+  </div>
+
+  <!-- Vehículos en taller -->
+  <div class="section card" id="tallerSection" style="display:none;border-color:#78350f44">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;flex-wrap:wrap">
+      <div>
+        <div class="section-title" style="margin-bottom:1px;color:#fbbf24" data-i18n="taller_title">🔧 Vehículos en Taller</div>
+        <div style="font-size:10px;color:#4b5563" data-i18n="taller_sub">Sin fecha de egreso = hay que exigirle una al taller</div>
+      </div>
+      <span id="tallerResumen" style="font-size:11px;color:#6b7280;align-self:center"></span>
+    </div>
+    <div class="evol-scroll">
+      <table class="taller-tbl" id="tallerTable"></table>
     </div>
   </div>
 
@@ -484,6 +514,7 @@ var DRIVERS = [];
 var FILTERED = [];
 var FLEET_NAMES = []; // normalized names from fleet control sheet
 var FLEET_ROWS = []; // [{nameNorm, coordinador, patente}] — planilla Control Flota
+var TALLER = [];     // hoja VEHÍCULOS EN TALLER de la misma planilla
 var _coordFilter = null; // coordinador seleccionado (columna E), null = todos
 var LANG = 'es';
 var CUR = 'CLP';
@@ -550,7 +581,7 @@ var T = {
       gest_vers_g:'Versiones anteriores · gestión',gest_vers_i:'Versiones anteriores · indicaciones',
       gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
       gest_err_archivo:'⚠ Falta el archivo tareas-comentarios.json en Drive',gest_err:'⚠ Error al guardar',
-      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',ver_menos:'Ver menos',
+      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_taller_sub:'con fecha de salida',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -608,7 +639,7 @@ var T = {
       gest_vers_g:'Earlier versions · follow-up',gest_vers_i:'Earlier versions · instructions',
       gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
       gest_err_archivo:'⚠ Missing tareas-comentarios.json in Drive',gest_err:'⚠ Save error',
-      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',ver_menos:'Show less',
+      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_taller_sub:'with an exit date',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -666,7 +697,7 @@ var T = {
       gest_vers_g:'Прежние версии · работа',gest_vers_i:'Прежние версии · указания',
       gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
       gest_err_archivo:'⚠ Нет файла tareas-comentarios.json на Drive',gest_err:'⚠ Ошибка сохранения',
-      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',ver_menos:'Свернуть',
+      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_taller_sub:'с датой выдачи',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -840,6 +871,7 @@ async function loadData(){
     FLEET_ROWS=fleetDrivers.map(function(d){
       return {nameNorm:normalizeName(d.conductor),coordinador:String(d.coordinador||'').trim(),patente:d.patente||''};
     });
+    TALLER=fleetJson.taller||[];
     _coordCache={};
     applyScope(); // depende de FLEET_ROWS: debe correr despues de cargar la planilla
     console.log('[Fleet] Conductores activos en sheet ('+FLEET_NAMES.length+'):', FLEET_NAMES.join(' | '));
@@ -2003,12 +2035,97 @@ function celdaGestion(drv,pendiente){
     'onclick="abrirComentario('+JSON.stringify(drv).replace(/"/g,'&quot;')+')">'+label+'</button></td>';
 }
 
+/* ── VEHÍCULOS EN TALLER ───────────────────────────────────────────────────
+   La hoja lleva estado, ingreso, egreso, taller y observaciones por patente.
+   Un auto sin fecha de egreso es uno por el que hay que ir a preguntar, así que
+   esos van primero y marcados, ordenados por días parados.
+
+   El cruce con el coordinador es por patente, no por conductor: el auto puede
+   haber cambiado de manos o estar sin asignar mientras está en el taller. */
+function coordDePatente(pat){
+  var p=normPlate(pat);
+  for(var i=0;i<FLEET_ROWS.length;i++){
+    if(normPlate(FLEET_ROWS[i].patente)===p)return FLEET_ROWS[i].coordinador||'';
+  }
+  return '';
+}
+function diasEnTaller(ingreso){
+  var d=parseDate(ingreso);
+  if(!d||isNaN(d))return null;
+  return Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));
+}
+function tallerEnTaller(){
+  return TALLER.filter(function(v){
+    if(!/en\s*taller/i.test(v.estado||''))return false;
+    if(!_coordFilter)return true;
+    var c=coordDePatente(v.patente);
+    // Los autos sin asignar aparecen con cualquier coordinador seleccionado: un
+    // auto que lleva semanas en el taller suele quedar fuera de la hoja de
+    // asignación, y es justamente al que hay que ir a perseguirle la fecha.
+    // Esconderlo al filtrar lo volvía invisible para todos.
+    return !c||c===_coordFilter;
+  });
+}
+function renderTaller(){
+  var sec=document.getElementById('tallerSection'),tbl=document.getElementById('tallerTable');
+  var enTaller=tallerEnTaller();
+  var conFecha=enTaller.filter(function(v){return v.egreso;}).length;
+
+  setText('kpiTaller',String(enTaller.length));
+  setText('kpiTallerSub',conFecha+' '+t('kpi_taller_sub'));
+  var card=document.getElementById('kpiTallerCard');
+  if(card)card.style.display=TALLER.length?'':'none';
+
+  if(!sec||!tbl)return;
+  if(!enTaller.length){sec.style.display='none';return;}
+  sec.style.display='';
+
+  // Primero los que no tienen fecha comprometida, y dentro de cada grupo el que
+  // lleva más tiempo parado
+  var orden=enTaller.slice().sort(function(a,b){
+    var fa=a.egreso?1:0,fb=b.egreso?1:0;
+    if(fa!==fb)return fa-fb;
+    return (diasEnTaller(b.ingreso)||0)-(diasEnTaller(a.ingreso)||0);
+  });
+
+  var sinFecha=enTaller.length-conFecha;
+  setText('tallerResumen',sinFecha
+    ? sinFecha+' '+t('taller_sin_fecha')
+    : t('taller_todos_con_fecha'));
+
+  var html='<thead><tr>'
+    +'<th>'+t('taller_patente')+'</th>'
+    +'<th>'+t('filter_by_coord')+'</th>'
+    +'<th>'+t('taller_taller')+'</th>'
+    +'<th>'+t('taller_ingreso')+'</th>'
+    +'<th>'+t('taller_dias')+'</th>'
+    +'<th>'+t('taller_egreso')+'</th>'
+    +'<th>'+t('taller_obs')+'</th>'
+    +'</tr></thead><tbody>';
+  orden.forEach(function(v){
+    var dias=diasEnTaller(v.ingreso);
+    var color=dias==null?'#6b7280':dias>30?'#f87171':dias>14?'#fbbf24':'#9ca3af';
+    html+='<tr class="'+(v.egreso?'':'sinfecha')+'">'
+      +'<td class="pat">'+esc(v.patente)+(v.ultimoConductor?'<div style="font-weight:400;color:#6b7280;font-size:10px">'+esc(v.ultimoConductor)+'</div>':'')+'</td>'
+      +'<td style="white-space:nowrap;color:'+(coordDePatente(v.patente)?'#9ca3af':'#6b7280')+'">'
+        +(coordDePatente(v.patente)?esc(coordDePatente(v.patente)):'<i>'+t('taller_sin_asignar')+'</i>')+'</td>'
+      +'<td style="white-space:nowrap">'+esc(v.taller||'—')+'</td>'
+      +'<td style="white-space:nowrap;color:#9ca3af">'+esc(v.ingreso||'—')+'</td>'
+      +'<td class="dias" style="color:'+color+'">'+(dias==null?'—':dias+' '+t('taller_d'))+'</td>'
+      +'<td class="'+(v.egreso?'confecha':'nofecha')+'">'+(v.egreso?esc(v.egreso):'⚠ '+t('taller_sin'))+'</td>'
+      +'<td class="obs">'+esc(v.observaciones||'—')+'</td>'
+      +'</tr>';
+  });
+  tbl.innerHTML=html+'</tbody>';
+}
+
 function renderAll(){
   FILTERED=sortDrivers(getFiltered());
   renderKPIs();renderDonut();renderMixedChart();renderEvolTable();renderDriversTable(FILTERED);
   renderWeeklyBreakdown();
   renderTypeFilterBar();
   renderCoordFilterBar();
+  renderTaller();
   applyI18n();
 }
 
