@@ -479,7 +479,7 @@ var FLEET_ROWS = []; // [{nameNorm, coordinador, patente}] — planilla Control 
 var _coordFilter = null; // coordinador seleccionado (columna E), null = todos
 var LANG = 'es';
 var CUR = 'CLP';
-var _typeFilter = null;
+var _typeFilter = []; // tipos seleccionados; vacío = todos
 var _mcPeriod = 'weekly';
 var _evolPeriod = 'weekly';
 var _page = 1;
@@ -900,12 +900,12 @@ function applyFilters(){
 function clearAllFilters(){
   var st=document.getElementById('filterStatus');if(st)st.value='';
   var ft=document.getElementById('filterText');if(ft)ft.value='';
-  _typeFilter=null;_coordFilter=null;
+  _typeFilter=[];_coordFilter=null;
   refiltrar();
 }
 
 /* ── FILTRO GLOBAL POR TIPO ────────────────────────────────────────────────
-   _typeFilter=null → todos. Al fijarlo, BILLS/PAYMENT_EVENTS pasan a ser la
+   _typeFilter vacío → todos. Al fijarlo, BILLS/PAYMENT_EVENTS pasan a ser la
    vista filtrada de ALL_BILLS/ALL_PAYMENT_EVENTS y DRIVERS se reconstruye desde
    ahi. Como cada render lee de esas tres variables, el filtro alcanza a las
    tarjetas KPI, las barras, el donut, los graficos, la tabla de evolucion, el
@@ -917,9 +917,9 @@ function clearAllFilters(){
    mostrar un delta que compararia peras con manzanas. */
 function applyScope(){
   var bills=ALL_BILLS,pays=ALL_PAYMENT_EVENTS;
-  if(_typeFilter){
-    bills=bills.filter(function(b){return classifyType(b.type)===_typeFilter;});
-    pays=pays.filter(function(p){return classifyType(p.type)===_typeFilter;});
+  if(_typeFilter.length){
+    bills=bills.filter(function(b){return _typeFilter.indexOf(classifyType(b.type))>=0;});
+    pays=pays.filter(function(p){return _typeFilter.indexOf(classifyType(p.type))>=0;});
   }
   if(_coordFilter){
     // El coordinador viene de la planilla, que va por patente-conductor: filtrar por
@@ -934,31 +934,42 @@ function applyScope(){
 // Orden fijo de los chips; solo se muestran los tipos presentes en los datos
 var TYPE_ORDER=['toll','multa','administrative','reparation','energy','other'];
 
-function renderTypeFilterBar(){
-  var box=document.getElementById('gtfChips');if(!box)return;
-  // Solo tipos con monto facturado: hoy "Otro" agrupa ~1100 filas sin tipo y sin monto,
-  // y su chip dejaria el reporte entero en cero. Si algun dia caen cargos reales ahi,
-  // el chip aparece solo.
+// Solo tipos con monto facturado: hoy "Otro" agrupa ~1100 filas sin tipo y sin monto,
+// y su chip dejaria el reporte entero en cero. Si algun dia caen cargos reales ahi,
+// el chip aparece solo.
+function tiposDisponibles(){
   var montoPorTipo={};
   ALL_BILLS.forEach(function(b){
     var k=classifyType(b.type);
     montoPorTipo[k]=(montoPorTipo[k]||0)+parseAmt(b.amount);
   });
-  var types=TYPE_ORDER.filter(function(tp){return montoPorTipo[tp]>0;});
-  var html='<button class="gtf-chip'+(_typeFilter?'':' active')+'" onclick="setTypeFilter(null)">'+t('all_types')+'</button>';
+  return TYPE_ORDER.filter(function(tp){return montoPorTipo[tp]>0;});
+}
+
+function renderTypeFilterBar(){
+  var box=document.getElementById('gtfChips');if(!box)return;
+  var types=tiposDisponibles();
+  var html='<button class="gtf-chip'+(_typeFilter.length?'':' active')+'" onclick="setTypeFilter(null)">'+t('all_types')+'</button>';
   types.forEach(function(tp){
-    html+='<button class="gtf-chip'+(_typeFilter===tp?' active':'')+'" onclick="setTypeFilter(\''+tp+'\')">'
+    html+='<button class="gtf-chip'+(_typeFilter.indexOf(tp)>=0?' active':'')+'" onclick="setTypeFilter(\''+tp+'\')">'
       +'<span class="gtf-dot" style="background:'+(TYPE_COLORS[tp]||'#9ca3af')+'"></span>'+esc(typeLabel(tp))+'</button>';
   });
   box.innerHTML=html;
   setText('gtfLabel',t('filter_by_type'));
-  setText('gtfNote',(_typeFilter||_coordFilter)?t('filter_active_note'):'');
+  setText('gtfNote',(_typeFilter.length||_coordFilter)?t('filter_active_note'):'');
 }
 
 function setTypeFilter(tp){
   // Volver a tocar el chip activo equivale a "Todos"
-  if(tp===_typeFilter)tp=null;
-  _typeFilter=tp;
+  // null = "Todos" limpia la selección; cualquier otro chip alterna su presencia.
+  // Seleccionar todos los tipos disponibles equivale a no filtrar, así que la
+  // selección se vacía sola en vez de dejar todos los chips encendidos.
+  if(tp===null){_typeFilter=[];}
+  else{
+    var i=_typeFilter.indexOf(tp);
+    if(i>=0)_typeFilter.splice(i,1);else _typeFilter.push(tp);
+    if(_typeFilter.length>=tiposDisponibles().length)_typeFilter=[];
+  }
   refiltrar();
 }
 
@@ -1454,7 +1465,9 @@ function renderEvolTable(){
     var v=chargeMap[w]&&chargeMap[w][drv]||0;if(v>maxCharge)maxCharge=v;
   });});
 
-  var pendingLabel=_typeFilter?typeLabel(_typeFilter).toUpperCase():t('evol_pending_col');
+  // Con un solo tipo la columna se rotula con su nombre; con varios vuelve al
+  // rótulo genérico, que apilar tres etiquetas no cabe ni se entiende.
+  var pendingLabel=_typeFilter.length===1?typeLabel(_typeFilter[0]).toUpperCase():t('evol_pending_col');
   var html='<thead><tr><th style="text-align:left">Conductor</th>';
   allWeeks.forEach(function(w){html+='<th>'+esc(w.toUpperCase())+'</th>';});
   html+='<th style="background:#1e2a42;color:#93c5fd;text-align:right">'+pendingLabel.replace(' ','<br>')+'</th>';
