@@ -128,6 +128,29 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .filter-chip button{background:none;border:none;color:#93c5fd;cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
 .filter-chip button:hover{color:#fff}
 
+/* Gestión de deuda — botón por fila y popup de comentario */
+.gbtn{background:none;border:1px solid #374151;color:#4b5563;border-radius:7px;padding:3px 9px;font-size:11px;
+  font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.gbtn:hover{border-color:#4b5563;color:#e2e8f0}
+.gbtn.tiene{border-color:#065f4699;color:#34d399;background:#05150d}
+.gbtn.viejo{border-color:#78350f99;color:#fbbf24;background:#130d02}
+.gmodal{position:fixed;inset:0;background:rgba(3,7,18,.72);display:flex;align-items:center;justify-content:center;z-index:90;padding:20px}
+.gcard{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:20px 22px;width:100%;max-width:520px;max-height:90vh;overflow:auto}
+.gcard h3{margin:0 0 3px;font-size:16px;font-weight:700;color:#f9fafb}
+.gcard .gsub{font-size:12px;color:#6b7280;margin-bottom:14px}
+.gcard textarea{width:100%;background:#0f1117;border:1px solid #374151;border-radius:9px;color:#e2e8f0;
+  font-family:inherit;font-size:13px;line-height:1.55;padding:10px 12px;outline:none;resize:vertical}
+.gcard textarea:focus{border-color:#2563eb}
+.gmeta{font-size:11px;color:#4b5563;margin-top:8px}
+.gacts{display:flex;gap:8px;margin-top:14px;align-items:center}
+.gsave{background:#1d4ed8;border:none;color:#fff;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer}
+.gsave:hover{background:#2563eb}
+.gcancel{background:none;border:1px solid #374151;color:#9ca3af;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer}
+.ghist{margin-top:14px;border-top:1px solid #1f2937;padding-top:10px}
+.ghist-item{font-size:11.5px;color:#6b7280;padding:6px 0;border-bottom:1px solid #1a2030;line-height:1.5}
+.ghist-item:last-child{border-bottom:none}
+.ghist-item b{color:#9ca3af;font-weight:600}
+
 /* Global type filter bar — aplica a todo el reporte */
 .gtf-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#111827;border:1px solid #1f2937;border-radius:12px;padding:11px 16px;margin-bottom:18px}
 .gtf-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;flex-shrink:0}
@@ -401,6 +424,22 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       <ul class="dq-list" id="dqList"></ul>
     </div>
     <button class="dq-dismiss" onclick="document.getElementById('dqPanel').style.display='none'" title="Cerrar">✕</button>
+  </div>
+
+  <!-- Popup de gestión de deuda -->
+  <div id="gModal" class="gmodal" style="display:none">
+    <div class="gcard">
+      <h3 id="gDrv">—</h3>
+      <div class="gsub" id="gSub">—</div>
+      <textarea id="gTexto" rows="5" placeholder="Cómo se está gestionando esta deuda: acuerdos, plazos, respuestas del conductor…"></textarea>
+      <div class="gmeta" id="gMeta"></div>
+      <div class="gacts">
+        <button class="gsave" onclick="guardarComentario()">Guardar</button>
+        <button class="gcancel" onclick="cerrarComentario()">Cancelar</button>
+        <span id="gEstado" style="margin-left:auto;font-size:11px;color:#4b5563"></span>
+      </div>
+      <div class="ghist" id="gHist" style="display:none"></div>
+    </div>
   </div>
 
 </div>
@@ -1355,6 +1394,7 @@ function renderEvolTable(){
   var html='<thead><tr><th style="text-align:left">Conductor</th>';
   allWeeks.forEach(function(w){html+='<th>'+esc(w.toUpperCase())+'</th>';});
   html+='<th style="background:#1e2a42;color:#93c5fd;text-align:right">'+pendingLabel.replace(' ','<br>')+'</th>';
+  html+='<th style="background:#1e2a42;color:#93c5fd;text-align:center">GESTIÓN</th>';
   html+='</tr></thead><tbody>';
 
   topDrivers.forEach(function(drv){
@@ -1387,6 +1427,7 @@ function renderEvolTable(){
     } else {
       html+='<td style="text-align:right"><span style="background:#3b0a0a;border:1px solid #7f1d1d55;color:#fca5a5;border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block">'+fmtShort(pendienteActual)+'</span></td>';
     }
+    html+=celdaGestion(drv,pendienteActual);
     html+='</tr>';
   });
 
@@ -1402,7 +1443,10 @@ function renderEvolTable(){
     if(p>0)html+='<div style="font-size:10px;color:#34d399;font-weight:600;line-height:1.3">−'+fmtShort(p)+'</div>';
     html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
   });
-  html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(grandTotalPending)+'</td></tr></tfoot>';
+  html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(grandTotalPending)+'</td>';
+  var conCom=topDrivers.filter(function(drv){return (driverPending[drv]||0)>0&&COMENTARIOS.items[drv];}).length;
+  var conDeuda=topDrivers.filter(function(drv){return (driverPending[drv]||0)>0;}).length;
+  html+='<td style="text-align:center;font-weight:600;color:#6b7280;font-size:11px">'+conCom+' de '+conDeuda+'</td></tr></tfoot>';
   tbl.innerHTML=html;
 }
 
@@ -1628,6 +1672,111 @@ function renderWeeklyBreakdown(){
   document.getElementById('wkGrid').innerHTML=html;
 }
 
+/* ── GESTIÓN DE DEUDA ──────────────────────────────────────────────────────
+   Un comentario por conductor con deuda, editable en cualquier momento, para
+   dejar registro de cómo se está gestionando. Vive en la mini-DB de Drive, la
+   misma que usa el reporte de tareas, en su propio documento.
+
+   La llave es el nombre normalizado del conductor: es lo único estable entre el
+   Excel de multas y la planilla. Si un nombre cambia de verdad en el origen, el
+   comentario queda huérfano — la normalización solo salva acentos y espacios. */
+var COM_API='/api/tareas?doc=comentarios';
+var COMENTARIOS={items:{},updatedAt:0};
+var ME_DEUDA=null;
+var _comDrv=null,_comSaveTimer=null;
+var COM_VIEJO_DIAS=15; // un comentario más viejo que esto sobre deuda viva se marca en ámbar
+
+function comQuien(){return ME_DEUDA&&ME_DEUDA.name?ME_DEUDA.name:'—';}
+function comFecha(ms){
+  if(!ms)return '';
+  var d=new Date(ms),p=function(n){return('0'+n).slice(-2);};
+  return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear();
+}
+function comDias(ms){return ms?Math.floor((Date.now()-ms)/86400000):null;}
+
+async function cargarComentarios(){
+  try{
+    var r=await fetch('/api/me',{cache:'no-store'});var j=await r.json();ME_DEUDA=j.user||null;
+  }catch(e){ME_DEUDA=null;}
+  try{
+    var r2=await fetch(COM_API+'&_='+Date.now());var j2=await r2.json();
+    if(j2&&j2.state&&j2.state.items)COMENTARIOS=j2.state;
+  }catch(e){}
+  renderEvolTable();
+}
+
+function abrirComentario(drv){
+  _comDrv=drv;
+  var c=COMENTARIOS.items[drv]||{};
+  document.getElementById('gDrv').textContent=drv;
+  document.getElementById('gSub').textContent='Deuda pendiente: '+fmtAmt(_comPendiente(drv));
+  document.getElementById('gTexto').value=c.texto||'';
+  document.getElementById('gMeta').textContent=c.fecha
+    ? 'Última edición por '+(c.quien||'—')+' · '+comFecha(c.fecha)+' ('+comDias(c.fecha)+' días)'
+    : 'Sin comentario todavía.';
+  document.getElementById('gEstado').textContent='';
+  var h=document.getElementById('gHist');
+  var hist=(c.historial||[]);
+  if(hist.length){
+    h.style.display='';
+    h.innerHTML='<div style="font-size:11px;color:#4b5563;margin-bottom:6px">Versiones anteriores</div>'+
+      hist.map(function(v){return '<div class="ghist-item"><b>'+esc(v.quien||'—')+' · '+comFecha(v.fecha)+'</b><br>'+esc(v.texto)+'</div>';}).join('');
+  }else{h.style.display='none';h.innerHTML='';}
+  document.getElementById('gModal').style.display='flex';
+  document.getElementById('gTexto').focus();
+}
+function cerrarComentario(){document.getElementById('gModal').style.display='none';_comDrv=null;}
+
+function _comPendiente(drv){
+  var d=DRIVERS.filter(function(x){return x.driver===drv;})[0];
+  return d?d.pending:0;
+}
+
+async function guardarComentario(){
+  if(!_comDrv)return;
+  var texto=document.getElementById('gTexto').value.trim();
+  var prev=COMENTARIOS.items[_comDrv];
+  // Guarda la versión anterior antes de pisarla: la película de cómo se gestionó
+  // la deuda vale más que la última foto. Se conservan las 5 últimas.
+  var hist=(prev&&prev.historial||[]).slice();
+  if(prev&&prev.texto&&prev.texto!==texto){
+    hist.unshift({texto:prev.texto,quien:prev.quien,fecha:prev.fecha});
+    hist=hist.slice(0,5);
+  }
+  if(!texto&&!hist.length)delete COMENTARIOS.items[_comDrv];
+  else COMENTARIOS.items[_comDrv]={texto:texto,quien:comQuien(),fecha:Date.now(),historial:hist};
+  COMENTARIOS.updatedAt=Date.now();
+
+  var est=document.getElementById('gEstado');
+  est.textContent='Guardando…';est.style.color='#6b7280';
+  try{
+    var r=await fetch(COM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(COMENTARIOS)});
+    if(!r.ok){
+      var j=await r.json().catch(function(){return{};});
+      var falta=String(j.error||'').indexOf('storage quota')>=0;
+      est.textContent=falta?'⚠ Falta el archivo tareas-comentarios.json en Drive':'⚠ Error al guardar';
+      est.style.color='#f87171';
+      renderEvolTable();
+      return; // el modal queda abierto: el texto no se pierde
+    }
+    est.textContent='☁️ Guardado';est.style.color='#34d399';
+    renderEvolTable();
+    setTimeout(cerrarComentario,450);
+  }catch(e){est.textContent='⚠ Sin conexión';est.style.color='#f87171';}
+}
+
+// Celda de la columna GESTIÓN: solo hay botón si el conductor debe algo
+function celdaGestion(drv,pendiente){
+  if(pendiente<=0)return '<td style="text-align:center"><span style="color:#374151">—</span></td>';
+  var c=COMENTARIOS.items[drv];
+  var dias=c?comDias(c.fecha):null;
+  var cls=!c?'':(dias!=null&&dias>COM_VIEJO_DIAS?'viejo':'tiene');
+  var label=!c?'＋ Comentar':(dias!=null&&dias>COM_VIEJO_DIAS?'⚠ Hace '+dias+' d':'💬 Ver');
+  var tip=c?esc(c.texto).slice(0,180):'Sin comentario';
+  return '<td style="text-align:center"><button class="gbtn '+cls+'" title="'+tip+'" '+
+    'onclick="abrirComentario('+JSON.stringify(drv).replace(/"/g,'&quot;')+')">'+label+'</button></td>';
+}
+
 function renderAll(){
   FILTERED=sortDrivers(getFiltered());
   renderKPIs();renderDonut();renderMixedChart();renderEvolTable();renderDriversTable(FILTERED);
@@ -1657,7 +1806,7 @@ window.addEventListener('load',function(){
   fetch('/api/fx').then(function(r){return r.ok?r.json():null;}).then(function(fx){
     if(fx&&fx.rate>0){USD_RATE=fx.rate;}
     setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
-  }).catch(function(){}).finally(function(){loadData();});
+  }).catch(function(){}).finally(function(){loadData().then(cargarComentarios);});
 });
 </script>
 </body>
