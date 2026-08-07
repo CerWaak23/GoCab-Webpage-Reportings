@@ -152,12 +152,6 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .ghist-item{font-size:11.5px;color:#6b7280;padding:6px 0;border-bottom:1px solid #1a2030;line-height:1.5}
 .ghist-item:last-child{border-bottom:none}
 .ghist-item b{color:#9ca3af;font-weight:600}
-.gtrad{background:none;border:1px solid #374151;color:#9ca3af;border-radius:6px;padding:2px 9px;
-  font-size:10.5px;font-weight:600;cursor:pointer;margin-left:8px}
-.gtrad:hover{border-color:#2563eb;color:#93c5fd}
-.gtrad-out{margin-top:6px;padding:8px 10px;background:#0d1420;border:1px solid #1f2937;border-left:2px solid #2563eb;
-  border-radius:0 8px 8px 0;font-size:12.5px;color:#cbd5e1;line-height:1.55;white-space:pre-wrap}
-.gtrad-out .lbl{display:block;font-size:10px;color:#4b5563;margin-bottom:3px}
 
 /* Global type filter bar — aplica a todo el reporte */
 .gtf-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#111827;border:1px solid #1f2937;border-radius:12px;padding:11px 16px;margin-bottom:18px}
@@ -454,12 +448,10 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       <div class="gsub" id="gSub">—</div>
       <div class="glabel" data-i18n="gest_label_g">Gestión del coordinador</div>
       <textarea id="gTexto" rows="4"></textarea>
-      <div class="gmeta"><span id="gMeta"></span><button class="gtrad" id="gTradBtn" onclick="traducirCaja('g')">⇄</button></div>
-      <div class="gtrad-out" id="gTradOut" style="display:none"></div>
+      <div class="gmeta" id="gMeta"></div>
       <div class="glabel" style="margin-top:14px" data-i18n="gest_label_i">Indicación para el coordinador</div>
       <textarea id="gInd" rows="3"></textarea>
-      <div class="gmeta"><span id="gIndMeta"></span><button class="gtrad" id="gIndTradBtn" onclick="traducirCaja('i')">⇄</button></div>
-      <div class="gtrad-out" id="gIndTradOut" style="display:none"></div>
+      <div class="gmeta" id="gIndMeta"></div>
       <div class="gacts">
         <button class="gsave" onclick="guardarComentario()" data-i18n="gest_guardar">Guardar</button>
         <button class="gcancel" onclick="cerrarComentario()" data-i18n="gest_cancelar">Cancelar</button>
@@ -551,7 +543,7 @@ var T = {
       gest_vers_g:'Versiones anteriores · gestión',gest_vers_i:'Versiones anteriores · indicaciones',
       gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
       gest_err_archivo:'⚠ Falta el archivo tareas-comentarios.json en Drive',gest_err:'⚠ Error al guardar',
-      gest_sin_conexion:'⚠ Sin conexión',gest_traducir:'Traducir',gest_traduciendo:'Traduciendo…',gest_trad_titulo:'Traducción automática',gest_trad_err:'No se pudo traducir',gest_trad_off:'Falta habilitar la Cloud Translation API en Google Cloud',
+      gest_sin_conexion:'⚠ Sin conexión',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -609,7 +601,7 @@ var T = {
       gest_vers_g:'Earlier versions · follow-up',gest_vers_i:'Earlier versions · instructions',
       gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
       gest_err_archivo:'⚠ Missing tareas-comentarios.json in Drive',gest_err:'⚠ Save error',
-      gest_sin_conexion:'⚠ Offline',gest_traducir:'Translate',gest_traduciendo:'Translating…',gest_trad_titulo:'Machine translation',gest_trad_err:'Could not translate',gest_trad_off:'Cloud Translation API is not enabled in Google Cloud',
+      gest_sin_conexion:'⚠ Offline',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -667,7 +659,7 @@ var T = {
       gest_vers_g:'Прежние версии · работа',gest_vers_i:'Прежние версии · указания',
       gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
       gest_err_archivo:'⚠ Нет файла tareas-comentarios.json на Drive',gest_err:'⚠ Ошибка сохранения',
-      gest_sin_conexion:'⚠ Нет связи',gest_traducir:'Перевести',gest_traduciendo:'Перевод…',gest_trad_titulo:'Машинный перевод',gest_trad_err:'Не удалось перевести',gest_trad_off:'Cloud Translation API не включён в Google Cloud',
+      gest_sin_conexion:'⚠ Нет связи',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -1883,71 +1875,10 @@ function abrirComentario(drv){
   };
   var htm=bloque(t('gest_vers_g'),c.historial)+bloque(t('gest_vers_i'),(c.ind||{}).historial);
   if(htm){h.style.display='';h.innerHTML=htm;}else{h.style.display='none';h.innerHTML='';}
-  pintarTraduccion('g');pintarTraduccion('i');
   document.getElementById('gModal').style.display='flex';
   document.getElementById('gTexto').focus();
 }
 function cerrarComentario(){document.getElementById('gModal').style.display='none';_comDrv=null;}
-
-/* ── TRADUCCIÓN DE LO QUE ESCRIBEN LAS PERSONAS ────────────────────────────
-   Los textos de la interfaz viven en los diccionarios de arriba. Esto es para
-   el contenido libre: un comentario escrito en español que alguien necesita
-   leer en inglés o ruso.
-
-   La traducción se guarda junto al comentario con una copia del texto que la
-   originó. Si el comentario se edita, la copia deja de calzar y se vuelve a
-   pedir; si no, se muestra al instante y no se paga de nuevo. */
-function _tradCajas(caja){
-  return caja==='g'
-    ? {ta:'gTexto',out:'gTradOut',btn:'gTradBtn',campo:'texto'}
-    : {ta:'gInd',out:'gIndTradOut',btn:'gIndTradBtn',campo:'ind'};
-}
-function textoDe(reg,caja){
-  if(!reg)return '';
-  return caja==='g'?(reg.texto||''):((reg.ind||{}).texto||'');
-}
-function pintarTraduccion(caja){
-  var ids=_tradCajas(caja);
-  var out=document.getElementById(ids.out),btn=document.getElementById(ids.btn);
-  var reg=COMENTARIOS.items[_comDrv];
-  var src=textoDe(reg,caja);
-  out.style.display='none';out.innerHTML='';
-  // Sin texto, o ya escrito en el idioma que se está viendo, no hay nada que ofrecer
-  if(!src){btn.style.display='none';return;}
-  btn.style.display='';
-  btn.textContent='⇄ '+t('gest_traducir');
-  var cache=((reg.trad||{})[caja]||{})[LANG];
-  if(cache&&cache.src===src){
-    out.style.display='';
-    out.innerHTML='<span class="lbl">'+esc(t('gest_trad_titulo'))+'</span>'+esc(cache.txt);
-  }
-}
-async function traducirCaja(caja){
-  var ids=_tradCajas(caja);
-  var out=document.getElementById(ids.out),btn=document.getElementById(ids.btn);
-  var reg=COMENTARIOS.items[_comDrv];
-  var src=textoDe(reg,caja);
-  if(!src)return;
-  btn.textContent='⇄ '+t('gest_traduciendo');
-  try{
-    var r=await fetch('/api/traducir',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text:src,target:LANG})});
-    var j=await r.json();
-    if(!r.ok)throw new Error(j.necesitaHabilitar?t('gest_trad_off'):(j.error||t('gest_trad_err')));
-    reg.trad=reg.trad||{};reg.trad[caja]=reg.trad[caja]||{};
-    reg.trad[caja][LANG]={src:src,txt:j.text};
-    out.style.display='';
-    out.innerHTML='<span class="lbl">'+esc(t('gest_trad_titulo'))+'</span>'+esc(j.text);
-    btn.textContent='⇄ '+t('gest_traducir');
-    // Se persiste en silencio: la próxima persona que lo abra no vuelve a pagarla
-    COMENTARIOS.updatedAt=Date.now();
-    fetch(COM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(COMENTARIOS)}).catch(function(){});
-  }catch(e){
-    out.style.display='';
-    out.innerHTML='<span class="lbl" style="color:#f87171">'+esc(String(e.message||e))+'</span>';
-    btn.textContent='⇄ '+t('gest_traducir');
-  }
-}
 
 function _comPendiente(drv){
   var d=DRIVERS.filter(function(x){return x.driver===drv;})[0];
@@ -1975,9 +1906,6 @@ async function guardarComentario(){
   // Cada caja lleva su propia firma: solo se re-sella la que efectivamente cambió,
   // para que editar la gestión no haga parecer que la indicación es nueva.
   var reg={
-    // Las traducciones cacheadas viajan con el registro; pintarTraduccion() descarta
-    // sola la que ya no calce con el texto editado.
-    trad:prev.trad||{},
     texto:texto,
     quien:(texto&&texto!==prev.texto)?comQuien():(prev.quien||null),
     fecha:(texto&&texto!==prev.texto)?Date.now():(prev.fecha||null),
@@ -2047,14 +1975,7 @@ function renderAll(){
   applyI18n();
 }
 
-function setLang(lang){
-  if(!T[lang])return;LANG=lang;renderAll();
-  // Si el popup de gestión está abierto, sus botones se repintan sin tocar lo que
-  // haya escrito la persona: la caché de traducción es por idioma.
-  if(_comDrv&&document.getElementById('gModal').style.display==='flex'){
-    pintarTraduccion('g');pintarTraduccion('i');
-  }
-}
+function setLang(lang){if(!T[lang])return;LANG=lang;renderAll();}
 function setLanguage(lang){setLang(lang);}
 function setCurrency(cur){CUR=cur;renderAll();}
 
