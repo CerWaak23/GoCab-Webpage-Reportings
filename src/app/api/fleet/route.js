@@ -31,16 +31,27 @@ export async function GET(request) {
     const rows = res.data.values || [];
     if (rows.length < 2) return NextResponse.json({ drivers: [] });
 
-    // Row 0 is header: Name, Vehicles, Created At, Tipe, Coordinator
-    const drivers = rows.slice(1)
-      .filter(r => r[0])
-      .map(r => ({
-        conductor: String(r[0] || '').trim().toUpperCase(),
-        patente: String(r[1] || '').trim(),
-        fechaInicio: String(r[2] || '').trim(),
-        nota: String(r[3] || '').trim(),
-        coordinador: String(r[4] || '').trim(), // columna E — filtro de coordinador del reporte
-      }));
+    // Las tres primeras columnas (Name, Vehicles, Created At) son estables; la del
+    // coordinador se ha movido de sitio y ha perdido su encabezado, así que se busca
+    // en vez de leerse por posición fija: primero por nombre de encabezado y, si no
+    // aparece, la última columna que venga llena en la mayoría de las filas.
+    const header = (rows[0] || []).map((h) => String(h || '').toLowerCase().trim());
+    const body = rows.slice(1).filter((r) => r[0]);
+    let iCoord = header.findIndex((h) => h.includes('coordinator') || h.includes('coordinador'));
+    if (iCoord < 0) {
+      for (let c = header.length - 1; c >= 3; c--) {
+        const llenas = body.filter((r) => String(r[c] || '').trim()).length;
+        if (body.length && llenas / body.length > 0.5) { iCoord = c; break; }
+      }
+    }
+
+    const drivers = body.map((r) => ({
+      conductor: String(r[0] || '').trim().toUpperCase(),
+      patente: String(r[1] || '').trim(),
+      fechaInicio: String(r[2] || '').trim(),
+      nota: String(r[3] || '').trim(),
+      coordinador: iCoord >= 0 ? String(r[iCoord] || '').trim() : '',
+    }));
 
     const noCache = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
     return NextResponse.json({ drivers, _fetchedAt: new Date().toISOString() }, { headers: noCache });

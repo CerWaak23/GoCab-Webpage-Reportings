@@ -1444,7 +1444,10 @@ function renderEvolTable(){
     html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
   });
   html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(grandTotalPending)+'</td>';
-  var conCom=topDrivers.filter(function(drv){return (driverPending[drv]||0)>0&&COMENTARIOS.items[drv];}).length;
+  var conCom=topDrivers.filter(function(drv){
+    var r=COMENTARIOS.items[drv];
+    return (driverPending[drv]||0)>0&&r&&r.texto;
+  }).length;
   var conDeuda=topDrivers.filter(function(drv){return (driverPending[drv]||0)>0;}).length;
   html+='<td style="text-align:center;font-weight:600;color:#6b7280;font-size:11px">'+conCom+' de '+conDeuda+'</td></tr></tfoot>';
   tbl.innerHTML=html;
@@ -1768,7 +1771,11 @@ async function guardarComentario(){
 // Celda de la columna GESTIÓN: solo hay botón si el conductor debe algo
 function celdaGestion(drv,pendiente){
   if(pendiente<=0)return '<td style="text-align:center"><span style="color:#374151">—</span></td>';
-  var c=COMENTARIOS.items[drv];
+  // Vale el texto, no la existencia del registro: al borrar un comentario queda la
+  // entrada con su historial, y tomarla como "tiene comentario" mostraba Ver sobre
+  // un comentario vacío.
+  var reg=COMENTARIOS.items[drv];
+  var c=(reg&&reg.texto)?reg:null;
   var dias=c?comDias(c.fecha):null;
   var cls=!c?'':(dias!=null&&dias>COM_VIEJO_DIAS?'viejo':'tiene');
   var label=!c?'＋ Comentar':(dias!=null&&dias>COM_VIEJO_DIAS?'⚠ Hace '+dias+' d':'💬 Ver');
