@@ -472,16 +472,16 @@
 <div id="protoModal" class="modal" hidden>
   <div class="modalcard">
     <h3 id="protoModalTitle">Protocolo</h3>
-    <label>Nombre</label>
-    <input id="pNombre" placeholder="Pérdida total de vehículo">
-    <label>Variantes — una por línea, en blanco si no hay</label>
-    <textarea id="pVariantes" rows="2" placeholder="Taller Bruno Fritsch&#10;Taller Kaufmann"></textarea>
-    <label>Contactos — uno por línea, formato Nombre | dato</label>
-    <textarea id="pContactos" rows="3" placeholder="Grúas Vera | +56 9 8123 4567&#10;Liquidador HDI | m.soto@hdi.cl"></textarea>
+    <label data-es="Nombre" data-en="Name" data-ru="Название">Nombre</label>
+    <input id="pNombre">
+    <label data-es="Variantes — una por línea, en blanco si no hay" data-en="Variants — one per line, blank if none" data-ru="Варианты — по одному в строке, пусто если нет">Variantes</label>
+    <textarea id="pVariantes" rows="2"></textarea>
+    <label data-es="Contactos — uno por línea, formato Nombre | dato" data-en="Contacts — one per line, format Name | detail" data-ru="Контакты — по одному в строке: Имя | данные">Contactos</label>
+    <textarea id="pContactos" rows="3"></textarea>
     <div class="factions">
-      <button class="addbtn" onclick="guardarProtocolo()">Guardar</button>
-      <button class="secbtn" onclick="cerrarModal('protoModal')">Cancelar</button>
-      <button class="secbtn" id="pBorrar" onclick="borrarProtocolo()" style="margin-left:auto;color:var(--red)">Eliminar</button>
+      <button class="addbtn" onclick="guardarProtocolo()" data-es="Guardar" data-en="Save" data-ru="Сохранить">Guardar</button>
+      <button class="secbtn" onclick="cerrarModal('protoModal')" data-es="Cancelar" data-en="Cancel" data-ru="Отмена">Cancelar</button>
+      <button class="secbtn" id="pBorrar" onclick="borrarProtocolo()" style="margin-left:auto;color:var(--red)" data-es="Eliminar" data-en="Delete" data-ru="Удалить">Eliminar</button>
     </div>
   </div>
 </div>
@@ -489,38 +489,38 @@
 <div id="pasoModal" class="modal" hidden>
   <div class="modalcard">
     <h3 id="pasoModalTitle">Paso</h3>
-    <label>Título — lo que se ve en el checklist</label>
-    <input id="sTitulo" placeholder="Avisar a la aseguradora">
-    <label>Descripción — a quién llamar, qué decir, qué pasa después</label>
-    <textarea id="sDesc" rows="5" placeholder="Llamar dentro de las primeras 24 h. Pedir número de siniestro…"></textarea>
+    <label data-es="Título — lo que se ve en el checklist" data-en="Title — what shows in the checklist" data-ru="Заголовок — то, что видно в чек-листе">Título</label>
+    <input id="sTitulo">
+    <label data-es="Descripción — a quién llamar, qué decir, qué pasa después" data-en="Description — who to call, what to say, what happens next" data-ru="Описание — кому звонить, что сказать, что дальше">Descripción</label>
+    <textarea id="sDesc" rows="5"></textarea>
     <div class="fgrid">
-      <div><label>Responsable</label><input id="sResp" placeholder="Ops manager"></div>
-      <div><label>Plazo en días</label><input id="sDias" type="number" min="0" step="1" placeholder="1"></div>
+      <div><label data-es="Responsable" data-en="Owner" data-ru="Ответственный">Responsable</label><input id="sResp"></div>
+      <div><label data-es="Plazo en días" data-en="Deadline in days" data-ru="Срок в днях">Plazo en días</label><input id="sDias" type="number" min="0" step="1"></div>
     </div>
-    <label>Aplica a</label>
+    <label data-es="Aplica a" data-en="Applies to" data-ru="Относится к">Aplica a</label>
     <select id="sVariante"></select>
     <div class="factions">
-      <button class="addbtn" onclick="guardarPaso()">Guardar</button>
-      <button class="secbtn" onclick="cerrarModal('pasoModal')">Cancelar</button>
-      <button class="secbtn" id="sBorrar" onclick="borrarPaso()" style="margin-left:auto;color:var(--red)">Eliminar</button>
+      <button class="addbtn" onclick="guardarPaso()" data-es="Guardar" data-en="Save" data-ru="Сохранить">Guardar</button>
+      <button class="secbtn" onclick="cerrarModal('pasoModal')" data-es="Cancelar" data-en="Cancel" data-ru="Отмена">Cancelar</button>
+      <button class="secbtn" id="sBorrar" onclick="borrarPaso()" style="margin-left:auto;color:var(--red)" data-es="Eliminar" data-en="Delete" data-ru="Удалить">Eliminar</button>
     </div>
   </div>
 </div>
 
 <div id="casoModal" class="modal" hidden>
   <div class="modalcard">
-    <h3>Abrir caso</h3>
-    <label>Protocolo</label>
+    <h3 data-es="Abrir caso" data-en="Open case" data-ru="Открыть случай">Abrir caso</h3>
+    <label data-es="Protocolo" data-en="Protocol" data-ru="Протокол">Protocolo</label>
     <select id="cProto" onchange="refrescarVariantesCaso()"></select>
-    <label>Variante</label>
+    <label data-es="Variante" data-en="Variant" data-ru="Вариант">Variante</label>
     <select id="cVariante"></select>
     <div class="fgrid">
-      <div><label>Patente</label><input id="cPatente" placeholder="VSBJ-40"></div>
-      <div><label>Conductor</label><input id="cConductor" placeholder="Renato Cuellar"></div>
+      <div><label data-es="Patente" data-en="Plate" data-ru="Номер">Patente</label><input id="cPatente"></div>
+      <div><label data-es="Conductor" data-en="Driver" data-ru="Водитель">Conductor</label><input id="cConductor"></div>
     </div>
     <div class="factions">
-      <button class="addbtn" onclick="crearCaso()">Abrir caso</button>
-      <button class="secbtn" onclick="cerrarModal('casoModal')">Cancelar</button>
+      <button class="addbtn" onclick="crearCaso()" data-es="Abrir caso" data-en="Open case" data-ru="Открыть случай">Abrir caso</button>
+      <button class="secbtn" onclick="cerrarModal('casoModal')" data-es="Cancelar" data-en="Cancel" data-ru="Отмена">Cancelar</button>
     </div>
   </div>
 </div>
@@ -531,8 +531,8 @@
     <p id="dSub" style="margin:-6px 0 12px;font-size:12px;color:var(--muted)"></p>
     <div id="dPasos"></div>
     <div class="factions" style="margin-top:14px">
-      <button class="secbtn" onclick="cerrarModal('detalleModal')">Cerrar</button>
-      <button class="secbtn" id="dBorrar" onclick="borrarCaso()" style="margin-left:auto;color:var(--red)">Eliminar caso</button>
+      <button class="secbtn" onclick="cerrarModal('detalleModal')" data-es="Cerrar" data-en="Close" data-ru="Закрыть">Cerrar</button>
+      <button class="secbtn" id="dBorrar" onclick="borrarCaso()" style="margin-left:auto;color:var(--red)" data-es="Eliminar caso" data-en="Delete case" data-ru="Удалить случай">Eliminar caso</button>
     </div>
   </div>
 </div>
@@ -1171,8 +1171,20 @@
     ['fDesc','eDesc'].forEach(i=>ph(i,'Paso a paso, para que otra persona pueda tomarla…','Step by step, so anyone can take it over…','Пошагово, чтобы задачу мог принять другой…'));
     ['fContacts','eContacts'].forEach(i=>ph(i,'Nombre, teléfono, correo…','Name, phone, email…','Имя, телефон, эл. почта…'));
     ['fLinks','eLinks'].forEach(i=>ph(i,'Un link por línea…','One link per line…','По одной ссылке на строку…'));
+    ph('protoQ','Buscar paso, contacto, texto…','Search step, contact, text…','Поиск по шагам, контактам, тексту…');
+    ph('casoQ','Patente, conductor, nota…','Plate, driver, note…','Номер, водитель, заметка…');
+    ph('pNombre','Pérdida total de vehículo','Total loss of vehicle','Полная гибель автомобиля');
+    ph('pVariantes','Taller Bruno Fritsch\nTaller Kaufmann','Bruno Fritsch shop\nKaufmann shop','Сервис Bruno Fritsch\nСервис Kaufmann');
+    ph('pContactos','Grúas Vera | +56 9 8123 4567','Vera Towing | +56 9 8123 4567','Эвакуатор Vera | +56 9 8123 4567');
+    ph('sTitulo','Avisar a la aseguradora','Notify the insurer','Сообщить страховой');
+    ph('sDesc','Llamar dentro de las primeras 24 h. Pedir número de siniestro…','Call within the first 24 h. Ask for the claim number…','Позвонить в первые 24 ч. Запросить номер страхового дела…');
+    ph('sResp','Ops manager','Ops manager','Операционный менеджер');
+    ph('cPatente','VSBJ-40','VSBJ-40','VSBJ-40');
+    ph('cConductor','Renato Cuellar','Renato Cuellar','Renato Cuellar');
     fillSelects(lang);
     render();
+    // La sección de protocolos se arma en JS: hay que repintarla al cambiar idioma
+    if(typeof renderProtos==='function'){renderProtos();renderCasos();}
     if(lastSyncState) setSync(lastSyncState);
     LS.set('gocab_dash_lang',lang);
   }
@@ -1256,6 +1268,9 @@
   let editandoProto=null, editandoPaso=null, casoAbierto=null;
   let pSaveTimer=null, cSaveTimer=null;
 
+  // Los textos de esta sección se arman en JS, así que no los alcanza el barrido
+  // de [data-es] de applyLang: pasan por acá.
+  const PT=(es,en,ru)=>LANG==='ru'?ru:LANG==='en'?en:es;
   const pesc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const nid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
   const quienSoy=()=>ME&&ME.name?ME.name:'—';
@@ -1395,8 +1410,8 @@
   function llenarSelectVariantes(protoId,sel){
     const p=PROTOS.protocolos.find(x=>x.id===protoId);
     const el=document.getElementById('sVariante');
-    el.innerHTML='<option value="">Todas las variantes</option>'+
-      (p&&p.variantes||[]).map(v=>`<option value="${pesc(v)}"${v===sel?' selected':''}>Solo ${pesc(v)}</option>`).join('');
+    el.innerHTML=`<option value="">${PT('Todas las variantes','All variants','Все варианты')}</option>`+
+      (p&&p.variantes||[]).map(v=>`<option value="${pesc(v)}"${v===sel?' selected':''}>${PT('Solo','Only','Только')} ${pesc(v)}</option>`).join('');
   }
   function guardarPaso(){
     const titulo=document.getElementById('sTitulo').value.trim();
@@ -1442,35 +1457,39 @@
     const q=(document.getElementById('protoQ').value||'').trim().toLowerCase();
     const lista=PROTOS.protocolos.filter(p=>protoCoincide(p,q));
     if(!lista.length){
-      el.innerHTML=`<div class="pempty">${PROTOS.protocolos.length?'Ningún protocolo coincide con la búsqueda.':'Todavía no hay protocolos. Crea el primero con “Nuevo protocolo”.'}</div>`;
+      el.innerHTML=`<div class="pempty">${PROTOS.protocolos.length
+        ?PT('Ningún protocolo coincide con la búsqueda.','No protocol matches your search.','Ни один протокол не найден.')
+        :PT('Todavía no hay protocolos. Crea el primero con “Nuevo protocolo”.','No protocols yet. Create the first one with “New protocol”.','Протоколов пока нет. Создайте первый через «Новый протокол».')}</div>`;
       return;
     }
     el.innerHTML=lista.map(p=>{
       const abierto=protoAbierto===p.id;
-      const nv=(p.variantes||[]).length;
-      const meta=`${(p.pasos||[]).length} paso${(p.pasos||[]).length===1?'':'s'}`+(nv?` · ${nv} variante${nv===1?'':'s'}`:'');
+      const nv=(p.variantes||[]).length,np=(p.pasos||[]).length;
+      const meta=`${np} ${PT(np===1?'paso':'pasos',np===1?'step':'steps','шаг(ов)')}`
+        +(nv?` · ${nv} ${PT(nv===1?'variante':'variantes',nv===1?'variant':'variants','вариант(ов)')}`:'');
       let body='';
       if(abierto){
         const tags=nv?`<div class="vtags">${p.variantes.map(v=>`<span class="vtag">${pesc(v)}</span>`).join('')}</div>`:'';
         const pasos=(p.pasos||[]).length?p.pasos.map((s,i)=>{
-          const tag=s.variante?`<span class="stag">solo ${pesc(s.variante)}</span>`:'';
-          const sm=[s.resp?`👤 ${pesc(s.resp)}`:'',s.dias!=null?`⏱ ${s.dias} día${s.dias===1?'':'s'}`:''].filter(Boolean).join(' · ');
+          const tag=s.variante?`<span class="stag">${PT('solo','only','только')} ${pesc(s.variante)}</span>`:'';
+          const sm=[s.resp?`👤 ${pesc(s.resp)}`:'',
+            s.dias!=null?`⏱ ${s.dias} ${PT(s.dias===1?'día':'días',s.dias===1?'day':'days','дн.')}`:''].filter(Boolean).join(' · ');
           return `<div class="pstep${s.variante?' var':''}">
             <div class="st"><span>${i+1}. ${pesc(s.titulo)}</span>${tag}
               <span style="margin-left:auto;display:flex;gap:4px">
                 <button class="minibtn" onclick="moverPaso('${p.id}','${s.id}',-1,event)" title="Subir">↑</button>
                 <button class="minibtn" onclick="moverPaso('${p.id}','${s.id}',1,event)" title="Bajar">↓</button>
-                <button class="minibtn" onclick="editarPaso('${p.id}','${s.id}',event)">Editar</button>
+                <button class="minibtn" onclick="editarPaso('${p.id}','${s.id}',event)">${PT('Editar','Edit','Изменить')}</button>
               </span></div>
             ${s.desc?`<div class="sd">${pesc(s.desc)}</div>`:''}
             ${sm?`<div class="sm">${sm}</div>`:''}
           </div>`;
-        }).join(''):'<div class="pempty">Sin pasos todavía.</div>';
-        const cont=(p.contactos||[]).length?`<div><div class="sm" style="margin-bottom:6px">Contactos del protocolo</div>
+        }).join(''):`<div class="pempty">${PT('Sin pasos todavía.','No steps yet.','Шагов пока нет.')}</div>`;
+        const cont=(p.contactos||[]).length?`<div><div class="sm" style="margin-bottom:6px">${PT('Contactos del protocolo','Protocol contacts','Контакты протокола')}</div>
           <div class="pcontacts">${p.contactos.map(c=>`<div class="pcontact"><b>${pesc(c.nombre)}</b><span>${pesc(c.dato)}</span></div>`).join('')}</div></div>`:'';
         body=`<div class="pbody">${tags}${pasos}${cont}
           <div style="display:flex;gap:6px;margin-top:2px">
-            <button class="minibtn" onclick="nuevoPaso('${p.id}',event)">＋ Paso</button>
+            <button class="minibtn" onclick="nuevoPaso('${p.id}',event)">＋ ${PT('Paso','Step','Шаг')}</button>
           </div></div>`;
       }
       // El botón de editar va en la cabecera y no dentro del cuerpo: si solo está
@@ -1480,7 +1499,7 @@
           <span class="caret">${abierto?'▾':'▸'}</span>
           <span class="pn">${pesc(p.nombre)}</span>
           <span class="pmeta">${meta}</span>
-          <button class="minibtn" onclick="editarProtocolo('${p.id}',event)">Editar</button>
+          <button class="minibtn" onclick="editarProtocolo('${p.id}',event)">${PT('Editar','Edit','Изменить')}</button>
         </div>${body}</div>`;
     }).join('');
   }
@@ -1489,7 +1508,7 @@
   function llenarSelectProtos(){
     const opts=PROTOS.protocolos.map(p=>`<option value="${p.id}">${pesc(p.nombre)}</option>`).join('');
     const f=document.getElementById('casoProto');
-    if(f){ const prev=f.value; f.innerHTML='<option value="">Todos los protocolos</option>'+opts; f.value=prev; }
+    if(f){ const prev=f.value; f.innerHTML=`<option value="">${PT('Todos los protocolos','All protocols','Все протоколы')}</option>`+opts; f.value=prev; }
     const c=document.getElementById('cProto');
     if(c) c.innerHTML=opts;
   }
@@ -1503,7 +1522,7 @@
   function refrescarVariantesCaso(){
     const p=PROTOS.protocolos.find(x=>x.id===document.getElementById('cProto').value);
     const el=document.getElementById('cVariante');
-    el.innerHTML='<option value="">Sin variante</option>'+
+    el.innerHTML=`<option value="">${PT('Sin variante','No variant','Без варианта')}</option>`+
       (p&&p.variantes||[]).map(v=>`<option value="${pesc(v)}">${pesc(v)}</option>`).join('');
   }
   function crearCaso(){
@@ -1529,10 +1548,11 @@
   function pintarDetalle(){
     const c=CASOS.casos.find(x=>x.id===casoAbierto); if(!c) return;
     const hechos=c.pasos.filter(s=>s.hecho).length;
-    document.getElementById('dTitulo').textContent=[c.patente,c.conductor].filter(Boolean).join(' · ')||'Caso';
+    document.getElementById('dTitulo').textContent=[c.patente,c.conductor].filter(Boolean).join(' · ')||PT('Caso','Case','Случай');
     document.getElementById('dSub').textContent=
-      `${c.protoNombre}${c.variante?' · '+c.variante:''} · abierto ${fmtDate(c.abiertoEl)} por ${c.abiertoPor||'—'}`+
-      (c.cerradoEl?` · cerrado ${fmtDate(c.cerradoEl)}`:'')+` · ${hechos} de ${c.pasos.length}`;
+      `${c.protoNombre}${c.variante?' · '+c.variante:''} · ${PT('abierto','opened','открыт')} ${fmtDate(c.abiertoEl)} ${PT('por','by','кем')} ${c.abiertoPor||'—'}`+
+      (c.cerradoEl?` · ${PT('cerrado','closed','закрыт')} ${fmtDate(c.cerradoEl)}`:'')+
+      ` · ${hechos} ${PT('de','of','из')} ${c.pasos.length}`;
     document.getElementById('dPasos').innerHTML=c.pasos.map((s,i)=>`
       <div class="ckstep${s.hecho?' hecho':''}">
         <input type="checkbox" ${s.hecho?'checked':''} onchange="marcarPaso('${c.id}','${s.id}',this.checked)">
@@ -1540,7 +1560,7 @@
           <div class="cn">${i+1}. ${pesc(s.titulo)}</div>
           ${s.desc?`<div class="cd">${pesc(s.desc)}</div>`:''}
           ${s.hecho?`<div class="cw">✓ ${pesc(s.quien||'—')} · ${fmtDate(s.fecha)}</div>`:''}
-          <textarea rows="1" placeholder="Nota…" onchange="notaPaso('${c.id}','${s.id}',this.value)">${pesc(s.nota||'')}</textarea>
+          <textarea rows="1" placeholder="${PT('Nota…','Note…','Заметка…')}" onchange="notaPaso('${c.id}','${s.id}',this.value)">${pesc(s.nota||'')}</textarea>
         </div>
       </div>`).join('');
   }
@@ -1581,7 +1601,9 @@
       return blob.indexOf(q)>=0;
     }).sort((a,b)=>(a.cerradoEl?1:0)-(b.cerradoEl?1:0)||b.abiertoEl-a.abiertoEl);
     if(!lista.length){
-      el.innerHTML=`<div class="pempty">${CASOS.casos.length?'Ningún caso coincide con el filtro.':'Todavía no hay casos registrados.'}</div>`;
+      el.innerHTML=`<div class="pempty">${CASOS.casos.length
+        ?PT('Ningún caso coincide con el filtro.','No case matches the filter.','Ни один случай не подходит под фильтр.')
+        :PT('Todavía no hay casos registrados.','No cases recorded yet.','Случаев пока нет.')}</div>`;
       return;
     }
     el.innerHTML=lista.map(c=>{
@@ -1589,11 +1611,12 @@
       const pct=tot?Math.round(hechos/tot*100):0;
       const color=c.cerradoEl?'var(--gray)':pct>=67?'var(--green)':pct>=34?'var(--amber)':'var(--red)';
       const dias=Math.max(0,Math.round(((c.cerradoEl||Date.now())-c.abiertoEl)/86400000));
+      const d=`${dias} ${PT(dias===1?'día':'días',dias===1?'day':'days','дн.')}`;
       const sub=`${pesc(c.protoNombre)}${c.variante?' · '+pesc(c.variante):''} · `+
-        (c.cerradoEl?`cerrado en ${dias} día${dias===1?'':'s'}`:`abierto hace ${dias} día${dias===1?'':'s'}`);
+        (c.cerradoEl?PT(`cerrado en ${d}`,`closed in ${d}`,`закрыт за ${d}`):PT(`abierto hace ${d}`,`open for ${d}`,`открыт ${d}`));
       return `<div class="prow${c.cerradoEl?' done':''}" onclick="abrirCaso('${c.id}')" style="cursor:pointer">
         <span class="dot" style="background:${color}"></span>
-        <div class="ct">${pesc([c.patente,c.conductor].filter(Boolean).join(' · ')||'Caso sin identificar')}<small>${sub}</small></div>
+        <div class="ct">${pesc([c.patente,c.conductor].filter(Boolean).join(' · ')||PT('Caso sin identificar','Unidentified case','Случай без данных'))}<small>${sub}</small></div>
         <div class="cprog"><div class="ctrack"><div class="cfill" style="width:${pct}%;background:${color}"></div></div>
           <small>${hechos} de ${tot}</small></div>
       </div>`;

@@ -161,6 +161,11 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .gtf-chip:hover{border-color:#4b5563;color:#e2e8f0}
 .gtf-chip.active{background:#1e3a5f;border-color:#2563eb66;color:#93c5fd}
 .gtf-chip .gtf-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* Casilla dentro del chip: sin ella no se lee que la selección es múltiple */
+.gtf-box{width:13px;height:13px;border-radius:3px;border:1px solid #4b5563;display:inline-flex;
+  align-items:center;justify-content:center;font-size:10px;line-height:1;color:transparent;flex-shrink:0}
+.gtf-chip.active .gtf-box{background:#2563eb;border-color:#2563eb;color:#fff}
+.gtf-sep{width:1px;align-self:stretch;background:#1f2937;margin:0 4px}
 .gtf-note{font-size:10px;color:#4b5563;margin-left:auto}
 
 /* Filters bar */
@@ -263,11 +268,10 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   <div class="gtf-bar">
     <span class="gtf-label" id="gtfLabel">Filtrar por tipo</span>
     <div class="gtf-chips" id="gtfChips"></div>
-    <span class="gtf-note" id="gtfNote"></span>
-  </div>
-  <div class="gtf-bar" id="gtfCoordBar" style="display:none">
-    <span class="gtf-label" id="gtfCoordLabel">Coordinador</span>
+    <span class="gtf-sep" id="gtfCoordBar" style="display:none"></span>
+    <span class="gtf-label" id="gtfCoordLabel" style="display:none">Coordinador</span>
     <div class="gtf-chips" id="gtfCoordChips"></div>
+    <span class="gtf-note" id="gtfNote"></span>
   </div>
 
   <!-- 6 KPI cards — layout matches original -->
@@ -361,8 +365,8 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   <!-- Weekly payment breakdown — va debajo de los graficos, antes de la tabla de evolucion -->
   <div class="section wk-section" id="weeklySection" style="display:none">
     <div class="wk-section-hdr">
-      <div class="wk-section-title">📅 Desglose Semanal de Cobranza</div>
-      <div class="wk-section-sub">De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda</div>
+      <div class="wk-section-title" data-i18n="wk_title">📅 Desglose Semanal de Cobranza</div>
+      <div class="wk-section-sub" data-i18n="wk_sub">De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda</div>
     </div>
     <div class="wk-grid" id="wkGrid"></div>
   </div>
@@ -442,15 +446,15 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     <div class="gcard">
       <h3 id="gDrv">—</h3>
       <div class="gsub" id="gSub">—</div>
-      <div class="glabel">Gestión del coordinador</div>
-      <textarea id="gTexto" rows="4" placeholder="Cómo se está gestionando esta deuda: acuerdos, plazos, respuestas del conductor…"></textarea>
+      <div class="glabel" data-i18n="gest_label_g">Gestión del coordinador</div>
+      <textarea id="gTexto" rows="4"></textarea>
       <div class="gmeta" id="gMeta"></div>
-      <div class="glabel" style="margin-top:14px">Indicación para el coordinador</div>
-      <textarea id="gInd" rows="3" placeholder="Qué se le pide al coordinador sobre este caso…"></textarea>
+      <div class="glabel" style="margin-top:14px" data-i18n="gest_label_i">Indicación para el coordinador</div>
+      <textarea id="gInd" rows="3"></textarea>
       <div class="gmeta" id="gIndMeta"></div>
       <div class="gacts">
-        <button class="gsave" onclick="guardarComentario()">Guardar</button>
-        <button class="gcancel" onclick="cerrarComentario()">Cancelar</button>
+        <button class="gsave" onclick="guardarComentario()" data-i18n="gest_guardar">Guardar</button>
+        <button class="gcancel" onclick="cerrarComentario()" data-i18n="gest_cancelar">Cancelar</button>
         <span id="gEstado" style="margin-left:auto;font-size:11px;color:#4b5563"></span>
       </div>
       <div class="ghist" id="gHist" style="display:none"></div>
@@ -523,6 +527,23 @@ var T = {
       filter_by_type:'Filtrar por tipo',filter_by_coord:'Coordinador',filter_active_note:'Todo el reporte está filtrado',
       kpi_multas_impagas:'Total Multas Impagas',kpi_multas_deuda:'Deuda de Conductores por Multas',
       kpi_multas_sub:'multas sin pagar',kpi_multas_deuda_sub:'conductores activos con multas',
+      wk_title:'📅 Desglose Semanal de Cobranza',
+      wk_sub:'De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda',
+      wk_cargado:'cargado',wk_cubierto:'cubierto',wk_pagado:'Pagado:',wk_impago:'Sigue impago:',
+      wk_caja:'Caja de la semana:',wk_recibidos:'recibidos',wk_anteriores:'a multas anteriores',
+      wk_pct_sub:'De lo cargado esa semana · pagado a hoy',wk_sin_cargos:'Sin cargos',wk_semana:'Semana',conector_de:'de',
+      wk_sin_cargos_sub:'No hubo multas cargadas',wk_dia:'DÍA',wk_dias:'DÍAS',
+      gest_col:'GESTIÓN',gest_comentar:'＋ Comentar',gest_ver:'💬 Ver',gest_hace:'⚠ Hace',
+      gest_d:'d',gest_ind_btn:'📌 Indicación',gest_sin_com:'Sin comentario',gest_ind_de:'Indicación de',
+      gest_deuda:'Deuda pendiente:',gest_label_g:'Gestión del coordinador',gest_label_i:'Indicación para el coordinador',
+      gest_ph_g:'Cómo se está gestionando esta deuda: acuerdos, plazos, respuestas del conductor…',
+      gest_ph_i:'Qué se le pide al coordinador sobre este caso…',
+      gest_ultima:'Última edición por',gest_escrita:'Escrita por',gest_dias:'días',
+      gest_sin_com_aun:'Sin comentario todavía.',gest_sin_ind:'Sin indicación.',
+      gest_vers_g:'Versiones anteriores · gestión',gest_vers_i:'Versiones anteriores · indicaciones',
+      gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
+      gest_err_archivo:'⚠ Falta el archivo tareas-comentarios.json en Drive',gest_err:'⚠ Error al guardar',
+      gest_sin_conexion:'⚠ Sin conexión',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -564,6 +585,23 @@ var T = {
       filter_by_type:'Filter by type',filter_by_coord:'Coordinator',filter_active_note:'The whole report is filtered',
       kpi_multas_impagas:'Total Unpaid Fines',kpi_multas_deuda:'Driver Debt from Fines',
       kpi_multas_sub:'unpaid fines',kpi_multas_deuda_sub:'active drivers with fines',
+      wk_title:'📅 Weekly Collection Breakdown',
+      wk_sub:'Of what was charged each week: how much is paid as of today — no matter when the payment came in — and how much is still carried as debt',
+      wk_cargado:'charged',wk_cubierto:'covered',wk_pagado:'Paid:',wk_impago:'Still unpaid:',
+      wk_caja:'Cash this week:',wk_recibidos:'received',wk_anteriores:'to earlier charges',
+      wk_pct_sub:'Of what was charged that week · paid to date',wk_sin_cargos:'No charges',wk_semana:'Week',conector_de:'of',
+      wk_sin_cargos_sub:'Nothing was charged',wk_dia:'DAY',wk_dias:'DAYS',
+      gest_col:'FOLLOW-UP',gest_comentar:'＋ Comment',gest_ver:'💬 View',gest_hace:'⚠',
+      gest_d:'d ago',gest_ind_btn:'📌 Instruction',gest_sin_com:'No comment',gest_ind_de:'Instruction from',
+      gest_deuda:'Pending debt:',gest_label_g:'Coordinator follow-up',gest_label_i:'Instruction for the coordinator',
+      gest_ph_g:'How this debt is being handled: agreements, deadlines, driver responses…',
+      gest_ph_i:'What the coordinator is asked to do about this case…',
+      gest_ultima:'Last edited by',gest_escrita:'Written by',gest_dias:'days',
+      gest_sin_com_aun:'No comment yet.',gest_sin_ind:'No instruction.',
+      gest_vers_g:'Earlier versions · follow-up',gest_vers_i:'Earlier versions · instructions',
+      gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
+      gest_err_archivo:'⚠ Missing tareas-comentarios.json in Drive',gest_err:'⚠ Save error',
+      gest_sin_conexion:'⚠ Offline',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -605,6 +643,23 @@ var T = {
       filter_by_type:'Фильтр по типу',filter_by_coord:'Координатор',filter_active_note:'Весь отчёт отфильтрован',
       kpi_multas_impagas:'Неоплаченные штрафы',kpi_multas_deuda:'Долг водителей по штрафам',
       kpi_multas_sub:'неоплаченных штрафов',kpi_multas_deuda_sub:'активных водителей со штрафами',
+      wk_title:'📅 Недельная разбивка сборов',
+      wk_sub:'Из начисленного за неделю: какой процент оплачен на сегодня — независимо от даты платежа — и сколько остаётся долгом',
+      wk_cargado:'начислено',wk_cubierto:'покрыто',wk_pagado:'Оплачено:',wk_impago:'Не оплачено:',
+      wk_caja:'Поступления недели:',wk_recibidos:'получено',wk_anteriores:'по прежним начислениям',
+      wk_pct_sub:'Из начисленного за ту неделю · оплачено на сегодня',wk_sin_cargos:'Без начислений',wk_semana:'Неделя',conector_de:'из',
+      wk_sin_cargos_sub:'Начислений не было',wk_dia:'ДЕНЬ',wk_dias:'ДН.',
+      gest_col:'ВЕДЕНИЕ',gest_comentar:'＋ Комментарий',gest_ver:'💬 Открыть',gest_hace:'⚠',
+      gest_d:'дн. назад',gest_ind_btn:'📌 Указание',gest_sin_com:'Без комментария',gest_ind_de:'Указание от',
+      gest_deuda:'Текущий долг:',gest_label_g:'Работа координатора',gest_label_i:'Указание координатору',
+      gest_ph_g:'Как ведётся этот долг: договорённости, сроки, ответы водителя…',
+      gest_ph_i:'Что нужно сделать координатору по этому случаю…',
+      gest_ultima:'Последнее изменение:',gest_escrita:'Написано:',gest_dias:'дн.',
+      gest_sin_com_aun:'Комментария пока нет.',gest_sin_ind:'Указаний нет.',
+      gest_vers_g:'Прежние версии · работа',gest_vers_i:'Прежние версии · указания',
+      gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
+      gest_err_archivo:'⚠ Нет файла tareas-comentarios.json на Drive',gest_err:'⚠ Ошибка сохранения',
+      gest_sin_conexion:'⚠ Нет связи',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -949,10 +1004,11 @@ function tiposDisponibles(){
 function renderTypeFilterBar(){
   var box=document.getElementById('gtfChips');if(!box)return;
   var types=tiposDisponibles();
-  var html='<button class="gtf-chip'+(_typeFilter.length?'':' active')+'" onclick="setTypeFilter(null)">'+t('all_types')+'</button>';
+  var caja='<span class="gtf-box">✓</span>';
+  var html='<button class="gtf-chip'+(_typeFilter.length?'':' active')+'" onclick="setTypeFilter(null)">'+caja+t('all_types')+'</button>';
   types.forEach(function(tp){
     html+='<button class="gtf-chip'+(_typeFilter.indexOf(tp)>=0?' active':'')+'" onclick="setTypeFilter(\''+tp+'\')">'
-      +'<span class="gtf-dot" style="background:'+(TYPE_COLORS[tp]||'#9ca3af')+'"></span>'+esc(typeLabel(tp))+'</button>';
+      +caja+'<span class="gtf-dot" style="background:'+(TYPE_COLORS[tp]||'#9ca3af')+'"></span>'+esc(typeLabel(tp))+'</button>';
   });
   box.innerHTML=html;
   setText('gtfLabel',t('filter_by_type'));
@@ -987,19 +1043,21 @@ function refiltrar(){
 }
 
 function renderCoordFilterBar(){
-  var bar=document.getElementById('gtfCoordBar'),box=document.getElementById('gtfCoordChips');
-  if(!bar||!box)return;
+  var sep=document.getElementById('gtfCoordBar'),lab=document.getElementById('gtfCoordLabel'),
+      box=document.getElementById('gtfCoordChips');
+  if(!sep||!box)return;
   var coords=[];
   FLEET_ROWS.forEach(function(fr){
     if(fr.coordinador&&coords.indexOf(fr.coordinador)<0)coords.push(fr.coordinador);
   });
   coords.sort();
-  // Sin coordinadores cargados en la planilla, la barra no se muestra
-  if(!coords.length){bar.style.display='none';return;}
-  bar.style.display='';
-  var html='<button class="gtf-chip'+(_coordFilter?'':' active')+'" onclick="setCoordFilter(null)">'+t('all_types')+'</button>';
+  // Sin coordinadores cargados en la planilla, este grupo no aparece
+  if(!coords.length){sep.style.display='none';lab.style.display='none';box.innerHTML='';return;}
+  sep.style.display='';lab.style.display='';
+  var caja='<span class="gtf-box">✓</span>';
+  var html='<button class="gtf-chip'+(_coordFilter?'':' active')+'" onclick="setCoordFilter(null)">'+caja+t('all_types')+'</button>';
   coords.forEach(function(c){
-    html+='<button class="gtf-chip'+(_coordFilter===c?' active':'')+'" onclick="setCoordFilter('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'+esc(c)+'</button>';
+    html+='<button class="gtf-chip'+(_coordFilter===c?' active':'')+'" onclick="setCoordFilter('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'+caja+esc(c)+'</button>';
   });
   box.innerHTML=html;
   setText('gtfCoordLabel',t('filter_by_coord'));
@@ -1063,7 +1121,14 @@ function renderKPIs(){
   setText('kpiPendingSub',runningActiveWithDebtCnt+' '+t('kpi_active_with_balance'));
 
   // Row 2: active-only breakdown
-  setText('kpiOpenBills',activeDrv);
+  // La flota activa la define la planilla Control Flota, no los cargos: un conductor
+  // que maneja pero todavía no acumula ninguna multa ni peaje igual está activo.
+  // DRIVERS se arma desde los cargos, así que contarlo ahí dejaba fuera a los 59
+  // conductores sin cargos y el KPI mostraba 42 en vez de la flota real.
+  var activosFlota=FLEET_ROWS.filter(function(fr){
+    return fr.nameNorm&&(!_coordFilter||fr.coordinador===_coordFilter);
+  }).length;
+  setText('kpiOpenBills',activosFlota||activeDrv);
   setText('kpiOpenBillsSub',activeWithDebt.length+' '+t('kpi_with_pending'));
   setText('kpiFiredDebt',activePct+'%');
   setText('kpiFiredDebtSub',fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
@@ -1074,7 +1139,7 @@ function renderKPIs(){
   var multasImpagas=MULTAS.filter(function(m){return (m.amount-m.paidAmount)>0;});
   var montoImpago=multasImpagas.reduce(function(s,m){return s+(m.amount-m.paidAmount);},0);
   setText('kpiMultas',fmtAmt(montoImpago));
-  setText('kpiMultasSub',multasImpagas.length+' de '+MULTAS.length+' '+t('kpi_multas_sub'));
+  setText('kpiMultasSub',multasImpagas.length+' '+t('conector_de')+' '+MULTAS.length+' '+t('kpi_multas_sub'));
 
   // De esas multas, las que caen sobre conductores que siguen activos: es lo
   // efectivamente cobrable hoy, en línea con el resto del reporte.
@@ -1471,7 +1536,7 @@ function renderEvolTable(){
   var html='<thead><tr><th style="text-align:left">Conductor</th>';
   allWeeks.forEach(function(w){html+='<th>'+esc(w.toUpperCase())+'</th>';});
   html+='<th style="background:#1e2a42;color:#93c5fd;text-align:right">'+pendingLabel.replace(' ','<br>')+'</th>';
-  html+='<th style="background:#1e2a42;color:#93c5fd;text-align:center">GESTIÓN</th>';
+  html+='<th style="background:#1e2a42;color:#93c5fd;text-align:center">'+t('gest_col')+'</th>';
   html+='</tr></thead><tbody>';
 
   topDrivers.forEach(function(drv){
@@ -1527,7 +1592,7 @@ function renderEvolTable(){
     var r=COMENTARIOS.items[drv];if(!r||!r.ind||!r.ind.texto)return false;
     return !r.texto||(r.ind.fecha||0)>(r.fecha||0); // indicación sin responder
   }).length;
-  html+='<td style="text-align:center;font-weight:600;color:#6b7280;font-size:11px">'+conCom+' de '+conDeudaList.length+
+  html+='<td style="text-align:center;font-weight:600;color:#6b7280;font-size:11px">'+conCom+' '+t('conector_de')+' '+conDeudaList.length+
     (conInd?'<div style="color:#93c5fd;font-weight:600">📌 '+conInd+'</div>':'')+'</td></tr></tfoot>';
   tbl.innerHTML=html;
 }
@@ -1689,7 +1754,7 @@ function computeWeeklyBreakdown(){
     if(isLast&&startD){
       var today2=new Date();
       var diff=Math.round((today2-startD)/86400000)+1;
-      if(diff<7)daysLabel=diff+(diff===1?' DÍA':' DÍAS');
+      if(diff<7)daysLabel=diff+' '+(diff===1?t('wk_dia'):t('wk_dias'));
     }
 
     var cargado=weekCharged[wk]||0;
@@ -1741,13 +1806,13 @@ function renderWeeklyBreakdown(){
     var pColor=p===null?'#6b7280':p>=80?'#34d399':p>=50?'#fbbf24':'#f87171';
     var pBg=p===null?'#0d1117':p>=80?'#05150d':p>=50?'#130d02':'#150505';
     var pBorder=p===null?'#37415144':p>=80?'#064e3b44':p>=50?'#78350f44':'#7f1d1d44';
-    var pMain=p===null?'Sin cargos':p+'% cubierto',pSub=p===null?'No hubo multas cargadas':'De lo cargado esa semana · pagado a hoy';
+    var pMain=p===null?t('wk_sin_cargos'):p+'% '+t('wk_cubierto'),pSub=p===null?t('wk_sin_cargos_sub'):t('wk_pct_sub');
     html+='<div class="wk-card">'
-      +'<div class="wk-header"><span class="wk-week-lbl">Semana '+w.weekNum+' · '+esc(w.label)+'</span>'+(w.daysLabel?'<span class="wk-days-badge">'+esc(w.daysLabel)+'</span>':'')+'</div>'
-      +'<div class="wk-amounts"><span class="wk-cargado">+'+fmtShort(w.cargado)+' cargado</span><span class="wk-pagado">'+fmtShort(w.cubierto)+' cubierto</span></div>'
+      +'<div class="wk-header"><span class="wk-week-lbl">'+t('wk_semana')+' '+w.weekNum+' · '+esc(w.label)+'</span>'+(w.daysLabel?'<span class="wk-days-badge">'+esc(w.daysLabel)+'</span>':'')+'</div>'
+      +'<div class="wk-amounts"><span class="wk-cargado">+'+fmtShort(w.cargado)+' '+t('wk_cargado')+'</span><span class="wk-pagado">'+fmtShort(w.cubierto)+' '+t('wk_cubierto')+'</span></div>'
       +'<div class="wk-bar"><div class="wk-bar-actual" style="width:'+wA+'%"></div><div class="wk-bar-vieja" style="width:'+wV+'%"></div></div>'
-      +'<div class="wk-bar-labels"><span><span class="wk-dot actual"></span>Pagado: '+fmtShort(w.cubierto)+'</span><span><span class="wk-dot vieja"></span>Sigue impago: '+fmtShort(w.pendienteSemana)+'</span>'
-      +(tot>0?'<span style="flex-basis:100%;color:#6b7280">Caja de la semana: '+fmtShort(tot)+' recibidos'+(w.pagadoVieja>0?' ('+fmtShort(w.pagadoVieja)+' a multas anteriores)':'')+'</span>':'')+'</div>'
+      +'<div class="wk-bar-labels"><span><span class="wk-dot actual"></span>'+t('wk_pagado')+' '+fmtShort(w.cubierto)+'</span><span><span class="wk-dot vieja"></span>'+t('wk_impago')+' '+fmtShort(w.pendienteSemana)+'</span>'
+      +(tot>0?'<span style="flex-basis:100%;color:#6b7280">'+t('wk_caja')+' '+fmtShort(tot)+' '+t('wk_recibidos')+(w.pagadoVieja>0?' ('+fmtShort(w.pagadoVieja)+' '+t('wk_anteriores')+')':'')+'</span>':'')+'</div>'
       +'<div class="wk-pct-box" style="background:'+pBg+';border:1px solid '+pBorder+'"><div class="wk-pct" style="color:'+pColor+'">'+pMain+'</div><div class="wk-pct-sub" style="color:'+pColor+'">'+pSub+'</div></div>'
       +'</div>';
   });
@@ -1791,16 +1856,16 @@ function abrirComentario(drv){
   _comDrv=drv;
   var c=COMENTARIOS.items[drv]||{};
   document.getElementById('gDrv').textContent=drv;
-  document.getElementById('gSub').textContent='Deuda pendiente: '+fmtAmt(_comPendiente(drv));
-  document.getElementById('gTexto').value=c.texto||'';
+  document.getElementById('gSub').textContent=t('gest_deuda')+' '+fmtAmt(_comPendiente(drv));
+  var ta=document.getElementById('gTexto');ta.value=c.texto||'';ta.placeholder=t('gest_ph_g');
   document.getElementById('gMeta').textContent=(c.texto&&c.fecha)
-    ? 'Última edición por '+(c.quien||'—')+' · '+comFecha(c.fecha)+' ('+comDias(c.fecha)+' días)'
-    : 'Sin comentario todavía.';
+    ? t('gest_ultima')+' '+(c.quien||'—')+' · '+comFecha(c.fecha)+' ('+comDias(c.fecha)+' '+t('gest_dias')+')'
+    : t('gest_sin_com_aun');
   var ind=c.ind||{};
-  document.getElementById('gInd').value=ind.texto||'';
+  var ti=document.getElementById('gInd');ti.value=ind.texto||'';ti.placeholder=t('gest_ph_i');
   document.getElementById('gIndMeta').textContent=(ind.texto&&ind.fecha)
-    ? 'Escrita por '+(ind.quien||'—')+' · '+comFecha(ind.fecha)+' ('+comDias(ind.fecha)+' días)'
-    : 'Sin indicación.';
+    ? t('gest_escrita')+' '+(ind.quien||'—')+' · '+comFecha(ind.fecha)+' ('+comDias(ind.fecha)+' '+t('gest_dias')+')'
+    : t('gest_sin_ind');
   document.getElementById('gEstado').textContent='';
   var h=document.getElementById('gHist');
   var bloque=function(titulo,arr){
@@ -1808,7 +1873,7 @@ function abrirComentario(drv){
     return '<div style="font-size:11px;color:#4b5563;margin:6px 0">'+titulo+'</div>'+
       arr.map(function(v){return '<div class="ghist-item"><b>'+esc(v.quien||'—')+' · '+comFecha(v.fecha)+'</b><br>'+esc(v.texto)+'</div>';}).join('');
   };
-  var htm=bloque('Versiones anteriores · gestión',c.historial)+bloque('Versiones anteriores · indicaciones',(c.ind||{}).historial);
+  var htm=bloque(t('gest_vers_g'),c.historial)+bloque(t('gest_vers_i'),(c.ind||{}).historial);
   if(htm){h.style.display='';h.innerHTML=htm;}else{h.style.display='none';h.innerHTML='';}
   document.getElementById('gModal').style.display='flex';
   document.getElementById('gTexto').focus();
@@ -1857,21 +1922,21 @@ async function guardarComentario(){
   COMENTARIOS.updatedAt=Date.now();
 
   var est=document.getElementById('gEstado');
-  est.textContent='Guardando…';est.style.color='#6b7280';
+  est.textContent=t('gest_guardando');est.style.color='#6b7280';
   try{
     var r=await fetch(COM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(COMENTARIOS)});
     if(!r.ok){
       var j=await r.json().catch(function(){return{};});
       var falta=String(j.error||'').indexOf('storage quota')>=0;
-      est.textContent=falta?'⚠ Falta el archivo tareas-comentarios.json en Drive':'⚠ Error al guardar';
+      est.textContent=falta?t('gest_err_archivo'):t('gest_err');
       est.style.color='#f87171';
       renderEvolTable();
       return; // el modal queda abierto: el texto no se pierde
     }
-    est.textContent='☁️ Guardado';est.style.color='#34d399';
+    est.textContent=t('gest_guardado');est.style.color='#34d399';
     renderEvolTable();
     setTimeout(cerrarComentario,450);
-  }catch(e){est.textContent='⚠ Sin conexión';est.style.color='#f87171';}
+  }catch(e){est.textContent=t('gest_sin_conexion');est.style.color='#f87171';}
 }
 
 // Celda de la columna GESTIÓN: solo hay botón si el conductor debe algo
@@ -1889,13 +1954,13 @@ function celdaGestion(drv,pendiente){
   var pendiente=ind&&(!c||(ind.fecha||0)>(c.fecha||0));
   var cls,label,tip;
   if(pendiente){
-    cls='ind';label='📌 Indicación';tip='Indicación de '+(ind.quien||'—')+': '+esc(ind.texto).slice(0,160);
+    cls='ind';label=t('gest_ind_btn');tip=t('gest_ind_de')+' '+(ind.quien||'—')+': '+esc(ind.texto).slice(0,160);
   }else if(!c){
-    cls='';label='＋ Comentar';tip='Sin comentario';
+    cls='';label=t('gest_comentar');tip=t('gest_sin_com');
   }else if(dias!=null&&dias>COM_VIEJO_DIAS){
-    cls='viejo';label='⚠ Hace '+dias+' d';tip=esc(c.texto).slice(0,180);
+    cls='viejo';label=t('gest_hace')+' '+dias+' '+t('gest_d');tip=esc(c.texto).slice(0,180);
   }else{
-    cls='tiene';label='💬 Ver';tip=esc(c.texto).slice(0,180);
+    cls='tiene';label=t('gest_ver');tip=esc(c.texto).slice(0,180);
   }
   return '<td style="text-align:center"><button class="gbtn '+cls+'" title="'+tip+'" '+
     'onclick="abrirComentario('+JSON.stringify(drv).replace(/"/g,'&quot;')+')">'+label+'</button></td>';
