@@ -167,9 +167,13 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .gtf-chip.active .gtf-box{background:#2563eb;border-color:#2563eb;color:#fff}
 .gtf-sep{width:1px;align-self:stretch;background:#1f2937;margin:0 4px}
 /* Vehículos en taller */
+/* Alto relativo a la pantalla: en un monitor grande se aprovecha, en un notebook
+   no se come la vista. El encabezado queda fijo al scrollear. */
+.taller-scroll{max-height:42vh;min-height:120px;overflow:auto}
 .taller-tbl{border-collapse:collapse;font-size:11.5px;width:100%}
 .taller-tbl th{background:#0f1623;color:#6b7280;font-size:10px;font-weight:600;text-transform:uppercase;
-  letter-spacing:.05em;padding:7px 10px;border:1px solid #1a2030;text-align:left;white-space:nowrap}
+  letter-spacing:.05em;padding:7px 10px;border:1px solid #1a2030;text-align:left;white-space:nowrap;
+  position:sticky;top:0;z-index:2}
 .taller-tbl td{padding:7px 10px;border:1px solid #1a2030;vertical-align:top;color:#d1d5db}
 .taller-tbl tr.sinfecha td{background:#160d02}
 .taller-tbl .pat{font-weight:700;color:#f9fafb;white-space:nowrap}
@@ -324,7 +328,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     <!-- Multas: viven en su propio archivo, así que tienen tarjetas propias -->
     <div class="kpi-grid" style="margin-top:11px">
       <div class="kpi-card" style="border-color:#7c3aed44;background:#120d1f">
-        <div class="kpi-label" style="color:#a78bfa" data-i18n="kpi_multas_impagas">Total Multas Impagas</div>
+        <div class="kpi-label" style="color:#a78bfa" data-i18n="kpi_multas_perdida">Pérdida en Multas — Despedidos</div>
         <div class="kpi-value" id="kpiMultas" style="color:#a78bfa">—</div>
         <div class="kpi-sub" id="kpiMultasSub">—</div>
       </div>
@@ -418,7 +422,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       </div>
       <span id="tallerResumen" style="font-size:11px;color:#6b7280;align-self:center"></span>
     </div>
-    <div class="evol-scroll">
+    <div class="taller-scroll">
       <table class="taller-tbl" id="tallerTable"></table>
     </div>
   </div>
@@ -563,8 +567,8 @@ var T = {
       paid_col:'Pagado',pending_debt:'Deuda Pend.',recovery:'Recuperación',main_type:'Tipo',
       all_types:'Todos',all_statuses:'Todos los estados',search:'Buscar conductor...',
       filter_by_type:'Filtrar por tipo',filter_by_coord:'Coordinador',filter_active_note:'Todo el reporte está filtrado',
-      kpi_multas_impagas:'Total Multas Impagas',kpi_multas_deuda:'Deuda de Conductores por Multas',
-      kpi_multas_sub:'multas sin pagar',kpi_multas_deuda_sub:'conductores activos con multas',
+      kpi_multas_perdida:'Pérdida en Multas — Despedidos',kpi_multas_perdida_sub:'conductores despedidos con multas',kpi_multas_deuda:'Deuda de Conductores por Multas',
+      kpi_multas_deuda_sub:'conductores activos con multas',
       wk_title:'📅 Desglose Semanal de Cobranza',
       wk_sub:'De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda',
       wk_cargado:'cargado',wk_cubierto:'cubierto',wk_pagado:'Pagado:',wk_impago:'Sigue impago:',
@@ -581,7 +585,7 @@ var T = {
       gest_vers_g:'Versiones anteriores · gestión',gest_vers_i:'Versiones anteriores · indicaciones',
       gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
       gest_err_archivo:'⚠ Falta el archivo tareas-comentarios.json en Drive',gest_err:'⚠ Error al guardar',
-      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_taller_sub:'con fecha de salida',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',
+      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_taller_sub:'con fecha de salida',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',taller_sale:'Sale',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -621,8 +625,8 @@ var T = {
       paid_col:'Paid',pending_debt:'Pending Debt',recovery:'Recovery',main_type:'Type',
       all_types:'All',all_statuses:'All statuses',search:'Search driver...',
       filter_by_type:'Filter by type',filter_by_coord:'Coordinator',filter_active_note:'The whole report is filtered',
-      kpi_multas_impagas:'Total Unpaid Fines',kpi_multas_deuda:'Driver Debt from Fines',
-      kpi_multas_sub:'unpaid fines',kpi_multas_deuda_sub:'active drivers with fines',
+      kpi_multas_perdida:'Fine Losses — Former Drivers',kpi_multas_perdida_sub:'former drivers with fines',kpi_multas_deuda:'Driver Debt from Fines',
+      kpi_multas_deuda_sub:'active drivers with fines',
       wk_title:'📅 Weekly Collection Breakdown',
       wk_sub:'Of what was charged each week: how much is paid as of today — no matter when the payment came in — and how much is still carried as debt',
       wk_cargado:'charged',wk_cubierto:'covered',wk_pagado:'Paid:',wk_impago:'Still unpaid:',
@@ -639,7 +643,7 @@ var T = {
       gest_vers_g:'Earlier versions · follow-up',gest_vers_i:'Earlier versions · instructions',
       gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
       gest_err_archivo:'⚠ Missing tareas-comentarios.json in Drive',gest_err:'⚠ Save error',
-      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_taller_sub:'with an exit date',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',
+      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_taller_sub:'with an exit date',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',taller_sale:'Out on',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -679,8 +683,8 @@ var T = {
       paid_col:'Оплачено',pending_debt:'Задолженность',recovery:'Погашение',main_type:'Тип',
       all_types:'Все',all_statuses:'Все статусы',search:'Поиск водителя...',
       filter_by_type:'Фильтр по типу',filter_by_coord:'Координатор',filter_active_note:'Весь отчёт отфильтрован',
-      kpi_multas_impagas:'Неоплаченные штрафы',kpi_multas_deuda:'Долг водителей по штрафам',
-      kpi_multas_sub:'неоплаченных штрафов',kpi_multas_deuda_sub:'активных водителей со штрафами',
+      kpi_multas_perdida:'Потери по штрафам — уволенные',kpi_multas_perdida_sub:'уволенных водителей со штрафами',kpi_multas_deuda:'Долг водителей по штрафам',
+      kpi_multas_deuda_sub:'активных водителей со штрафами',
       wk_title:'📅 Недельная разбивка сборов',
       wk_sub:'Из начисленного за неделю: какой процент оплачен на сегодня — независимо от даты платежа — и сколько остаётся долгом',
       wk_cargado:'начислено',wk_cubierto:'покрыто',wk_pagado:'Оплачено:',wk_impago:'Не оплачено:',
@@ -697,7 +701,7 @@ var T = {
       gest_vers_g:'Прежние версии · работа',gest_vers_i:'Прежние версии · указания',
       gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
       gest_err_archivo:'⚠ Нет файла tareas-comentarios.json на Drive',gest_err:'⚠ Ошибка сохранения',
-      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_taller_sub:'с датой выдачи',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',
+      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_taller_sub:'с датой выдачи',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',taller_sale:'Выдача',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -1176,23 +1180,22 @@ function renderKPIs(){
   // tipo — si no, al filtrar por Peaje estas dos tarjetas quedarían en cero y
   // parecería que no hay multas.
   var multasImpagas=MULTAS.filter(function(m){return (m.amount-m.paidAmount)>0;});
-  var montoImpago=multasImpagas.reduce(function(s,m){return s+(m.amount-m.paidAmount);},0);
-  setText('kpiMultas',fmtAmt(montoImpago));
-  setText('kpiMultasSub',multasImpagas.length+' '+t('conector_de')+' '+MULTAS.length+' '+t('kpi_multas_sub'));
-
-  // De esas multas, las que caen sobre conductores que siguen activos: es lo
-  // efectivamente cobrable hoy, en línea con el resto del reporte.
   var activosSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activosSet[d.driver]=true;});
-  var deudaActivos=0,drvActivosConMulta={};
+
+  // Dos universos que no se pisan: lo que se le puede cobrar a alguien que sigue
+  // manejando, y lo que quedó colgando de gente que ya se fue.
+  var deudaActivos=0,drvActivos={},perdida=0,drvDespedidos={};
   multasImpagas.forEach(function(m){
-    var k=normalizeName(m.driver);
-    if(!activosSet[k])return;
-    deudaActivos+=(m.amount-m.paidAmount);
-    drvActivosConMulta[k]=true;
+    var k=normalizeName(m.driver),saldo=m.amount-m.paidAmount;
+    if(activosSet[k]){deudaActivos+=saldo;drvActivos[k]=true;}
+    else{perdida+=saldo;drvDespedidos[k]=true;}
   });
+
+  setText('kpiMultas',fmtAmt(perdida));
+  setText('kpiMultasSub',Object.keys(drvDespedidos).length+' '+t('kpi_multas_perdida_sub'));
   setText('kpiMultasDeuda',fmtAmt(deudaActivos));
-  setText('kpiMultasDeudaSub',Object.keys(drvActivosConMulta).length+' '+t('kpi_multas_deuda_sub'));
+  setText('kpiMultasDeudaSub',Object.keys(drvActivos).length+' '+t('kpi_multas_deuda_sub'));
 
   // Recommended KPIs
   var withPending=DRIVERS.filter(function(d){return d.pending>0;});
@@ -2055,8 +2058,16 @@ function diasEnTaller(ingreso){
   return Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));
 }
 function tallerEnTaller(){
+  var hoy=new Date();hoy.setHours(0,0,0,0);
   return TALLER.filter(function(v){
     if(!/en\s*taller/i.test(v.estado||''))return false;
+    // Una fecha de egreso ya cumplida significa que el auto salió, aunque nadie
+    // haya actualizado la columna de estado. Las fechas futuras se quedan: son
+    // autos que siguen adentro pero con salida comprometida.
+    if(v.egreso){
+      var e=parseDate(v.egreso);
+      if(e&&!isNaN(e)&&e<hoy)return false;
+    }
     if(!_coordFilter)return true;
     var c=coordDePatente(v.patente);
     // Los autos sin asignar aparecen con cualquier coordinador seleccionado: un
@@ -2112,7 +2123,9 @@ function renderTaller(){
       +'<td style="white-space:nowrap">'+esc(v.taller||'—')+'</td>'
       +'<td style="white-space:nowrap;color:#9ca3af">'+esc(v.ingreso||'—')+'</td>'
       +'<td class="dias" style="color:'+color+'">'+(dias==null?'—':dias+' '+t('taller_d'))+'</td>'
-      +'<td class="'+(v.egreso?'confecha':'nofecha')+'">'+(v.egreso?esc(v.egreso):'⚠ '+t('taller_sin'))+'</td>'
+      // "Sale el X" y no la fecha pelada: en verde y a secas se leía como que el
+      // auto ya había salido, cuando es un compromiso a futuro
+      +'<td class="'+(v.egreso?'confecha':'nofecha')+'">'+(v.egreso?t('taller_sale')+' '+esc(v.egreso):'⚠ '+t('taller_sin'))+'</td>'
       +'<td class="obs">'+esc(v.observaciones||'—')+'</td>'
       +'</tr>';
   });
