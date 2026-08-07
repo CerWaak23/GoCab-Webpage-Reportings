@@ -141,7 +141,9 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .gcard textarea{width:100%;background:#0f1117;border:1px solid #374151;border-radius:9px;color:#e2e8f0;
   font-family:inherit;font-size:13px;line-height:1.55;padding:10px 12px;outline:none;resize:vertical}
 .gcard textarea:focus{border-color:#2563eb}
-.gmeta{font-size:11px;color:#4b5563;margin-top:8px}
+.gmeta{font-size:11px;color:#4b5563;margin-top:6px}
+.glabel{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#6b7280;margin-bottom:6px}
+.gbtn.ind{border-color:#2563eb99;color:#93c5fd;background:#0b1729}
 .gacts{display:flex;gap:8px;margin-top:14px;align-items:center}
 .gsave{background:#1d4ed8;border:none;color:#fff;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer}
 .gsave:hover{background:#2563eb}
@@ -431,8 +433,12 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
     <div class="gcard">
       <h3 id="gDrv">—</h3>
       <div class="gsub" id="gSub">—</div>
-      <textarea id="gTexto" rows="5" placeholder="Cómo se está gestionando esta deuda: acuerdos, plazos, respuestas del conductor…"></textarea>
+      <div class="glabel">Gestión del coordinador</div>
+      <textarea id="gTexto" rows="4" placeholder="Cómo se está gestionando esta deuda: acuerdos, plazos, respuestas del conductor…"></textarea>
       <div class="gmeta" id="gMeta"></div>
+      <div class="glabel" style="margin-top:14px">Indicación para el coordinador</div>
+      <textarea id="gInd" rows="3" placeholder="Qué se le pide al coordinador sobre este caso…"></textarea>
+      <div class="gmeta" id="gIndMeta"></div>
       <div class="gacts">
         <button class="gsave" onclick="guardarComentario()">Guardar</button>
         <button class="gcancel" onclick="cerrarComentario()">Cancelar</button>
@@ -1444,12 +1450,14 @@ function renderEvolTable(){
     html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
   });
   html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(grandTotalPending)+'</td>';
-  var conCom=topDrivers.filter(function(drv){
-    var r=COMENTARIOS.items[drv];
-    return (driverPending[drv]||0)>0&&r&&r.texto;
+  var conDeudaList=topDrivers.filter(function(drv){return (driverPending[drv]||0)>0;});
+  var conCom=conDeudaList.filter(function(drv){var r=COMENTARIOS.items[drv];return r&&r.texto;}).length;
+  var conInd=conDeudaList.filter(function(drv){
+    var r=COMENTARIOS.items[drv];if(!r||!r.ind||!r.ind.texto)return false;
+    return !r.texto||(r.ind.fecha||0)>(r.fecha||0); // indicación sin responder
   }).length;
-  var conDeuda=topDrivers.filter(function(drv){return (driverPending[drv]||0)>0;}).length;
-  html+='<td style="text-align:center;font-weight:600;color:#6b7280;font-size:11px">'+conCom+' de '+conDeuda+'</td></tr></tfoot>';
+  html+='<td style="text-align:center;font-weight:600;color:#6b7280;font-size:11px">'+conCom+' de '+conDeudaList.length+
+    (conInd?'<div style="color:#93c5fd;font-weight:600">📌 '+conInd+'</div>':'')+'</td></tr></tfoot>';
   tbl.innerHTML=html;
 }
 
@@ -1714,17 +1722,23 @@ function abrirComentario(drv){
   document.getElementById('gDrv').textContent=drv;
   document.getElementById('gSub').textContent='Deuda pendiente: '+fmtAmt(_comPendiente(drv));
   document.getElementById('gTexto').value=c.texto||'';
-  document.getElementById('gMeta').textContent=c.fecha
+  document.getElementById('gMeta').textContent=(c.texto&&c.fecha)
     ? 'Última edición por '+(c.quien||'—')+' · '+comFecha(c.fecha)+' ('+comDias(c.fecha)+' días)'
     : 'Sin comentario todavía.';
+  var ind=c.ind||{};
+  document.getElementById('gInd').value=ind.texto||'';
+  document.getElementById('gIndMeta').textContent=(ind.texto&&ind.fecha)
+    ? 'Escrita por '+(ind.quien||'—')+' · '+comFecha(ind.fecha)+' ('+comDias(ind.fecha)+' días)'
+    : 'Sin indicación.';
   document.getElementById('gEstado').textContent='';
   var h=document.getElementById('gHist');
-  var hist=(c.historial||[]);
-  if(hist.length){
-    h.style.display='';
-    h.innerHTML='<div style="font-size:11px;color:#4b5563;margin-bottom:6px">Versiones anteriores</div>'+
-      hist.map(function(v){return '<div class="ghist-item"><b>'+esc(v.quien||'—')+' · '+comFecha(v.fecha)+'</b><br>'+esc(v.texto)+'</div>';}).join('');
-  }else{h.style.display='none';h.innerHTML='';}
+  var bloque=function(titulo,arr){
+    if(!arr||!arr.length)return '';
+    return '<div style="font-size:11px;color:#4b5563;margin:6px 0">'+titulo+'</div>'+
+      arr.map(function(v){return '<div class="ghist-item"><b>'+esc(v.quien||'—')+' · '+comFecha(v.fecha)+'</b><br>'+esc(v.texto)+'</div>';}).join('');
+  };
+  var htm=bloque('Versiones anteriores · gestión',c.historial)+bloque('Versiones anteriores · indicaciones',(c.ind||{}).historial);
+  if(htm){h.style.display='';h.innerHTML=htm;}else{h.style.display='none';h.innerHTML='';}
   document.getElementById('gModal').style.display='flex';
   document.getElementById('gTexto').focus();
 }
@@ -1738,16 +1752,37 @@ function _comPendiente(drv){
 async function guardarComentario(){
   if(!_comDrv)return;
   var texto=document.getElementById('gTexto').value.trim();
-  var prev=COMENTARIOS.items[_comDrv];
+  var indTexto=document.getElementById('gInd').value.trim();
+  var prev=COMENTARIOS.items[_comDrv]||{};
+  var prevInd=prev.ind||{};
   // Guarda la versión anterior antes de pisarla: la película de cómo se gestionó
-  // la deuda vale más que la última foto. Se conservan las 5 últimas.
-  var hist=(prev&&prev.historial||[]).slice();
-  if(prev&&prev.texto&&prev.texto!==texto){
+  // la deuda vale más que la última foto. Se conservan las 5 últimas de cada caja.
+  var hist=(prev.historial||[]).slice();
+  if(prev.texto&&prev.texto!==texto){
     hist.unshift({texto:prev.texto,quien:prev.quien,fecha:prev.fecha});
     hist=hist.slice(0,5);
   }
-  if(!texto&&!hist.length)delete COMENTARIOS.items[_comDrv];
-  else COMENTARIOS.items[_comDrv]={texto:texto,quien:comQuien(),fecha:Date.now(),historial:hist};
+  var indHist=(prevInd.historial||[]).slice();
+  if(prevInd.texto&&prevInd.texto!==indTexto){
+    indHist.unshift({texto:prevInd.texto,quien:prevInd.quien,fecha:prevInd.fecha});
+    indHist=indHist.slice(0,5);
+  }
+  // Cada caja lleva su propia firma: solo se re-sella la que efectivamente cambió,
+  // para que editar la gestión no haga parecer que la indicación es nueva.
+  var reg={
+    texto:texto,
+    quien:(texto&&texto!==prev.texto)?comQuien():(prev.quien||null),
+    fecha:(texto&&texto!==prev.texto)?Date.now():(prev.fecha||null),
+    historial:hist,
+    ind:{
+      texto:indTexto,
+      quien:(indTexto&&indTexto!==prevInd.texto)?comQuien():(prevInd.quien||null),
+      fecha:(indTexto&&indTexto!==prevInd.texto)?Date.now():(prevInd.fecha||null),
+      historial:indHist
+    }
+  };
+  if(!texto&&!indTexto&&!hist.length&&!indHist.length)delete COMENTARIOS.items[_comDrv];
+  else COMENTARIOS.items[_comDrv]=reg;
   COMENTARIOS.updatedAt=Date.now();
 
   var est=document.getElementById('gEstado');
@@ -1776,10 +1811,21 @@ function celdaGestion(drv,pendiente){
   // un comentario vacío.
   var reg=COMENTARIOS.items[drv];
   var c=(reg&&reg.texto)?reg:null;
+  var ind=(reg&&reg.ind&&reg.ind.texto)?reg.ind:null;
   var dias=c?comDias(c.fecha):null;
-  var cls=!c?'':(dias!=null&&dias>COM_VIEJO_DIAS?'viejo':'tiene');
-  var label=!c?'＋ Comentar':(dias!=null&&dias>COM_VIEJO_DIAS?'⚠ Hace '+dias+' d':'💬 Ver');
-  var tip=c?esc(c.texto).slice(0,180):'Sin comentario';
+  // Una indicación más nueva que la última gestión es una instrucción sin responder:
+  // gana sobre los demás estados, porque es la que exige acción de alguien.
+  var pendiente=ind&&(!c||(ind.fecha||0)>(c.fecha||0));
+  var cls,label,tip;
+  if(pendiente){
+    cls='ind';label='📌 Indicación';tip='Indicación de '+(ind.quien||'—')+': '+esc(ind.texto).slice(0,160);
+  }else if(!c){
+    cls='';label='＋ Comentar';tip='Sin comentario';
+  }else if(dias!=null&&dias>COM_VIEJO_DIAS){
+    cls='viejo';label='⚠ Hace '+dias+' d';tip=esc(c.texto).slice(0,180);
+  }else{
+    cls='tiene';label='💬 Ver';tip=esc(c.texto).slice(0,180);
+  }
   return '<td style="text-align:center"><button class="gbtn '+cls+'" title="'+tip+'" '+
     'onclick="abrirComentario('+JSON.stringify(drv).replace(/"/g,'&quot;')+')">'+label+'</button></td>';
 }
