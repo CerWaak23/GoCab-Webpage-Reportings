@@ -222,7 +222,20 @@
   .trashrow .purge:hover{color:var(--red);opacity:1}
   .trash-empty{list-style:none;color:var(--muted);font-size:12.5px;font-style:italic}
 
-  /* protocolos + casos */
+  /* Índice lateral. En vez de esperar a que sobre margen —lo que en pantallas
+     normales no pasa nunca— se le hace sitio corriendo el contenido a la derecha.
+     Así aparece desde 1200px y jamás se superpone. */
+  .toc{position:fixed;left:18px;top:96px;width:178px;z-index:40;display:none;
+    max-height:calc(100vh - 130px);overflow-y:auto}
+  .toc-t{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 8px 10px}
+  .toc a{display:block;font-size:11.5px;color:var(--muted);text-decoration:none;padding:5px 10px;
+    border-left:2px solid var(--line);line-height:1.35;transition:all .12s}
+  .toc a:hover{color:var(--ink);border-left-color:var(--blue)}
+  .toc a.on{color:var(--ink);border-left-color:var(--gold1);font-weight:700}
+  @media (min-width:1200px){.toc{display:block}body{padding-left:214px}}
+
+  /* protocolos */
   .pbox{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--paper)}
   .pbar{display:flex;gap:8px;padding:9px 11px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
   .pbar input,.pbar select{font-family:inherit;font-size:12px;color:var(--ink);background:var(--paper);
@@ -251,25 +264,6 @@
   .pcontact{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:12px}
   .pcontact b{display:block;font-size:12px;color:var(--ink)}
   .pcontact span{color:var(--muted);font-size:11.5px}
-  .prow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--card)}
-  .prow.done{opacity:.62}
-  .dot{width:8px;height:8px;border-radius:50%;flex:none}
-  .prow .ct{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:var(--ink)}
-  .prow .ct small{display:block;font-weight:500;color:var(--muted);font-size:10.5px;margin-top:2px}
-  .cprog{flex:none;width:74px}
-  .ctrack{height:5px;border-radius:3px;background:var(--paper);overflow:hidden}
-  .cfill{height:100%;border-radius:3px}
-  .cprog small{display:block;text-align:right;font-size:10px;color:var(--muted);margin-top:3px}
-  .ckstep{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
-  .ckstep:last-child{border-bottom:none}
-  .ckstep input[type=checkbox]{margin-top:3px;width:15px;height:15px;flex:none;accent-color:var(--green);cursor:pointer}
-  .ckstep .cb{flex:1;min-width:0}
-  .ckstep .cn{font-size:12.5px;font-weight:700;color:var(--ink)}
-  .ckstep.hecho .cn{text-decoration:line-through;color:var(--muted)}
-  .ckstep .cd{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:2px;white-space:pre-wrap}
-  .ckstep .cw{font-size:10.5px;color:var(--green);margin-top:3px}
-  .ckstep textarea{width:100%;margin-top:5px;font-family:inherit;font-size:11.5px;color:var(--ink);
-    background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;outline:none;resize:vertical}
   .minibtn{font-family:inherit;font-size:10.5px;font-weight:700;color:var(--muted);background:transparent;
     border:1px solid var(--line);border-radius:7px;padding:3px 8px;cursor:pointer}
   .minibtn:hover{color:var(--ink);border-color:var(--blue)}
@@ -409,31 +403,13 @@
   <!-- PROTOCOLOS OPERACIONALES -->
   <div class="sec">
     <p class="sh"><span data-es="📋 Protocolos operacionales" data-en="📋 Operational protocols" data-ru="📋 Операционные протоколы">📋 Protocolos operacionales</span><button class="secbtn" onclick="nuevoProtocolo()" data-es="＋ Nuevo protocolo" data-en="＋ New protocol" data-ru="＋ Новый протокол">＋ Nuevo protocolo</button></p>
-    <p class="ssub" data-es="Qué hacer paso a paso cuando pasa algo fuera de la rutina. Cada caso real queda registrado abajo con quién hizo qué y cuándo." data-en="Step-by-step guides for anything outside the routine. Every real case is logged below with who did what and when." data-ru="Пошаговые инструкции для нештатных ситуаций. Каждый случай фиксируется ниже: кто, что и когда.">Qué hacer paso a paso cuando pasa algo fuera de la rutina. Cada caso real queda registrado abajo con quién hizo qué y cuándo.</p>
+    <p class="ssub" data-es="Qué hacer paso a paso cuando pasa algo fuera de la rutina, para que cualquiera pueda tomarlo sin preguntar." data-en="Step-by-step guides for anything outside the routine, so anyone can pick it up without asking." data-ru="Пошаговые инструкции для нештатных ситуаций, чтобы любой мог разобраться без вопросов.">Qué hacer paso a paso cuando pasa algo fuera de la rutina, para que cualquiera pueda tomarlo sin preguntar.</p>
     <div class="pbox">
       <div class="pbar">
         <input class="grow" id="protoQ" oninput="renderProtos()" placeholder="Buscar paso, contacto, texto…">
         <span id="protoSync" style="align-self:center;font-size:11px;color:var(--muted);white-space:nowrap"></span>
       </div>
       <div class="pscroll" id="protoList"></div>
-    </div>
-  </div>
-
-  <div class="sec">
-    <p class="sh"><span data-es="🗂️ Casos" data-en="🗂️ Cases" data-ru="🗂️ Случаи">🗂️ Casos</span><button class="secbtn" onclick="nuevoCaso()" data-es="＋ Abrir caso" data-en="＋ Open case" data-ru="＋ Открыть случай">＋ Abrir caso</button></p>
-    <p class="ssub" data-es="Historial de cada vez que aplicamos un protocolo. Los pasos quedan congelados como estaban al abrir el caso." data-en="History of every time a protocol was applied. Steps are frozen as they were when the case was opened." data-ru="История применения протоколов. Шаги фиксируются на момент открытия случая.">Historial de cada vez que aplicamos un protocolo. Los pasos quedan congelados como estaban al abrir el caso.</p>
-    <div class="pbox">
-      <div class="pbar">
-        <input class="grow" id="casoQ" oninput="renderCasos()" placeholder="Patente, conductor, nota…">
-        <select id="casoProto" onchange="renderCasos()"></select>
-        <select id="casoEstado" onchange="renderCasos()">
-          <option value="">Todos</option>
-          <option value="abierto">Abiertos</option>
-          <option value="cerrado">Cerrados</option>
-        </select>
-        <span id="casoSync" style="align-self:center;font-size:11px;color:var(--muted);white-space:nowrap"></span>
-      </div>
-      <div class="pscroll" id="casoList"></div>
     </div>
   </div>
 
@@ -503,36 +479,6 @@
       <button class="addbtn" onclick="guardarPaso()" data-es="Guardar" data-en="Save" data-ru="Сохранить">Guardar</button>
       <button class="secbtn" onclick="cerrarModal('pasoModal')" data-es="Cancelar" data-en="Cancel" data-ru="Отмена">Cancelar</button>
       <button class="secbtn" id="sBorrar" onclick="borrarPaso()" style="margin-left:auto;color:var(--red)" data-es="Eliminar" data-en="Delete" data-ru="Удалить">Eliminar</button>
-    </div>
-  </div>
-</div>
-
-<div id="casoModal" class="modal" hidden>
-  <div class="modalcard">
-    <h3 data-es="Abrir caso" data-en="Open case" data-ru="Открыть случай">Abrir caso</h3>
-    <label data-es="Protocolo" data-en="Protocol" data-ru="Протокол">Protocolo</label>
-    <select id="cProto" onchange="refrescarVariantesCaso()"></select>
-    <label data-es="Variante" data-en="Variant" data-ru="Вариант">Variante</label>
-    <select id="cVariante"></select>
-    <div class="fgrid">
-      <div><label data-es="Patente" data-en="Plate" data-ru="Номер">Patente</label><input id="cPatente"></div>
-      <div><label data-es="Conductor" data-en="Driver" data-ru="Водитель">Conductor</label><input id="cConductor"></div>
-    </div>
-    <div class="factions">
-      <button class="addbtn" onclick="crearCaso()" data-es="Abrir caso" data-en="Open case" data-ru="Открыть случай">Abrir caso</button>
-      <button class="secbtn" onclick="cerrarModal('casoModal')" data-es="Cancelar" data-en="Cancel" data-ru="Отмена">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<div id="detalleModal" class="modal" hidden>
-  <div class="modalcard" style="max-width:620px">
-    <h3 id="dTitulo">Caso</h3>
-    <p id="dSub" style="margin:-6px 0 12px;font-size:12px;color:var(--muted)"></p>
-    <div id="dPasos"></div>
-    <div class="factions" style="margin-top:14px">
-      <button class="secbtn" onclick="cerrarModal('detalleModal')" data-es="Cerrar" data-en="Close" data-ru="Закрыть">Cerrar</button>
-      <button class="secbtn" id="dBorrar" onclick="borrarCaso()" style="margin-left:auto;color:var(--red)" data-es="Eliminar caso" data-en="Delete case" data-ru="Удалить случай">Eliminar caso</button>
     </div>
   </div>
 </div>
@@ -1172,7 +1118,6 @@
     ['fContacts','eContacts'].forEach(i=>ph(i,'Nombre, teléfono, correo…','Name, phone, email…','Имя, телефон, эл. почта…'));
     ['fLinks','eLinks'].forEach(i=>ph(i,'Un link por línea…','One link per line…','По одной ссылке на строку…'));
     ph('protoQ','Buscar paso, contacto, texto…','Search step, contact, text…','Поиск по шагам, контактам, тексту…');
-    ph('casoQ','Patente, conductor, nota…','Plate, driver, note…','Номер, водитель, заметка…');
     ph('pNombre','Pérdida total de vehículo','Total loss of vehicle','Полная гибель автомобиля');
     ph('pVariantes','Taller Bruno Fritsch\nTaller Kaufmann','Bruno Fritsch shop\nKaufmann shop','Сервис Bruno Fritsch\nСервис Kaufmann');
     ph('pContactos','Grúas Vera | +56 9 8123 4567','Vera Towing | +56 9 8123 4567','Эвакуатор Vera | +56 9 8123 4567');
@@ -1184,7 +1129,8 @@
     fillSelects(lang);
     render();
     // La sección de protocolos se arma en JS: hay que repintarla al cambiar idioma
-    if(typeof renderProtos==='function'){renderProtos();renderCasos();}
+    if(typeof renderProtos==='function')renderProtos();
+    if(typeof buildTOC==='function')buildTOC(); // los títulos del índice también cambian de idioma
     if(lastSyncState) setSync(lastSyncState);
     LS.set('gocab_dash_lang',lang);
   }
@@ -1254,19 +1200,19 @@
     }, 15000);
   }
 
-  /* ═══════════ PROTOCOLOS OPERACIONALES + CASOS ═══════════
-     Dos mini-bases separadas de las tareas: los protocolos casi no cambian y los
-     casos crecen sin techo, así que comparten el endpoint pero no el archivo.
-     Al abrir un caso se congela una copia de los pasos vigentes: si mañana el
-     protocolo cambia, los casos ya cerrados siguen contando su propia historia. */
+  /* ═══════════ PROTOCOLOS OPERACIONALES ═══════════
+     Mini-base propia en Drive, separada de las tareas: los protocolos casi no
+     cambian y no tiene sentido reenviarlos con cada edición de una tarea.
+
+     Existió acá un registro de casos —cada vez que se aplicaba un protocolo, con
+     sus pasos congelados— que se retiró por no usarse. Sus datos siguen en Drive
+     en tareas-casos.json y el código está en el historial de git. */
   const PROTO_API='/api/tareas?doc=protocolos';
-  const CASO_API='/api/tareas?doc=casos';
   let PROTOS={protocolos:[],updatedAt:0};
-  let CASOS={casos:[],updatedAt:0};
   let ME=null;                 // usuario de la sesión, para firmar quién marcó cada paso
   let protoAbierto=null;       // solo un protocolo desplegado a la vez
-  let editandoProto=null, editandoPaso=null, casoAbierto=null;
-  let pSaveTimer=null, cSaveTimer=null;
+  let editandoProto=null, editandoPaso=null;
+  let pSaveTimer=null;
 
   // Los textos de esta sección se arman en JS, así que no los alcanza el barrido
   // de [data-es] de applyLang: pasan por acá.
@@ -1283,18 +1229,11 @@
     try{
       const r=await fetch(PROTO_API+'&_='+Date.now()); const j=await r.json();
       if(j&&j.state&&Array.isArray(j.state.protocolos)&&(j.state.updatedAt||0)>(PROTOS.updatedAt||0)){
-        PROTOS=j.state; renderProtos(); llenarSelectProtos();
+        PROTOS=j.state; renderProtos();
       }
     }catch(e){}
   }
-  async function pullCasos(){
-    try{
-      const r=await fetch(CASO_API+'&_='+Date.now()); const j=await r.json();
-      if(j&&j.state&&Array.isArray(j.state.casos)&&(j.state.updatedAt||0)>(CASOS.updatedAt||0)){
-        CASOS=j.state; renderCasos();
-      }
-    }catch(e){}
-  }
+
   /* Un fallo al guardar tiene que verse: si el archivo de Drive no existe o la
      service account no puede escribirlo, el trabajo recién escrito se perdería
      en silencio al recargar. El estado queda a la vista y el error explica qué hacer. */
@@ -1321,12 +1260,7 @@
     if(pSaveTimer) clearTimeout(pSaveTimer);
     pSaveTimer=setTimeout(()=>{ pSaveTimer=null; enviar(PROTO_API,PROTOS,'protoSync'); },700);
   }
-  function guardarCasos(){
-    CASOS.updatedAt=Date.now();
-    estadoGuardado('casoSync','✎ Sin guardar…');
-    if(cSaveTimer) clearTimeout(cSaveTimer);
-    cSaveTimer=setTimeout(()=>{ cSaveTimer=null; enviar(CASO_API,CASOS,'casoSync'); },700);
-  }
+
 
   function cerrarModal(id){ const m=document.getElementById(id); if(m) m.hidden=true; }
 
@@ -1367,15 +1301,13 @@
       const p={id:nid('p'),nombre,variantes,contactos,pasos:[],creadoPor:quienSoy(),creadoEl:Date.now()};
       PROTOS.protocolos.push(p); protoAbierto=p.id;
     }
-    guardarProtos(); cerrarModal('protoModal'); renderProtos(); llenarSelectProtos();
+    guardarProtos(); cerrarModal('protoModal'); renderProtos();
   }
   function borrarProtocolo(){
     const p=PROTOS.protocolos.find(x=>x.id===editandoProto); if(!p) return;
-    const usados=CASOS.casos.filter(c=>c.protoId===p.id).length;
-    const aviso=usados?`Hay ${usados} caso(s) abiertos o cerrados con este protocolo. Los casos NO se borran y conservan sus pasos. ¿Eliminar el protocolo igual?`:'¿Eliminar este protocolo?';
-    if(!confirm(aviso)) return;
+    if(!confirm(PT('¿Eliminar este protocolo?','Delete this protocol?','Удалить этот протокол?'))) return;
     PROTOS.protocolos=PROTOS.protocolos.filter(x=>x.id!==p.id);
-    guardarProtos(); cerrarModal('protoModal'); renderProtos(); llenarSelectProtos();
+    guardarProtos(); cerrarModal('protoModal'); renderProtos();
   }
   function toggleProto(id){ protoAbierto=protoAbierto===id?null:id; renderProtos(); }
 
@@ -1430,7 +1362,7 @@
     guardarProtos(); cerrarModal('pasoModal'); renderProtos();
   }
   function borrarPaso(){
-    if(!confirm('¿Eliminar este paso? Los casos ya abiertos lo conservan.')) return;
+    if(!confirm(PT('¿Eliminar este paso?','Delete this step?','Удалить этот шаг?'))) return;
     const p=PROTOS.protocolos.find(x=>x.id===editandoPaso.protoId); if(!p) return;
     p.pasos=p.pasos.filter(x=>x.id!==editandoPaso.pasoId);
     guardarProtos(); cerrarModal('pasoModal'); renderProtos();
@@ -1504,140 +1436,97 @@
     }).join('');
   }
 
-  /* ---------- Casos ---------- */
-  function llenarSelectProtos(){
-    const opts=PROTOS.protocolos.map(p=>`<option value="${p.id}">${pesc(p.nombre)}</option>`).join('');
-    const f=document.getElementById('casoProto');
-    if(f){ const prev=f.value; f.innerHTML=`<option value="">${PT('Todos los protocolos','All protocols','Все протоколы')}</option>`+opts; f.value=prev; }
-    const c=document.getElementById('cProto');
-    if(c) c.innerHTML=opts;
-  }
-  function nuevoCaso(){
-    if(!PROTOS.protocolos.length){ alert('Primero crea un protocolo.'); return; }
-    llenarSelectProtos(); refrescarVariantesCaso();
-    document.getElementById('cPatente').value='';
-    document.getElementById('cConductor').value='';
-    document.getElementById('casoModal').hidden=false;
-  }
-  function refrescarVariantesCaso(){
-    const p=PROTOS.protocolos.find(x=>x.id===document.getElementById('cProto').value);
-    const el=document.getElementById('cVariante');
-    el.innerHTML=`<option value="">${PT('Sin variante','No variant','Без варианта')}</option>`+
-      (p&&p.variantes||[]).map(v=>`<option value="${pesc(v)}">${pesc(v)}</option>`).join('');
-  }
-  function crearCaso(){
-    const p=PROTOS.protocolos.find(x=>x.id===document.getElementById('cProto').value);
-    if(!p) return;
-    const variante=document.getElementById('cVariante').value;
-    // Congela los pasos vigentes: el protocolo puede cambiar, este caso ya no.
-    const pasos=(p.pasos||[]).filter(s=>!s.variante||s.variante===variante)
-      .map(s=>({id:s.id,titulo:s.titulo,desc:s.desc,resp:s.resp,dias:s.dias,hecho:false,fecha:null,quien:null,nota:''}));
-    if(!pasos.length){ alert('Ese protocolo no tiene pasos para esa variante.'); return; }
-    CASOS.casos.unshift({
-      id:nid('c'),protoId:p.id,protoNombre:p.nombre,variante,
-      patente:document.getElementById('cPatente').value.trim(),
-      conductor:document.getElementById('cConductor').value.trim(),
-      abiertoEl:Date.now(),abiertoPor:quienSoy(),cerradoEl:null,pasos
-    });
-    guardarCasos(); cerrarModal('casoModal'); renderCasos();
-  }
-  function abrirCaso(id){
-    casoAbierto=id; pintarDetalle();
-    document.getElementById('detalleModal').hidden=false;
-  }
-  function pintarDetalle(){
-    const c=CASOS.casos.find(x=>x.id===casoAbierto); if(!c) return;
-    const hechos=c.pasos.filter(s=>s.hecho).length;
-    document.getElementById('dTitulo').textContent=[c.patente,c.conductor].filter(Boolean).join(' · ')||PT('Caso','Case','Случай');
-    document.getElementById('dSub').textContent=
-      `${c.protoNombre}${c.variante?' · '+c.variante:''} · ${PT('abierto','opened','открыт')} ${fmtDate(c.abiertoEl)} ${PT('por','by','кем')} ${c.abiertoPor||'—'}`+
-      (c.cerradoEl?` · ${PT('cerrado','closed','закрыт')} ${fmtDate(c.cerradoEl)}`:'')+
-      ` · ${hechos} ${PT('de','of','из')} ${c.pasos.length}`;
-    document.getElementById('dPasos').innerHTML=c.pasos.map((s,i)=>`
-      <div class="ckstep${s.hecho?' hecho':''}">
-        <input type="checkbox" ${s.hecho?'checked':''} onchange="marcarPaso('${c.id}','${s.id}',this.checked)">
-        <div class="cb">
-          <div class="cn">${i+1}. ${pesc(s.titulo)}</div>
-          ${s.desc?`<div class="cd">${pesc(s.desc)}</div>`:''}
-          ${s.hecho?`<div class="cw">✓ ${pesc(s.quien||'—')} · ${fmtDate(s.fecha)}</div>`:''}
-          <textarea rows="1" placeholder="${PT('Nota…','Note…','Заметка…')}" onchange="notaPaso('${c.id}','${s.id}',this.value)">${pesc(s.nota||'')}</textarea>
-        </div>
-      </div>`).join('');
-  }
-  function marcarPaso(casoId,pasoId,checked){
-    const c=CASOS.casos.find(x=>x.id===casoId); if(!c) return;
-    const s=c.pasos.find(x=>x.id===pasoId); if(!s) return;
-    s.hecho=checked;
-    // Firma automática: quién y cuándo salen de la sesión, no se escriben a mano
-    s.quien=checked?quienSoy():null;
-    s.fecha=checked?Date.now():null;
-    c.cerradoEl=c.pasos.every(x=>x.hecho)?Date.now():null;
-    guardarCasos(); pintarDetalle(); renderCasos();
-  }
-  function notaPaso(casoId,pasoId,val){
-    const c=CASOS.casos.find(x=>x.id===casoId); if(!c) return;
-    const s=c.pasos.find(x=>x.id===pasoId); if(!s) return;
-    s.nota=val; guardarCasos(); renderCasos();
-  }
-  function borrarCaso(){
-    if(!confirm('¿Eliminar este caso del historial? No se puede deshacer.')) return;
-    CASOS.casos=CASOS.casos.filter(x=>x.id!==casoAbierto);
-    guardarCasos(); cerrarModal('detalleModal'); renderCasos();
-  }
-
-  function renderCasos(){
-    const el=document.getElementById('casoList'); if(!el) return;
-    const q=(document.getElementById('casoQ').value||'').trim().toLowerCase();
-    const fp=document.getElementById('casoProto').value;
-    const fe=document.getElementById('casoEstado').value;
-    const lista=CASOS.casos.filter(c=>{
-      if(fp&&c.protoId!==fp) return false;
-      if(fe==='abierto'&&c.cerradoEl) return false;
-      if(fe==='cerrado'&&!c.cerradoEl) return false;
-      if(!q) return true;
-      // la búsqueda entra también a las notas: ahí queda el detalle que uno recuerda a medias
-      const blob=[c.patente,c.conductor,c.protoNombre,c.variante,c.abiertoPor,
-        c.pasos.map(s=>s.nota+' '+s.titulo).join(' ')].join(' ').toLowerCase();
-      return blob.indexOf(q)>=0;
-    }).sort((a,b)=>(a.cerradoEl?1:0)-(b.cerradoEl?1:0)||b.abiertoEl-a.abiertoEl);
-    if(!lista.length){
-      el.innerHTML=`<div class="pempty">${CASOS.casos.length
-        ?PT('Ningún caso coincide con el filtro.','No case matches the filter.','Ни один случай не подходит под фильтр.')
-        :PT('Todavía no hay casos registrados.','No cases recorded yet.','Случаев пока нет.')}</div>`;
-      return;
-    }
-    el.innerHTML=lista.map(c=>{
-      const hechos=c.pasos.filter(s=>s.hecho).length,tot=c.pasos.length;
-      const pct=tot?Math.round(hechos/tot*100):0;
-      const color=c.cerradoEl?'var(--gray)':pct>=67?'var(--green)':pct>=34?'var(--amber)':'var(--red)';
-      const dias=Math.max(0,Math.round(((c.cerradoEl||Date.now())-c.abiertoEl)/86400000));
-      const d=`${dias} ${PT(dias===1?'día':'días',dias===1?'day':'days','дн.')}`;
-      const sub=`${pesc(c.protoNombre)}${c.variante?' · '+pesc(c.variante):''} · `+
-        (c.cerradoEl?PT(`cerrado en ${d}`,`closed in ${d}`,`закрыт за ${d}`):PT(`abierto hace ${d}`,`open for ${d}`,`открыт ${d}`));
-      return `<div class="prow${c.cerradoEl?' done':''}" onclick="abrirCaso('${c.id}')" style="cursor:pointer">
-        <span class="dot" style="background:${color}"></span>
-        <div class="ct">${pesc([c.patente,c.conductor].filter(Boolean).join(' · ')||PT('Caso sin identificar','Unidentified case','Случай без данных'))}<small>${sub}</small></div>
-        <div class="cprog"><div class="ctrack"><div class="cfill" style="width:${pct}%;background:${color}"></div></div>
-          <small>${hechos} de ${tot}</small></div>
-      </div>`;
-    }).join('');
-  }
-
   async function initProtocolos(){
     await cargarMe();
-    await pullProtos(); await pullCasos();
-    renderProtos(); renderCasos(); llenarSelectProtos();
+    await pullProtos();
+    renderProtos();
     setInterval(()=>{
-      const alguno=['protoModal','pasoModal','casoModal','detalleModal'].some(i=>!document.getElementById(i).hidden);
-      if(alguno||pSaveTimer||cSaveTimer) return; // no pisar lo que se está editando
-      pullProtos(); pullCasos();
+      const alguno=['protoModal','pasoModal'].some(i=>!document.getElementById(i).hidden);
+      if(alguno||pSaveTimer) return; // no pisar lo que se está editando
+      pullProtos();
     },20000);
   }
+
+  /* ---------- Índice lateral ---------- */
+  // Se arma leyendo los títulos que ya existen, no una lista aparte: si mañana se
+  // agrega o se saca una sección, el índice se entera solo.
+  function buildTOC(){
+    let nav=document.getElementById('toc');
+    if(!nav){
+      nav=document.createElement('nav');nav.id='toc';nav.className='toc';
+      document.body.appendChild(nav);
+    }
+    const secs=[...document.querySelectorAll('.sec')].filter(s=>s.querySelector('.sh'));
+    let html=`<p class="toc-t">${PT('Índice','Contents','Содержание')}</p>`;
+    secs.forEach((s,i)=>{
+      if(!s.id) s.id='sec'+i;
+      const sp=s.querySelector('.sh span');
+      const txt=(sp?sp.textContent:s.querySelector('.sh').textContent).trim();
+      html+=`<a href="#${s.id}" data-sec="${s.id}">${pesc(txt)}</a>`;
+    });
+    nav.innerHTML=html;
+    nav.querySelectorAll('a').forEach(a=>{
+      a.onclick=e=>{
+        e.preventDefault();
+        const el=document.getElementById(a.dataset.sec);
+        if(!el) return;
+        // Offset para que el título no quede pegado al borde de arriba
+        const y=Math.max(0,el.getBoundingClientRect().top+window.scrollY-24);
+        const desde=window.scrollY;
+        try{ window.scrollTo({top:y,behavior:'smooth'}); }catch(_){ window.scrollTo(0,y); }
+        // Red de seguridad: si el scroll suave no se movió —pasa cuando el
+        // navegador lo ignora— se salta de una en vez de no hacer nada.
+        setTimeout(()=>{ if(Math.abs(window.scrollY-desde)<2) window.scrollTo(0,y); },250);
+        // Feedback inmediato: no esperar a que el observer se entere
+        nav.querySelectorAll('a').forEach(x=>x.classList.toggle('on',x===a));
+        setTimeout(marcarTOC,600);
+      };
+    });
+    observarSecciones();
+    marcarTOC();
+  }
+  // Resalta la sección que se está mirando: la última cuyo título ya pasó por
+  // arriba de la pantalla
+  function marcarTOC(){
+    const nav=document.getElementById('toc'); if(!nav) return;
+    const secs=[...document.querySelectorAll('.sec')].filter(s=>s.id&&s.querySelector('.sh'));
+    if(!secs.length) return;
+    let actual=secs[0];
+    secs.forEach(s=>{ if(s.getBoundingClientRect().top<=120) actual=s; });
+    // Abajo del todo ya no se puede scrollear más, así que las últimas secciones
+    // nunca llegarían a cruzar el umbral: ahí gana la última.
+    const finDePagina=window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4;
+    if(finDePagina) actual=secs[secs.length-1];
+    nav.querySelectorAll('a').forEach(a=>{
+      a.classList.toggle('on',!!actual&&a.dataset.sec===actual.id);
+    });
+  }
+  /* El resaltado se dispara con IntersectionObserver y no con el evento scroll:
+     hay contextos —el iframe embebido entre ellos— donde la página se desplaza
+     sin emitir un solo evento scroll, y el índice se quedaba congelado en la
+     primera sección. El observer lo maneja el propio motor de render. */
+  let _tocObs=null;
+  function observarSecciones(){
+    if(_tocObs) _tocObs.disconnect();
+    if(typeof IntersectionObserver!=='function') return;
+    _tocObs=new IntersectionObserver(()=>marcarTOC(),{threshold:[0,1]});
+    document.querySelectorAll('.sec').forEach(s=>_tocObs.observe(s));
+  }
+  let _tocTick=false;
+  window.addEventListener('scroll',()=>{   // respuesta inmediata donde sí hay eventos
+    if(_tocTick) return; _tocTick=true;
+    requestAnimationFrame(()=>{ _tocTick=false; marcarTOC(); });
+  },{passive:true});
+  /* Y una red de seguridad: ni el evento scroll ni el observer se disparan en
+     todos los contextos donde corre este reporte. Cuatro getBoundingClientRect
+     cada 400 ms no se notan, y garantizan que el índice nunca quede congelado. */
+  setInterval(marcarTOC,400);
 
   applyTheme(THEME);
   applyLang(LANG);
   initRemote();
   initProtocolos();
+  buildTOC();
 </script>
 </body>
 </html>
