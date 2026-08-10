@@ -1247,6 +1247,23 @@
     return ok?{nombre,url}:null;
   }).filter(Boolean);
   const linksATexto=arr=>(arr||[]).map(l=>l.nombre+' | '+l.url).join('\n');
+  /* Separa lo que se pudo interpretar de lo que no, línea por línea. Antes las
+     líneas invalidas se perdían sin decir nada y el campo aparecía vacío la
+     próxima vez, que es exactamente lo que pasó con "Documentos y enlaces". */
+  const parseLinksDetalle=txt=>{
+    const out={ok:[],malas:[]};
+    String(txt||'').split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{
+      const r=parseLinks(l);
+      if(r.length) out.ok.push(r[0]); else out.malas.push(l);
+    });
+    return out;
+  };
+  const avisaMalas=malas=>{
+    if(!malas.length) return;
+    alert(PT('Estas líneas no parecen enlaces y no se van a mostrar como botón. Quedan guardadas igual, revísalas:',
+             'These lines do not look like links and will not show as buttons. They are still saved, please review:',
+             'Эти строки не похожи на ссылки и не будут показаны кнопкой. Они сохранены, проверьте их:')+'\n\n'+malas.join('\n'));
+  };
   const pintaLinks=arr=>!arr||!arr.length?'':'<div class="plinks">'+arr.map(l=>
     '<a class="plink" href="'+pesc(l.url)+'" target="_blank" rel="noopener noreferrer">🔗 '+pesc(l.nombre)+'</a>').join('')+'</div>';
   const nid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -1320,7 +1337,7 @@
     document.getElementById('pNombre').value=p.nombre||'';
     document.getElementById('pVariantes').value=(p.variantes||[]).join('\n');
     document.getElementById('pContactos').value=(p.contactos||[]).map(c=>c.nombre+' | '+c.dato).join('\n');
-    document.getElementById('pLinks').value=linksATexto(p.links);
+    document.getElementById('pLinks').value=(p.linksRaw!=null&&p.linksRaw!=='')?p.linksRaw:linksATexto(p.links);
     document.getElementById('pBorrar').style.display='';
     document.getElementById('protoModal').hidden=false;
   }
@@ -1332,15 +1349,19 @@
       const i=l.indexOf('|');
       return i<0?{nombre:l,dato:''}:{nombre:l.slice(0,i).trim(),dato:l.slice(i+1).trim()};
     });
-    const links=parseLinks(document.getElementById('pLinks').value);
+    // Se guarda tambien el texto tal cual se escribio: asi nada de lo que puso
+    // la persona desaparece, aunque no se pueda convertir en boton.
+    const linksRaw=document.getElementById('pLinks').value;
+    const det=parseLinksDetalle(linksRaw);
+    const links=det.ok;
     if(editandoProto){
       const p=PROTOS.protocolos.find(x=>x.id===editandoProto);
-      Object.assign(p,{nombre,variantes,contactos,links});
+      Object.assign(p,{nombre,variantes,contactos,links,linksRaw});
     }else{
-      const p={id:nid('p'),nombre,variantes,contactos,links,pasos:[],creadoPor:quienSoy(),creadoEl:Date.now()};
+      const p={id:nid('p'),nombre,variantes,contactos,links,linksRaw,pasos:[],creadoPor:quienSoy(),creadoEl:Date.now()};
       PROTOS.protocolos.push(p); protoAbierto=p.id;
     }
-    guardarProtos(); cerrarModal('protoModal'); renderProtos();
+    guardarProtos(); cerrarModal('protoModal'); renderProtos(); avisaMalas(det.malas);
   }
   function borrarProtocolo(){
     const p=PROTOS.protocolos.find(x=>x.id===editandoProto); if(!p) return;
@@ -1375,7 +1396,7 @@
     document.getElementById('sDesc').value=s.desc||'';
     document.getElementById('sResp').value=s.resp||'';
     document.getElementById('sDias').value=s.dias==null?'':s.dias;
-    document.getElementById('sLinks').value=linksATexto(s.links);
+    document.getElementById('sLinks').value=(s.linksRaw!=null&&s.linksRaw!=='')?s.linksRaw:linksATexto(s.links);
     llenarSelectVariantes(protoId,s.variante||'');
     document.getElementById('sBorrar').style.display='';
     document.getElementById('pasoModal').hidden=false;
@@ -1390,18 +1411,20 @@
     const titulo=document.getElementById('sTitulo').value.trim();
     if(!titulo){ alert('El paso necesita un título.'); return; }
     const dias=document.getElementById('sDias').value;
+    const detPaso=parseLinksDetalle(document.getElementById('sLinks').value);
     const datos={
       titulo,
       desc:document.getElementById('sDesc').value.trim(),
       resp:document.getElementById('sResp').value.trim(),
       dias:dias===''?null:Number(dias),
-      links:parseLinks(document.getElementById('sLinks').value),
+      links:detPaso.ok,
+      linksRaw:document.getElementById('sLinks').value,
       variante:document.getElementById('sVariante').value
     };
     const p=PROTOS.protocolos.find(x=>x.id===editandoPaso.protoId); if(!p) return;
     if(editandoPaso.pasoId) Object.assign(p.pasos.find(x=>x.id===editandoPaso.pasoId),datos);
     else p.pasos.push({id:nid('s'),...datos});
-    guardarProtos(); cerrarModal('pasoModal'); renderProtos();
+    guardarProtos(); cerrarModal('pasoModal'); renderProtos(); avisaMalas(detPaso.malas);
   }
   function borrarPaso(){
     if(!confirm(PT('¿Eliminar este paso?','Delete this step?','Удалить этот шаг?'))) return;
