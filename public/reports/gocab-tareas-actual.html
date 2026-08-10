@@ -1282,7 +1282,12 @@
         estadoGuardado(sel,falta?'⚠ No se pudo guardar: falta el archivo en Drive':'⚠ Error al guardar','var(--red)');
         return;
       }
-      estadoGuardado(sel,'☁️ Guardado','var(--green)');
+      // El mensaje dice QUÉ se guardó, no solo que se guardó: si alguien edita el
+      // detalle y el contador no se mueve, el problema se ve en el momento y no
+      // recién al recargar.
+      const n=(payload.protocolos||[]).length;
+      const pasos=(payload.protocolos||[]).reduce((s,p)=>s+((p.pasos||[]).length),0);
+      estadoGuardado(sel,`☁️ ${PT('Guardado','Saved','Сохранено')} · ${n} ${PT('protocolos','protocols','протоколов')} · ${pasos} ${PT('pasos','steps','шагов')}`,'var(--green)');
     }catch(e){ estadoGuardado(sel,'⚠ Sin conexión','var(--red)'); }
   }
   function guardarProtos(){
