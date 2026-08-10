@@ -2058,15 +2058,18 @@ function diasEnTaller(ingreso){
   return Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));
 }
 function tallerEnTaller(){
-  var hoy=new Date();hoy.setHours(0,0,0,0);
+  // parseDate() devuelve medianoche UTC, así que el "hoy" contra el que se compara
+  // también tiene que serlo. Comparar contra la medianoche local dejaba fuera a los
+  // autos que salen hoy mismo, que son justo los que hay que estar mirando.
+  var n=new Date(),hoyUTC=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate());
   return TALLER.filter(function(v){
     if(!/en\s*taller/i.test(v.estado||''))return false;
     // Una fecha de egreso ya cumplida significa que el auto salió, aunque nadie
-    // haya actualizado la columna de estado. Las fechas futuras se quedan: son
-    // autos que siguen adentro pero con salida comprometida.
+    // haya actualizado la columna de estado. Hoy y las futuras se quedan: son
+    // autos que siguen adentro, con salida comprometida.
     if(v.egreso){
       var e=parseDate(v.egreso);
-      if(e&&!isNaN(e)&&e<hoy)return false;
+      if(e&&!isNaN(e)&&e.getTime()<hoyUTC)return false;
     }
     if(!_coordFilter)return true;
     var c=coordDePatente(v.patente);
@@ -2117,7 +2120,9 @@ function renderTaller(){
     var dias=diasEnTaller(v.ingreso);
     var color=dias==null?'#6b7280':dias>30?'#f87171':dias>14?'#fbbf24':'#9ca3af';
     html+='<tr class="'+(v.egreso?'':'sinfecha')+'">'
-      +'<td class="pat">'+esc(v.patente)+(v.ultimoConductor?'<div style="font-weight:400;color:#6b7280;font-size:10px">'+esc(v.ultimoConductor)+'</div>':'')+'</td>'
+      +'<td class="pat">'+esc(v.patente)
+        +(v.modelo?'<div style="font-weight:600;color:#9ca3af;font-size:10px">'+esc(v.modelo)+'</div>':'')
+        +(v.ultimoConductor?'<div style="font-weight:400;color:#6b7280;font-size:10px">'+esc(v.ultimoConductor)+'</div>':'')+'</td>'
       +'<td style="white-space:nowrap;color:'+(coordDePatente(v.patente)?'#9ca3af':'#6b7280')+'">'
         +(coordDePatente(v.patente)?esc(coordDePatente(v.patente)):'<i>'+t('taller_sin_asignar')+'</i>')+'</td>'
       +'<td style="white-space:nowrap">'+esc(v.taller||'—')+'</td>'

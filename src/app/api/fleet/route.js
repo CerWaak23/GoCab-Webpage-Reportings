@@ -65,19 +65,43 @@ export async function GET(request) {
         quotaUser: `gc-${Date.now()}`,
       });
       const tRows = tRes.data.values || [];
+      // Por nombre de columna y no por posición: esta hoja ya gano una columna
+      // (MODELO-MARCA en la C) y leerla por indice fijo corrio todos los campos
+      // una casilla, haciendo que la fecha de ingreso se leyera como egreso.
+      const th = (tRows[0] || []).map((h) =>
+        String(h || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+      );
+      const tcol = (...claves) => {
+        for (const k of claves) {
+          const i = th.findIndex((h) => h.includes(k));
+          if (i !== -1) return i;
+        }
+        return -1;
+      };
+      const cPat = tcol('patente', 'plate');
+      const cEst = tcol('estado');
+      const cMod = tcol('modelo', 'marca');
+      const cIng = tcol('ingreso');
+      const cEgr = tcol('egreso', 'salida');
+      const cTal = tcol('taller');
+      const cObs = tcol('observ');
+      const cCon = tcol('conductor');
+      const val = (r, i) => (i >= 0 ? String(r[i] || '').trim() : '');
+
       taller = tRows.slice(1)
-        .filter((r) => String(r[0] || '').trim())
+        .filter((r) => val(r, cPat))
         .map((r) => ({
-          patente: String(r[0] || '').trim().toUpperCase().replace(/[-\s]/g, ''),
-          estado: String(r[1] || '').trim(),
-          ingreso: String(r[2] || '').trim(),
+          patente: val(r, cPat).toUpperCase().replace(/[-\s]/g, ''),
+          estado: val(r, cEst),
+          modelo: val(r, cMod),
+          ingreso: val(r, cIng),
           // "SIN FECHA" es el marcador que usa la planilla cuando el taller
           // todavía no compromete una salida: se normaliza a vacío para que el
           // reporte no tenga que conocer esa convención.
-          egreso: /sin\s*fecha/i.test(String(r[3] || '')) ? '' : String(r[3] || '').trim(),
-          taller: String(r[4] || '').trim(),
-          observaciones: String(r[5] || '').trim(),
-          ultimoConductor: String(r[6] || '').trim(),
+          egreso: /sin\s*fecha/i.test(val(r, cEgr)) ? '' : val(r, cEgr),
+          taller: val(r, cTal),
+          observaciones: val(r, cObs),
+          ultimoConductor: val(r, cCon),
         }));
     } catch (e) {
       taller = [];
