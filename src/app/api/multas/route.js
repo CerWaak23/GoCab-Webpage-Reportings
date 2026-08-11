@@ -26,6 +26,35 @@ function parseAmount(val) {
 
 const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
 
+/** Igual que en bills: el costo es el ida y vuelta con Drive, no el tamaño. */
+async function descargarEnParalelo(drive, files, limite = 10) {
+  const buffers = new Array(files.length);
+  let siguiente = 0;
+  const bajarUno = async (i) => {
+    for (let intento = 0; intento < 2; intento++) {
+      try {
+        const res = await drive.files.get(
+          { fileId: files[i].id, alt: 'media' },
+          { responseType: 'arraybuffer' }
+        );
+        return Buffer.from(res.data);
+      } catch (err) {
+        if (intento === 1) throw new Error(`No se pudo leer "${files[i].name}": ${err.message}`);
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    }
+  };
+  const worker = async () => {
+    while (true) {
+      const i = siguiente++;
+      if (i >= files.length) return;
+      buffers[i] = await bajarUno(i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limite, files.length) }, worker));
+  return buffers;
+}
+
 /**
  * Clave de una multa.
  *
@@ -60,15 +89,16 @@ export async function GET() {
     const finesMap = new Map();   // key → estado más reciente de la multa
     const paymentEvents = [];     // pagos detectados al pasar de pending a completed
 
-    for (const file of files) {
-      const name = file.name.toLowerCase();
-      if (!name.endsWith('.xlsx') && !name.endsWith('.xls') && !name.endsWith('.csv')) continue;
+    const tabulares = files.filter((f) => {
+      const n = f.name.toLowerCase();
+      return n.endsWith('.xlsx') || n.endsWith('.xls') || n.endsWith('.csv');
+    });
+    const buffers = await descargarEnParalelo(drive, tabulares);
 
-      const fileRes = await drive.files.get(
-        { fileId: file.id, alt: 'media' },
-        { responseType: 'arraybuffer' }
-      );
-      const buffer = Buffer.from(fileRes.data);
+    for (let idx = 0; idx < tabulares.length; idx++) {
+      const file = tabulares[idx];
+      const name = file.name.toLowerCase();
+      const buffer = buffers[idx];
 
       let rows;
       if (name.endsWith('.csv')) {

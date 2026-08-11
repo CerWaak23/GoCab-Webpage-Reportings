@@ -18,6 +18,53 @@ function getAuth() {
   });
 }
 
+/**
+ * Descarga varios archivos de Drive a la vez.
+ *
+ * Cada archivo pesa unos 27 KB pero tarda casi un segundo, porque el costo es el
+ * ida y vuelta con Google, no el tamaño. Bajándolos de a uno, 137 archivos son
+ * más de dos minutos; de a diez en paralelo, unos quince segundos.
+ *
+ * El orden importa —los pagos se detectan comparando cada archivo con la versión
+ * anterior— así que la descarga se paraleliza pero el resultado se devuelve en el
+ * mismo orden en que se pidió, y el procesamiento sigue siendo secuencial.
+ */
+async function descargarEnParalelo(drive, files, limite = 10) {
+  const buffers = new Array(files.length);
+  let siguiente = 0;
+
+  const bajarUno = async (i) => {
+    // Un reintento: con peticiones en paralelo sube la chance de un fallo transitorio
+    for (let intento = 0; intento < 2; intento++) {
+      try {
+        const res = await drive.files.get(
+          { fileId: files[i].id, alt: 'media' },
+          { responseType: 'arraybuffer' }
+        );
+        return Buffer.from(res.data);
+      } catch (err) {
+        if (intento === 1) {
+          throw new Error(`No se pudo leer "${files[i].name}": ${err.message}`);
+        }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    }
+  };
+
+  const worker = async () => {
+    while (true) {
+      const i = siguiente++;
+      if (i >= files.length) return;
+      buffers[i] = await bajarUno(i);
+    }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(limite, files.length) }, worker)
+  );
+  return buffers;
+}
+
 function parseAmount(val) {
   if (val === null || val === undefined || val === '') return 0;
   const n = parseFloat(String(val).replace(/[^\d.-]/g, ''));
@@ -92,16 +139,18 @@ export async function GET() {
     const snapshots = [];            // recovery-rate snapshot after each file
     const dataWarnings = [];         // data-quality issues detected per file
 
-    for (const file of files) {
+    // Se filtra primero y se descarga todo junto; después se procesa en orden.
+    const tabulares = files.filter((f) => {
+      const n = f.name.toLowerCase();
+      return n.endsWith('.xlsx') || n.endsWith('.xls') || n.endsWith('.csv');
+    });
+    const buffers = await descargarEnParalelo(drive, tabulares);
+
+    for (let idx = 0; idx < tabulares.length; idx++) {
+      const file = tabulares[idx];
       const name = file.name.toLowerCase();
-      if (!name.endsWith('.xlsx') && !name.endsWith('.xls') && !name.endsWith('.csv')) continue;
+      const buffer = buffers[idx];
 
-      const fileRes = await drive.files.get(
-        { fileId: file.id, alt: 'media' },
-        { responseType: 'arraybuffer' }
-      );
-
-      const buffer = Buffer.from(fileRes.data);
       let rows;
       if (name.endsWith('.csv')) {
         // CSV: read as text and split
