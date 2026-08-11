@@ -112,8 +112,12 @@ function parseHtmlRows(rows) {
   return tableRows;
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
+    // ?todosLosArchivos=1 lee todas las versiones en vez de una por día. Sirve
+    // para contrastar ambos criterios sobre el mismo conjunto de archivos.
+    const todosLosArchivos =
+      new URL(request.url).searchParams.get('todosLosArchivos') === '1';
     const auth = getAuth();
     const drive = google.drive({ version: 'v3', auth });
 
@@ -144,10 +148,30 @@ export async function GET() {
       const n = f.name.toLowerCase();
       return n.endsWith('.xlsx') || n.endsWith('.xls') || n.endsWith('.csv');
     });
-    const buffers = await descargarEnParalelo(drive, tabulares);
 
-    for (let idx = 0; idx < tabulares.length; idx++) {
-      const file = tabulares[idx];
+    /* Un solo archivo por día: el último.
+     *
+     * El archivo se sube varias veces al día (hasta once), y cada versión es una
+     * foto completa del estado, no un incremento. Como paidAmount es acumulativo,
+     * el delta contra el último archivo del día absorbe todo lo que haya pasado
+     * ese día: no se pierde ni un peso, solo se pierde el detalle de a qué hora
+     * dentro del día ocurrió cada pago — que no se usa en ninguna parte, porque
+     * la vista más fina del reporte es diaria.
+     *
+     * El día se calcula en hora de Chile: agrupar por UTC partiría en dos los
+     * archivos subidos después de las 20:00.
+     */
+    const porDia = new Map();
+    for (const f of tabulares) {
+      const dia = new Date(f.modifiedTime).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+      porDia.set(dia, f); // vienen en orden ascendente, así que gana el último del día
+    }
+    const ultimosDelDia = todosLosArchivos ? tabulares : [...porDia.values()];
+
+    const buffers = await descargarEnParalelo(drive, ultimosDelDia);
+
+    for (let idx = 0; idx < ultimosDelDia.length; idx++) {
+      const file = ultimosDelDia[idx];
       const name = file.name.toLowerCase();
       const buffer = buffers[idx];
 
@@ -294,7 +318,9 @@ export async function GET() {
       paymentEvents,
       snapshots,
       dataWarnings,
-      sources: files.map((f) => f.name),
+      sources: ultimosDelDia.map((f) => f.name),
+      // Para poder ver de un vistazo cuántas versiones se saltaron por día
+      archivos: { enCarpeta: tabulares.length, leidos: ultimosDelDia.length },
     }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
