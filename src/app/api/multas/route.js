@@ -202,6 +202,22 @@ export async function GET() {
     }
 
     const fines = Array.from(finesMap.values());
+
+    // Una multa sin conductor ni patente no se puede imputar a nadie: entra en el
+    // total facturado pero desaparece de la deuda por conductor, de la tabla de
+    // evolución y del filtro por coordinador. Es plata que se esfuma de la vista
+    // sin ningún error, así que el reporte tiene que decirlo.
+    const dataWarnings = [];
+    const sinDuenio = fines.filter((f) => !f.driver && !f.vehicle);
+    if (fines.length && sinDuenio.length / fines.length > 0.2) {
+      dataWarnings.push({
+        file: files[files.length - 1]?.name || 'archivo de multas',
+        date: files[files.length - 1]?.modifiedTime || null,
+        issue: 'empty_drivers',
+        emptyDriverPct: Math.round((sinDuenio.length / fines.length) * 100),
+        totalRows: fines.length,
+      });
+    }
     const totalCharged = fines.reduce((s, f) => s + f.amount, 0);
     const totalPaid = fines.reduce((s, f) => s + f.paidAmount, 0);
 
@@ -216,6 +232,7 @@ export async function GET() {
           totalPaid,
           totalPending: Math.max(0, totalCharged - totalPaid),
         },
+        dataWarnings,
         _fetchedAt: new Date().toISOString(),
       },
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' } }

@@ -279,6 +279,10 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
         Carpeta Bills
       </a>
+      <a class="btn-act" href="https://drive.google.com/drive/folders/1O5GblTXWQI_6RBn7072am1nprtZYcvJ7" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Carpeta Multas
+      </a>
       <div class="fx-badge" id="fxBadge">1 USD = $890 CLP</div>
       <span style="font-size:11px;color:#4b5563" data-i18n="refresh_hint">Para ver datos nuevos, recarga la página (F5)</span>
     </div>
@@ -902,7 +906,7 @@ async function loadData(){
     applyScope(); // depende de FLEET_ROWS: debe correr despues de cargar la planilla
     console.log('[Fleet] Conductores activos en sheet ('+FLEET_NAMES.length+'):', FLEET_NAMES.join(' | '));
     // Render data-quality warnings if any files had suspicious data
-    var dataWarnings=billsJson.dataWarnings||[];
+    var dataWarnings=(billsJson.dataWarnings||[]).concat((multasJson&&multasJson.dataWarnings)||[]);
     var dqPanel=document.getElementById('dqPanel');
     var dqList=document.getElementById('dqList');
     if(dataWarnings.length>0&&dqPanel&&dqList){
