@@ -181,6 +181,8 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .taller-tbl .nofecha{color:#fbbf24;font-weight:700;white-space:nowrap}
 .taller-tbl .confecha{color:#34d399;white-space:nowrap}
 .taller-tbl .dias{font-weight:700;white-space:nowrap}
+.badge-pol{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  background:#3b0a0a;border:1px solid #7f1d1d66;color:#fca5a5;border-radius:5px;padding:1px 6px;margin-top:3px}
 .verMas{background:#111827;border:1px solid #374151;color:#93c5fd;border-radius:8px;padding:6px 16px;
   font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
 .verMas:hover{border-color:#2563eb;background:#0f1a2a}
@@ -341,6 +343,25 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <div class="kpi-label" style="color:#fbbf24" data-i18n="kpi_taller">Autos en Taller</div>
         <div class="kpi-value" id="kpiTaller" style="color:#fbbf24">—</div>
         <div class="kpi-sub" id="kpiTallerSub">—</div>
+      </div>
+      <div class="kpi-card" id="kpiPoliciaCard" style="display:none;border-color:#7f1d1d55;background:#1a0707">
+        <div class="kpi-label" style="color:#f87171" data-i18n="kpi_policia">Autos en Policía</div>
+        <div class="kpi-value" id="kpiPolicia" style="color:#f87171">—</div>
+        <div class="kpi-sub" id="kpiPoliciaSub">—</div>
+      </div>
+      <div class="kpi-card" id="kpiModalidadCard" style="border-color:#0e749044;background:#04161c">
+        <div class="kpi-label" style="color:#22d3ee" data-i18n="kpi_modalidad">Flota por Modalidad</div>
+        <div style="display:flex;gap:26px;align-items:baseline;flex-wrap:wrap">
+          <div>
+            <span class="kpi-value" id="kpiDTO" style="color:#22d3ee">—</span>
+            <span style="font-size:12px;font-weight:600;color:#22d3ee;margin-left:5px">DTO</span>
+          </div>
+          <div>
+            <span class="kpi-value" id="kpiRenta" style="color:#67e8f9">—</span>
+            <span style="font-size:12px;font-weight:600;color:#67e8f9;margin-left:5px" data-i18n="kpi_modalidad_renta_lbl">Renta</span>
+          </div>
+        </div>
+        <div class="kpi-sub" id="kpiModalidadSub"></div>
       </div>
     </div>
   </div>
@@ -585,7 +606,7 @@ var T = {
       gest_vers_g:'Versiones anteriores · gestión',gest_vers_i:'Versiones anteriores · indicaciones',
       gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
       gest_err_archivo:'⚠ Falta el archivo tareas-comentarios.json en Drive',gest_err:'⚠ Error al guardar',
-      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_taller_sub:'con fecha de salida',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',taller_sale:'Sale',
+      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_policia:'Autos en Policía',taller_policia:'Policía',kpi_taller_sub:'con fecha de salida',kpi_modalidad:'Flota por Modalidad',kpi_modalidad_renta:'en renta',kpi_modalidad_renta_lbl:'Renta',kpi_modalidad_sin:'sin modalidad',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',taller_sale:'Sale',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -643,7 +664,7 @@ var T = {
       gest_vers_g:'Earlier versions · follow-up',gest_vers_i:'Earlier versions · instructions',
       gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
       gest_err_archivo:'⚠ Missing tareas-comentarios.json in Drive',gest_err:'⚠ Save error',
-      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_taller_sub:'with an exit date',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',taller_sale:'Out on',
+      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_policia:'Cars Impounded',taller_policia:'Police',kpi_taller_sub:'with an exit date',kpi_modalidad:'Fleet by Model',kpi_modalidad_renta:'on rent',kpi_modalidad_renta_lbl:'Rent',kpi_modalidad_sin:'unset',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',taller_sale:'Out on',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -701,7 +722,7 @@ var T = {
       gest_vers_g:'Прежние версии · работа',gest_vers_i:'Прежние версии · указания',
       gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
       gest_err_archivo:'⚠ Нет файла tareas-comentarios.json на Drive',gest_err:'⚠ Ошибка сохранения',
-      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_taller_sub:'с датой выдачи',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',taller_sale:'Выдача',
+      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_policia:'Машины на штрафстоянке',taller_policia:'Полиция',kpi_taller_sub:'с датой выдачи',kpi_modalidad:'Парк по схеме',kpi_modalidad_renta:'в аренде',kpi_modalidad_renta_lbl:'Аренда',kpi_modalidad_sin:'без схемы',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',taller_sale:'Выдача',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -873,7 +894,8 @@ async function loadData(){
     var fleetDrivers=fleetJson.drivers||[];
     FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
     FLEET_ROWS=fleetDrivers.map(function(d){
-      return {nameNorm:normalizeName(d.conductor),coordinador:String(d.coordinador||'').trim(),patente:d.patente||''};
+      return {nameNorm:normalizeName(d.conductor),coordinador:String(d.coordinador||'').trim(),
+              patente:d.patente||'',tipo:String(d.tipo||'').trim()};
     });
     TALLER=fleetJson.taller||[];
     _coordCache={};
@@ -1168,10 +1190,25 @@ function renderKPIs(){
   // que maneja pero todavía no acumula ninguna multa ni peaje igual está activo.
   // DRIVERS se arma desde los cargos, así que contarlo ahí dejaba fuera a los 59
   // conductores sin cargos y el KPI mostraba 42 en vez de la flota real.
-  var activosFlota=FLEET_ROWS.filter(function(fr){
+  var flotaFiltrada=FLEET_ROWS.filter(function(fr){
     return fr.nameNorm&&(!_coordFilter||fr.coordinador===_coordFilter);
-  }).length;
-  setText('kpiOpenBills',activosFlota||activeDrv);
+  });
+  setText('kpiOpenBills',flotaFiltrada.length||activeDrv);
+
+  // Modalidad: DTO (drive to own) vs renta, según la columna Tipo de la planilla
+  var dto=0,renta=0,otroTipo=0;
+  flotaFiltrada.forEach(function(fr){
+    var t=(fr.tipo||'').toLowerCase();
+    if(!t)otroTipo++;
+    else if(t.indexOf('dto')>=0||t.indexOf('own')>=0)dto++;
+    else if(t.indexOf('renta')>=0||t.indexOf('rent')>=0)renta++;
+    else otroTipo++;
+  });
+  var cardMod=document.getElementById('kpiModalidadCard');
+  if(cardMod)cardMod.style.display=(dto+renta)?'':'none';
+  setText('kpiDTO',String(dto));
+  setText('kpiRenta',String(renta));
+  setText('kpiModalidadSub',otroTipo?otroTipo+' '+t('kpi_modalidad_sin'):'');
   setText('kpiOpenBillsSub',activeWithDebt.length+' '+t('kpi_with_pending'));
   setText('kpiFiredDebt',activePct+'%');
   setText('kpiFiredDebtSub',fmtAmt(activePaid)+' / '+fmtAmt(activeCharged));
@@ -2057,13 +2094,19 @@ function diasEnTaller(ingreso){
   if(!d||isNaN(d))return null;
   return Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));
 }
-function tallerEnTaller(){
+// Un auto retenido en la policía tampoco está trabajando y también hay que
+// perseguirle una fecha, así que comparte tabla con los del taller. Se separan
+// solo en las tarjetas, porque quien los destraba es distinto.
+function esPolicia(v){return /polic/i.test(v.estado||'');}
+function esTaller(v){return /en\s*taller/i.test(v.estado||'');}
+
+function tallerFueraDeServicio(){
   // parseDate() devuelve medianoche UTC, así que el "hoy" contra el que se compara
   // también tiene que serlo. Comparar contra la medianoche local dejaba fuera a los
   // autos que salen hoy mismo, que son justo los que hay que estar mirando.
   var n=new Date(),hoyUTC=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate());
   return TALLER.filter(function(v){
-    if(!/en\s*taller/i.test(v.estado||''))return false;
+    if(!esTaller(v)&&!esPolicia(v))return false;
     // Una fecha de egreso ya cumplida significa que el auto salió, aunque nadie
     // haya actualizado la columna de estado. Hoy y las futuras se quedan: son
     // autos que siguen adentro, con salida comprometida.
@@ -2082,7 +2125,8 @@ function tallerEnTaller(){
 }
 function renderTaller(){
   var sec=document.getElementById('tallerSection'),tbl=document.getElementById('tallerTable');
-  var enTaller=tallerEnTaller();
+  var fuera=tallerFueraDeServicio();
+  var enTaller=fuera.filter(esTaller),enPolicia=fuera.filter(esPolicia);
   var conFecha=enTaller.filter(function(v){return v.egreso;}).length;
 
   setText('kpiTaller',String(enTaller.length));
@@ -2090,19 +2134,25 @@ function renderTaller(){
   var card=document.getElementById('kpiTallerCard');
   if(card)card.style.display=TALLER.length?'':'none';
 
+  // La tarjeta de policía solo aparece si hay algún auto en ese estado
+  var cardPol=document.getElementById('kpiPoliciaCard');
+  if(cardPol)cardPol.style.display=enPolicia.length?'':'none';
+  setText('kpiPolicia',String(enPolicia.length));
+  setText('kpiPoliciaSub',enPolicia.filter(function(v){return v.egreso;}).length+' '+t('kpi_taller_sub'));
+
   if(!sec||!tbl)return;
-  if(!enTaller.length){sec.style.display='none';return;}
+  if(!fuera.length){sec.style.display='none';return;}
   sec.style.display='';
 
   // Primero los que no tienen fecha comprometida, y dentro de cada grupo el que
   // lleva más tiempo parado
-  var orden=enTaller.slice().sort(function(a,b){
+  var orden=fuera.slice().sort(function(a,b){
     var fa=a.egreso?1:0,fb=b.egreso?1:0;
     if(fa!==fb)return fa-fb;
     return (diasEnTaller(b.ingreso)||0)-(diasEnTaller(a.ingreso)||0);
   });
 
-  var sinFecha=enTaller.length-conFecha;
+  var sinFecha=fuera.filter(function(v){return !v.egreso;}).length;
   setText('tallerResumen',sinFecha
     ? sinFecha+' '+t('taller_sin_fecha')
     : t('taller_todos_con_fecha'));
@@ -2121,6 +2171,7 @@ function renderTaller(){
     var color=dias==null?'#6b7280':dias>30?'#f87171':dias>14?'#fbbf24':'#9ca3af';
     html+='<tr class="'+(v.egreso?'':'sinfecha')+'">'
       +'<td class="pat">'+esc(v.patente)
+        +(esPolicia(v)?'<div><span class="badge-pol">'+t('taller_policia')+'</span></div>':'')
         +(v.modelo?'<div style="font-weight:600;color:#9ca3af;font-size:10px">'+esc(v.modelo)+'</div>':'')
         +(v.ultimoConductor?'<div style="font-weight:400;color:#6b7280;font-size:10px">'+esc(v.ultimoConductor)+'</div>':'')+'</td>'
       +'<td style="white-space:nowrap;color:'+(coordDePatente(v.patente)?'#9ca3af':'#6b7280')+'">'

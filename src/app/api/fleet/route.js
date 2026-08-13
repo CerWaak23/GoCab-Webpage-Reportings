@@ -38,13 +38,22 @@ export async function GET(request) {
     // aparece, la última columna que venga llena en la mayoría de las filas.
     const header = (rows[0] || []).map((h) => String(h || '').toLowerCase().trim());
     const body = rows.slice(1).filter((r) => r[0]);
-    let iCoord = header.findIndex((h) => h.includes('coordinator') || h.includes('coordinador'));
+    let iCoord = header.findIndex(
+      (h) => h.includes('coordinator') || h.includes('coordinador') || h.includes('encargado')
+    );
     if (iCoord < 0) {
+      // Respaldo por si vuelven a renombrarla: la última columna con datos, pero
+      // saltando las que sabemos que son otra cosa. Sin esta exclusión, agregar
+      // "Rut" y "Tipo" hacía que el filtro de coordinador mostrara DTO y Renta.
+      const esOtraCosa = (h) => /rut|tipo|modalidad|patente|veh|fecha|creat|nota|mail|correo|telefono|fono/.test(h);
       for (let c = header.length - 1; c >= 3; c--) {
+        if (esOtraCosa(header[c])) continue;
         const llenas = body.filter((r) => String(r[c] || '').trim()).length;
         if (body.length && llenas / body.length > 0.5) { iCoord = c; break; }
       }
     }
+    // Modalidad del vehículo: DTO (drive to own) o renta
+    const iTipo = header.findIndex((h) => h === 'tipo' || h.includes('modalidad'));
 
     const drivers = body.map((r) => ({
       conductor: String(r[0] || '').trim().toUpperCase(),
@@ -52,6 +61,7 @@ export async function GET(request) {
       fechaInicio: String(r[2] || '').trim(),
       nota: String(r[3] || '').trim(),
       coordinador: iCoord >= 0 ? String(r[iCoord] || '').trim() : '',
+      tipo: iTipo >= 0 ? String(r[iTipo] || '').trim() : '',
     }));
 
     // ── Vehículos en taller ───────────────────────────────────────────────────
