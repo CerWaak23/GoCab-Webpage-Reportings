@@ -794,25 +794,27 @@ function parseDate(s){
   return null;
 }
 
-/* El ciclo semanal corre de jueves 00:00 UTC a miércoles 23:59 UTC.
-   2020-01-02 fue jueves y es el ancla de todo el cálculo: cambiar esta constante
-   mueve la semana en el reporte entero —tarjetas y tabla—, porque todo pasa por
-   getWeekKey(). */
-var EPOCA_SEMANA=new Date('2020-01-02');
-var MS_SEMANA=7*24*60*60*1000;
-
-function inicioDeSemana(d){
-  if(!d)return null;
-  var wn=Math.floor((d-EPOCA_SEMANA)/MS_SEMANA);
-  return new Date(EPOCA_SEMANA.getTime()+wn*MS_SEMANA);
-}
 function getWeekKey(d){
-  var weekStart=inicioDeSemana(d);
-  if(!weekStart)return null;
+  if(!d)return null;
+  var msPerWeek=7*24*60*60*1000;
+  var epoch=new Date('2020-01-03'); // Friday — cycles run Fri 00:00 UTC → Thu 23:59 UTC
+  var wn=Math.floor((d-epoch)/msPerWeek);
+  var weekStart=new Date(epoch.getTime()+wn*msPerWeek);
   var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return weekStart.getUTCDate()+' '+mn[weekStart.getUTCMonth()];
 }
 
+// Reconstruct the Friday start date from a week key like "12 Jun".
+// Used to compute exact Fri→Thu date labels on breakdown cards.
+function weekKeyToDate(wk){
+  var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var p=wk.split(' ');var d=parseInt(p[0]),m=mn.indexOf(p[1]);
+  if(m<0)return null;
+  var now=new Date();var yr=now.getUTCFullYear();
+  var dt=new Date(Date.UTC(yr,m,d));
+  if(dt>now)dt=new Date(Date.UTC(yr-1,m,d));
+  return dt;
+}
 
 // Normalize a license plate: uppercase, remove dashes and spaces
 function normPlate(s){
@@ -1767,79 +1769,130 @@ function applyI18n(){
 }
 
 /* ── WEEKLY BREAKDOWN ──────────────────────────────────────────────────── */
+function getWeekStartDate(d){
+  /* Returns the actual week-start Date using the same epoch as getWeekKey(),
+     so weekly cards show the exact same date boundaries as the evolution table columns */
+  if(!d)return null;
+  var msPerWeek=7*24*60*60*1000;
+  var epoch=new Date('2020-01-06');
+  var wn=Math.floor((d-epoch)/msPerWeek);
+  return new Date(epoch.getTime()+wn*msPerWeek);
+}
 function computeWeeklyBreakdown(){
   if(!BILLS.length)return[];
 
-  // Mismo filtro de conductores activos que la tabla de evolución: garantiza que
-  // las tarjetas y la fila Total de la tabla hablen del mismo universo
+  // Same active-driver filter as renderEvolTable — guarantees card totals match the table footer
   var activeSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
 
-  /* Cobertura por imputación real, no por una regla de reparto nuestra.
-     cubierto sale del paidAmount acumulado de cada multa, agrupado por la semana
-     en que esa multa se creó. Un pago hecho semanas después sube retroactivamente
-     el porcentaje de la semana a la que pertenece la multa, no el de la semana en
-     que entró la plata. */
-  var sem={},billWeek={};
-  function casilla(fecha){
-    var k=getWeekKey(fecha);if(!k)return null;
-    if(!sem[k])sem[k]={key:k,ini:inicioDeSemana(fecha).getTime(),
-                       cargado:0,pagadoCum:0,cajaPropia:0,cajaVieja:0};
-    return sem[k];
-  }
+  // Step 1: Map each bill reference → its week key (same grouping as evolution table)
+  // Only active drivers, matching renderEvolTable's srcBills loop
+  // weekPaidCum: cuanto de lo cargado esa semana esta pagado A HOY, sin importar cuando
+  // entro la plata. Sale del paidAmount de cada multa (imputacion real del sistema), asi
+  // que un pago hecho semanas despues sube retroactivamente el % de la semana de la multa.
+  var billWeekMap={},weekCharged={},weekPaidCum={};
   BILLS.forEach(function(b){
     if(!b.reference)return;
     if(!activeSet[normalizeName(b.driver)])return;
     var d=parseDate(b.createdAt);if(!d)return;
-    var s=casilla(d);if(!s)return;
-    billWeek[b.reference]=s.key;
-    s.cargado+=parseAmt(b.amount);
-    s.pagadoCum+=parseAmt(b.paidAmount);
+    var wk=getWeekKey(d);if(!wk)return;
+    billWeekMap[b.reference]=wk;
+    weekCharged[wk]=(weekCharged[wk]||0)+parseAmt(b.amount);
+    weekPaidCum[wk]=(weekPaidCum[wk]||0)+parseAmt(b.paidAmount);
   });
 
-  /* Flujo de caja de la semana, aparte de la cobertura: de la plata que entró,
-     cuánta fue a multas de esa misma semana y cuánta a multas anteriores. */
+  // Step 2: Split payments into "actuales" (same week as the bill) vs "vieja" (older bill)
+  // Uses the PAYMENT date's week as the bucket, and compares to the BILL's creation week.
+  // Payments with no reference, or whose bill has no date, go to "vieja" by default.
+  // Only active drivers, matching renderEvolTable's srcPayments loop.
+  var weekActuales={},weekVieja={};
   PAYMENT_EVENTS.forEach(function(p){
     if(!activeSet[normalizeName(p.driver)])return;
-    var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var s=casilla(d);if(!s)return;
-    if(p.reference&&billWeek[p.reference]===s.key)s.cajaPropia+=p.amount;
-    else s.cajaVieja+=p.amount;
+    var pd=parseDate(p.date);if(!pd)return;
+    var wk=getWeekKey(pd);if(!wk)return;
+    if(p.reference&&billWeekMap[p.reference]&&billWeekMap[p.reference]===wk){
+      weekActuales[wk]=(weekActuales[wk]||0)+p.amount;
+    } else {
+      weekVieja[wk]=(weekVieja[wk]||0)+p.amount;
+    }
   });
 
-  var orden=Object.keys(sem).map(function(k){return sem[k];})
-    .sort(function(a,b){return a.ini-b.ini;});
-  if(!orden.length)return[];
-  var ultimas=orden.slice(-4);
+  // Step 3: Collect all weeks that have ANY data
+  var allWks={};
+  [weekCharged,weekActuales,weekVieja].forEach(function(o){Object.keys(o).forEach(function(w){allWks[w]=true;});});
+
+  // Step 4: For each week, track the EARLIEST actual date (first bill creation date)
+  // This is used for sorting and for the card date label (matches "de jueves a jueves" business cycles)
+  // Only active drivers — keeps date boundaries consistent with the evolution table
+  var weekMinDate={};
+  BILLS.forEach(function(b){
+    if(!activeSet[normalizeName(b.driver)])return;
+    var d=parseDate(b.createdAt);if(!d)return;
+    var wk=getWeekKey(d);if(!wk)return;
+    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
+  });
+  // Also seed weekMinDate from payment dates (in case a week only has payments, no charges)
+  PAYMENT_EVENTS.forEach(function(p){
+    if(!activeSet[normalizeName(p.driver)])return;
+    var d=parseDate(p.date);if(!d)return;
+    var wk=getWeekKey(d);if(!wk)return;
+    if(!weekMinDate[wk]||d<weekMinDate[wk])weekMinDate[wk]=d;
+  });
+
+  // Step 5: Sort weeks by their first date, take last 4 (same horizon as evolution table)
+  var lastWks=Object.keys(allWks)
+    .filter(function(w){return weekMinDate[w];})
+    .sort(function(a,b){return weekMinDate[a]-weekMinDate[b];})
+    .slice(-4);
+  if(!lastWks.length)return[];
+
   var pad=function(n){return('0'+n).slice(-2);};
 
-  return ultimas.map(function(s,i){
-    // Etiqueta con las fechas exactas del ciclo: jueves de inicio → miércoles de cierre
-    var startD=new Date(s.ini);
-    var endD=new Date(s.ini+6*24*60*60*1000);
-    var lbl=pad(startD.getUTCDate())+'/'+pad(startD.getUTCMonth()+1)
-      +' → '+pad(endD.getUTCDate())+'/'+pad(endD.getUTCMonth()+1);
+  return lastWks.map(function(wk,i){
+    // Date label: exact Fri→Thu boundaries for this cycle
+    // weekKeyToDate(wk) recovers the Friday start; +6 days = the Thursday end
+    var startD=weekKeyToDate(wk);
+    var endD=startD?new Date(startD.getTime()+6*24*60*60*1000):null;
 
-    // Insignia de días para la semana en curso (la última tarjeta)
-    var daysLabel=null;
-    if(i===ultimas.length-1){
-      var diff=Math.round((Date.now()-s.ini)/86400000)+1;
-      if(diff>0&&diff<7)daysLabel=diff+' '+(diff===1?t('wk_dia'):t('wk_dias'));
+    var lbl;
+    if(startD&&endD){
+      lbl=pad(startD.getUTCDate())+'/'+pad(startD.getUTCMonth()+1)
+        +' → '+pad(endD.getUTCDate())+'/'+pad(endD.getUTCMonth()+1);
+    } else {
+      lbl=wk;
     }
 
-    // Cap: si por sobrepago el pagado supera lo cargado, la cobertura no pasa de 100%
-    var cubierto=Math.min(s.cargado,s.pagadoCum);
+    // Days badge for the current partial week (last card in list)
+    var isLast=(i===lastWks.length-1),daysLabel=null;
+    if(isLast&&startD){
+      var today2=new Date();
+      var diff=Math.round((today2-startD)/86400000)+1;
+      if(diff<7)daysLabel=diff+' '+(diff===1?t('wk_dia'):t('wk_dias'));
+    }
+
+    var cargado=weekCharged[wk]||0;
+    var pagadoActuales=weekActuales[wk]||0;
+    var pagadoVieja=weekVieja[wk]||0;
+    var tot=pagadoActuales+pagadoVieja;
+    // Cobertura acumulada de la semana, no el flujo de caja de la semana.
+    // Cap: si por sobrepago paidAmount > amount, la cobertura no pasa de lo cargado.
+    var cubierto=Math.min(cargado,weekPaidCum[wk]||0);
     return {
       weekNum:i+1,
-      weekKey:s.key,
+      weekKey:wk,
       label:lbl,
       daysLabel:daysLabel,
-      cargado:s.cargado,
-      pagadoVieja:s.cajaVieja,                 // de la caja de la semana, cuánto fue a multas anteriores
-      totalPagado:s.cajaPropia+s.cajaVieja,    // caja de la semana — cuadra con la fila Total de la tabla
-      cubierto:cubierto,                       // de lo cargado esa semana, cuánto está pagado a hoy
-      pctCobrado:s.cargado>0?Math.round(cubierto/s.cargado*100):null,
-      pendienteSemana:Math.max(0,s.cargado-cubierto)
+      cargado:cargado,
+      pagadoActuales:pagadoActuales,  // flujo: pagos recibidos esa semana por multas de esa semana
+      pagadoVieja:pagadoVieja,        // flujo: pagos recibidos esa semana por multas anteriores
+      totalPagado:tot,                // flujo total de la semana — cuadra con la fila Total de la tabla
+      cubierto:cubierto,              // acumulado: de lo cargado esa semana, cuanto esta pagado hoy
+      // De lo CARGADO esa semana, que % esta pagado a hoy. Retroactivo: un pago de
+      // hoy imputado a una multa de hace 3 semanas sube el % de esa semana, no el de hoy.
+      // null cuando no hubo cargos: el ratio no esta definido.
+      pctCobrado:cargado>0?Math.round(cubierto/cargado*100):null,
+      // Saldo de lo cargado esa semana que sigue impago y arrastra como deuda
+      pendienteSemana:Math.max(0,cargado-cubierto)
     };
   });
 }
