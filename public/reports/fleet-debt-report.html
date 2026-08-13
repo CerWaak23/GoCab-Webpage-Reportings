@@ -1775,94 +1775,40 @@ function computeWeeklyBreakdown(){
   var activeSet={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
 
-  /* ── Paso 1: cargado y caja de cada semana ──────────────────────────────
-     cargado = multas creadas esa semana. caja = plata que entró esa semana,
-     sin importar a qué multa la haya imputado el sistema de flota. */
-  var sem={};                 // agregado de la flota, para mostrar
-  var porConductor={};        // mismo dato abierto por persona, para la cascada
-  function casilla(mapa,fecha){
+  /* Cobertura por imputación real, no por una regla de reparto nuestra.
+     cubierto sale del paidAmount acumulado de cada multa, agrupado por la semana
+     en que esa multa se creó. Un pago hecho semanas después sube retroactivamente
+     el porcentaje de la semana a la que pertenece la multa, no el de la semana en
+     que entró la plata. */
+  var sem={},billWeek={};
+  function casilla(fecha){
     var k=getWeekKey(fecha);if(!k)return null;
-    if(!mapa[k])mapa[k]={key:k,ini:inicioDeSemana(fecha).getTime(),cargado:0,caja:0,
-                         cubierto:0,aPropia:0,aAnteriores:0};
-    return mapa[k];
-  }
-  function deConductor(drv){
-    if(!porConductor[drv])porConductor[drv]={};
-    return porConductor[drv];
+    if(!sem[k])sem[k]={key:k,ini:inicioDeSemana(fecha).getTime(),
+                       cargado:0,pagadoCum:0,cajaPropia:0,cajaVieja:0};
+    return sem[k];
   }
   BILLS.forEach(function(b){
-    var drv=normalizeName(b.driver);
-    if(!activeSet[drv])return;
+    if(!b.reference)return;
+    if(!activeSet[normalizeName(b.driver)])return;
     var d=parseDate(b.createdAt);if(!d)return;
-    var s=casilla(sem,d);if(s)s.cargado+=parseAmt(b.amount);
-    var sd=casilla(deConductor(drv),d);if(sd)sd.cargado+=parseAmt(b.amount);
+    var s=casilla(d);if(!s)return;
+    billWeek[b.reference]=s.key;
+    s.cargado+=parseAmt(b.amount);
+    s.pagadoCum+=parseAmt(b.paidAmount);
   });
+
+  /* Flujo de caja de la semana, aparte de la cobertura: de la plata que entró,
+     cuánta fue a multas de esa misma semana y cuánta a multas anteriores. */
   PAYMENT_EVENTS.forEach(function(p){
-    var drv=normalizeName(p.driver);
-    if(!activeSet[drv])return;
+    if(!activeSet[normalizeName(p.driver)])return;
     var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var s=casilla(sem,d);if(s)s.caja+=p.amount;
-    var sd=casilla(deConductor(drv),d);if(sd)sd.caja+=p.amount;
+    var s=casilla(d);if(!s)return;
+    if(p.reference&&billWeek[p.reference]===s.key)s.cajaPropia+=p.amount;
+    else s.cajaVieja+=p.amount;
   });
 
   var orden=Object.keys(sem).map(function(k){return sem[k];})
     .sort(function(a,b){return a.ini-b.ini;});
-
-  /* ── Paso 2: cascada ────────────────────────────────────────────────────
-     La plata que entra una semana cubre primero lo cargado ESA semana, y lo que
-     sobra baja a la deuda más antigua que siga impaga. Si después de tapar todo
-     todavía sobra, queda como saldo a favor y cubre lo que se cargue más
-     adelante.
-
-     Esto es una regla nuestra y no la imputación del sistema de flota: antes el
-     porcentaje seguía a qué multa había abonado el sistema cada pago, y por eso
-     un pago grande podía no mover la semana en curso. */
-  var pendiente=function(s){return Math.max(0,s.cargado-s.cubierto);};
-
-  /* La cascada corre POR CONDUCTOR y después se suma. Hacerla sobre el total de
-     la flota permitiría que el excedente de una persona tapara la deuda vieja de
-     otra, que no es lo que pasa en la realidad: cada quien paga lo suyo. */
-  function correrCascada(semanas){
-    var saldoAFavor=0;
-    semanas.forEach(function(s,idx){
-      // Lo que sobró de semanas anteriores cubre primero lo de esta
-      var usar=Math.min(saldoAFavor,pendiente(s));
-      s.cubierto+=usar;saldoAFavor-=usar;
-
-      // Después, la caja de la semana: primero lo propio
-      var disp=s.caja;
-      usar=Math.min(disp,pendiente(s));
-      s.cubierto+=usar;s.aPropia+=usar;disp-=usar;
-
-      // Y el resto baja a la deuda más antigua que siga abierta
-      for(var j=0;j<idx&&disp>0;j++){
-        var viejo=semanas[j],p=pendiente(viejo);
-        if(p<=0)continue;
-        var u=Math.min(disp,p);
-        viejo.cubierto+=u;s.aAnteriores+=u;disp-=u;
-      }
-      // Lo que quede queda a favor para semanas futuras de esa misma persona
-      saldoAFavor+=disp;
-    });
-  }
-
-  // Se corre por persona y el resultado se acumula en el agregado de la flota
-  var cubiertoPorSemana={},aAnterioresPorSemana={};
-  Object.keys(porConductor).forEach(function(drv){
-    var mapa=porConductor[drv];
-    var semanas=Object.keys(mapa).map(function(k){return mapa[k];})
-      .sort(function(a,b){return a.ini-b.ini;});
-    correrCascada(semanas);
-    semanas.forEach(function(s){
-      cubiertoPorSemana[s.key]=(cubiertoPorSemana[s.key]||0)+s.cubierto;
-      aAnterioresPorSemana[s.key]=(aAnterioresPorSemana[s.key]||0)+s.aAnteriores;
-    });
-  });
-  orden.forEach(function(s){
-    s.cubierto=Math.min(s.cargado,cubiertoPorSemana[s.key]||0);
-    s.aAnteriores=aAnterioresPorSemana[s.key]||0;
-  });
-
   if(!orden.length)return[];
   var ultimas=orden.slice(-4);
   var pad=function(n){return('0'+n).slice(-2);};
@@ -1881,17 +1827,19 @@ function computeWeeklyBreakdown(){
       if(diff>0&&diff<7)daysLabel=diff+' '+(diff===1?t('wk_dia'):t('wk_dias'));
     }
 
+    // Cap: si por sobrepago el pagado supera lo cargado, la cobertura no pasa de 100%
+    var cubierto=Math.min(s.cargado,s.pagadoCum);
     return {
       weekNum:i+1,
       weekKey:s.key,
       label:lbl,
       daysLabel:daysLabel,
       cargado:s.cargado,
-      pagadoVieja:s.aAnteriores,   // de la caja de esta semana, cuánto bajó a semanas anteriores
-      totalPagado:s.caja,          // caja de la semana — cuadra con la fila Total de la tabla
-      cubierto:s.cubierto,         // de lo cargado esa semana, cuánto quedó cubierto por la cascada
-      pctCobrado:s.cargado>0?Math.round(s.cubierto/s.cargado*100):null,
-      pendienteSemana:Math.max(0,s.cargado-s.cubierto)
+      pagadoVieja:s.cajaVieja,                 // de la caja de la semana, cuánto fue a multas anteriores
+      totalPagado:s.cajaPropia+s.cajaVieja,    // caja de la semana — cuadra con la fila Total de la tabla
+      cubierto:cubierto,                       // de lo cargado esa semana, cuánto está pagado a hoy
+      pctCobrado:s.cargado>0?Math.round(cubierto/s.cargado*100):null,
+      pendienteSemana:Math.max(0,s.cargado-cubierto)
     };
   });
 }
