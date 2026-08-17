@@ -823,13 +823,20 @@ function getWeekKey(d){
    durante la semana siguiente. El sábado cae de golpe todo lo cargado de sábado a
    viernes, y desde ese día hasta el viernes siguiente se trabaja en recuperarlo.
 
-   Ejemplo: la tarjeta 08/08 → 14/08 junta los cargos de esos días, aparece el
-   sábado 15 —que es cuando caen— y se cobra entre el 15 y el 21. La tarjeta
-   15/08 → 21/08 no se muestra hasta el sábado 22.
+   Y el sistema carga con un día de atraso: el cargo que aparece un día es el
+   consumo del día anterior. Así que la semana 08/08 → 14/08 no son los cargos
+   fechados del 8 al 14, sino los fechados del 9 al 15: el del 15 es el consumo
+   del viernes 14, y el del 8 es el del viernes 7, que pertenece a la semana
+   pasada.
+
+   Ejemplo completo: la tarjeta 08/08 → 14/08 junta los cargos fechados entre el
+   9 y el 15, aparece el sábado 15 —cuando cae el último— y se cobra entre el 15
+   y el 21. La tarjeta 15/08 → 21/08 no se muestra hasta el sábado 22.
 
    Por eso cargo y pago se agrupan distinto:
 
-   · un CARGO va a la semana sábado→viernes que contiene su fecha.
+   · un CARGO se corre un día hacia atrás, al consumo que representa, y va a la
+     semana sábado→viernes de ese día.
    · un PAGO va a la semana ANTERIOR a la suya, porque lo que se paga entre el 15
      y el 21 es la deuda cargada entre el 8 y el 14.
 
@@ -1884,11 +1891,13 @@ function computeWeeklyBreakdown(){
     if(!sem[k])sem[k]={ini:k,cargado:0,caja:0};
     return sem[k];
   }
-  // El cargo va a la semana sábado→viernes que contiene su fecha
+  // El cargo se corre un día atrás —es el consumo del día anterior— y de ahí
+  // sale su semana: los cargos del 9 al 15 son la semana del 8 al 14
   BILLS.forEach(function(b){
     if(!activeSet[normalizeName(b.driver)])return;
     var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
-    var s=casilla(sabadoDeSemana(d));if(s)s.cargado+=parseAmt(b.amount);
+    var s=casilla(sabadoDeSemana(new Date(d.getTime()-MS_DIA)));
+    if(s)s.cargado+=parseAmt(b.amount);
   });
   // El pago va a la semana anterior: lo que entra esta semana paga la pasada
   PAYMENT_EVENTS.forEach(function(p){
