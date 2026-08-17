@@ -39,6 +39,21 @@ function parseValor(val) {
   return isNaN(n) ? 0 : n;
 }
 
+/**
+ * Convierte lo que venga en el export a una fecha.
+ *
+ * TODO se construye en UTC a propósito, y todo lo que lee estas fechas usa
+ * getUTC*. La fecha del archivo es hora de pórtico, no un instante universal:
+ * lo único que importa es conservar el día y la hora tal como vienen escritos.
+ *
+ * Antes se construía con los componentes locales (new Date(a, m, d, ...)) y se
+ * leía con getUTC*. En Vercel eso pasaba desapercibido porque el servidor corre
+ * en UTC, pero al ejecutarlo desde un computador en Chile (UTC-4) toda pasada
+ * desde las 20:00 se guardaba con la fecha del día siguiente, conservando la
+ * hora — un conductor veía en el jueves un peaje que había hecho el miércoles.
+ * El serial de Excel, más abajo, siempre se interpretó en UTC; ahora las tres
+ * ramas coinciden.
+ */
 function parseFecha(s) {
   if (!s) return null;
   if (s instanceof Date) return isNaN(s) ? null : s;
@@ -49,11 +64,11 @@ function parseFecha(s) {
   const str = String(s).trim();
   // ISO datetime: YYYY-MM-DD HH:MM:SS (new mayo-2026 format)
   const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::\d{2})?)?/);
-  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3], +(iso[4] || 0), +(iso[5] || 0));
+  if (iso) return new Date(Date.UTC(+iso[1], +iso[2] - 1, +iso[3], +(iso[4] || 0), +(iso[5] || 0)));
   // Chilean dd/mm/yyyy or dd-mm-yyyy
   const m = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::\d{2})?)?/);
   if (!m) return null;
-  return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
+  return new Date(Date.UTC(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)));
 }
 
 function getWeekKey(d) {
