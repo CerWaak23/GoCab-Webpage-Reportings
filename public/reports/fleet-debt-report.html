@@ -796,25 +796,40 @@ function parseDate(s){
 }
 
 function getWeekKey(d){
+  /* El ciclo corre de domingo 00:00 UTC a sábado 23:59 UTC.
+     Desde ahora se cobra a diario lo del día anterior, así que un sábado se ve
+     el cobro del viernes: la semana domingo→sábado corresponde a la actividad
+     real de sábado a viernes.
+     2020-01-05 fue domingo y es el ancla de todo el cálculo. Cambiar esta fecha
+     mueve la semana en el reporte entero, tarjetas y tabla, porque ambas pasan
+     por acá. */
   if(!d)return null;
   var msPerWeek=7*24*60*60*1000;
-  var epoch=new Date('2020-01-03'); // Friday — cycles run Fri 00:00 UTC → Thu 23:59 UTC
+  var epoch=new Date('2020-01-05');
   var wn=Math.floor((d-epoch)/msPerWeek);
   var weekStart=new Date(epoch.getTime()+wn*msPerWeek);
   var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return weekStart.getUTCDate()+' '+mn[weekStart.getUTCMonth()];
 }
 
-// Reconstruct the Friday start date from a week key like "12 Jun".
-// Used to compute exact Fri→Thu date labels on breakdown cards.
+// Reconstruye el domingo de inicio a partir de una clave como "12 Jun".
+// Se usa para las etiquetas domingo→sábado de las tarjetas.
 function weekKeyToDate(wk){
   var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   var p=wk.split(' ');var d=parseInt(p[0]),m=mn.indexOf(p[1]);
   if(m<0)return null;
-  var now=new Date();var yr=now.getUTCFullYear();
-  var dt=new Date(Date.UTC(yr,m,d));
-  if(dt>now)dt=new Date(Date.UTC(yr-1,m,d));
-  return dt;
+  var now=new Date(),yr=now.getUTCFullYear();
+  /* La clave solo trae día y mes, así que el año hay que deducirlo. Antes se
+     asumía que una fecha futura era del año pasado, y eso devolvía un sábado del
+     año equivocado para cualquier semana que empiece después de hoy.
+     Un inicio de semana siempre cae domingo: se prueban los años vecinos, se
+     descartan los que no den domingo y se elige el más cercano a hoy. */
+  var opciones=[yr,yr-1,yr+1]
+    .map(function(y){return new Date(Date.UTC(y,m,d));})
+    .filter(function(x){return x.getUTCDay()===0;});
+  if(!opciones.length)return new Date(Date.UTC(yr,m,d));
+  opciones.sort(function(a,b){return Math.abs(a-now)-Math.abs(b-now);});
+  return opciones[0];
 }
 
 // Normalize a license plate: uppercase, remove dashes and spaces
@@ -1054,8 +1069,8 @@ function clearAllFilters(){
    respecto de lo facturado.
 
    Para desactivarlo, dejar las dos fechas vacías. */
-var CARGOS_EXCLUIDOS_DESDE='2026-08-12';
-var CARGOS_EXCLUIDOS_HASTA='2026-08-16';   // domingo, incluido
+var CARGOS_EXCLUIDOS_DESDE='';
+var CARGOS_EXCLUIDOS_HASTA='';
 
 function excluirCargos(){
   if(!CARGOS_EXCLUIDOS_DESDE||!CARGOS_EXCLUIDOS_HASTA)return;
@@ -1807,15 +1822,6 @@ function applyI18n(){
 }
 
 /* ── WEEKLY BREAKDOWN ──────────────────────────────────────────────────── */
-function getWeekStartDate(d){
-  /* Returns the actual week-start Date using the same epoch as getWeekKey(),
-     so weekly cards show the exact same date boundaries as the evolution table columns */
-  if(!d)return null;
-  var msPerWeek=7*24*60*60*1000;
-  var epoch=new Date('2020-01-06');
-  var wn=Math.floor((d-epoch)/msPerWeek);
-  return new Date(epoch.getTime()+wn*msPerWeek);
-}
 function computeWeeklyBreakdown(){
   if(!BILLS.length)return[];
 
@@ -1888,7 +1894,7 @@ function computeWeeklyBreakdown(){
 
   return lastWks.map(function(wk,i){
     // Date label: exact Fri→Thu boundaries for this cycle
-    // weekKeyToDate(wk) recovers the Friday start; +6 days = the Thursday end
+    // weekKeyToDate(wk) recupera el domingo de inicio; +6 días = el sábado de cierre
     var startD=weekKeyToDate(wk);
     var endD=startD?new Date(startD.getTime()+6*24*60*60*1000):null;
 
