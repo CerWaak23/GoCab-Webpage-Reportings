@@ -21,7 +21,8 @@ export default function LoginPage() {
         <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-2xl">
           <h2 className="text-lg font-semibold text-white mb-1">Ingresar</h2>
           <p className="text-gray-500 text-sm mb-6">
-            Ingresa tu correo <span className="text-gray-300 font-medium">@gocab.io</span> para acceder.
+            Ingresa tu correo <span className="text-gray-300 font-medium">@gocab.io</span> y la
+            contraseña del portal para acceder.
           </p>
 
           <LoginButton />

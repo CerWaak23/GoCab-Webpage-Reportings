@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginButton() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -22,13 +23,17 @@ export default function LoginButton() {
       setError('Solo se permiten cuentas @gocab.io.');
       return;
     }
+    if (!password) {
+      setError('Por favor ingresa tu contraseña.');
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: trimmed }),
+        body: JSON.stringify({ email: trimmed, password }),
       });
 
       if (res.ok) {
@@ -74,9 +79,27 @@ export default function LoginButton() {
         />
       </div>
 
+      <div>
+        <label className="block text-xs font-medium text-gray-400 mb-1.5">
+          Contraseña
+        </label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••••"
+          disabled={loading}
+          autoComplete="current-password"
+          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3
+            text-white text-sm placeholder-gray-600
+            focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/50
+            disabled:opacity-50 transition"
+        />
+      </div>
+
       <button
         type="submit"
-        disabled={loading || !email}
+        disabled={loading || !email || !password}
         className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl
           bg-green-500 hover:bg-green-400 active:bg-green-600
           disabled:opacity-40 disabled:cursor-not-allowed
