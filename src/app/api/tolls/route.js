@@ -1,420 +1,80 @@
-export const dynamic = 'force-dynamic'; // never cache HTTP response — always check Drive
+export const dynamic = 'force-dynamic';
+// Solo importa para el plan B (recalcular en vivo). La vía normal —leer el
+// snapshot— responde en menos de un segundo.
+export const maxDuration = 60;
 
-import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
-import * as XLSX from 'xlsx';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { computeTolls, splitSnapshots, normPlate } from '@/lib/tolls';
+import { readSnapshot, readPlateTransactions, snapshotsEnabled } from '@/lib/tolls-snapshot';
 
-const TOLLS_FOLDER_ID = '1rn3x_-ixgPqwvUzx6Tkqb0Pzjd6LT-xw';
+const noStore = { 'Cache-Control': 'no-store' };
 
-// ── Disk cache ─────────────────────────────────────────────────────────────────
-// Persists processed data across server restarts.  Only a lightweight Drive
-// metadata list is needed to decide whether the disk cache is still valid.
-const CACHE_DIR  = join(process.cwd(), '.cache');
-const CACHE_FILE = join(CACHE_DIR, 'tolls-cache.json');
+// ── Plan B ────────────────────────────────────────────────────────────────────
+// Si todavía no hay snapshot (antes del primer cron, o si el cron falló) se
+// calcula en vivo, que es lo que hacía este endpoint siempre. Se memoriza por
+// instancia para que varias visitas seguidas no disparen el proceso completo
+// una y otra vez.
+//
+// Nota: la versión anterior guardaba este resultado en process.cwd()/.cache.
+// En Vercel el filesystem es de solo lectura salvo /tmp, así que esa escritura
+// fallaba en silencio y cada arranque en frío repetía el trabajo entero.
+let _memo = null;          // { at: epochMs, data }
+let _enVuelo = null;       // promesa compartida si hay varias peticiones juntas
+const MEMO_MS = 10 * 60 * 1000;
 
-// ── In-memory cache ────────────────────────────────────────────────────────────
-// Key = joined "fileId:modifiedTime" for all files in the folder.
-// Populated either by a fresh Drive download OR by loading from disk.
-let _cacheKey    = '';
-let _cacheData   = null;
-let _diskLoaded  = false;  // true once we've attempted the disk-load (one-shot)
+async function calcularEnVivo() {
+  if (_memo && Date.now() - _memo.at < MEMO_MS) return _memo.data;
+  if (_enVuelo) return _enVuelo;
 
-function loadDiskCache() {
-  if (_diskLoaded) return;
-  _diskLoaded = true;
-  try {
-    const raw    = readFileSync(CACHE_FILE, 'utf-8');
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.key && parsed.data) {
-      _cacheKey  = parsed.key;
-      _cacheData = parsed.data;
-      console.log('[tolls] Loaded cache from disk');
-    }
-  } catch {
-    // File doesn't exist yet or is malformed — ignore, will build fresh
-  }
-}
-
-function saveDiskCache(key, data) {
-  try {
-    mkdirSync(CACHE_DIR, { recursive: true });
-    writeFileSync(CACHE_FILE, JSON.stringify({ key, data }), 'utf-8');
-    console.log('[tolls] Cache saved to disk');
-  } catch (e) {
-    console.warn('[tolls] Could not save cache to disk:', e.message);
-  }
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function getAuth() {
-  const email = process.env.GOOGLE_CLIENT_EMAIL;
-  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  if (!email || !key) throw new Error('Missing Google credentials');
-  return new google.auth.GoogleAuth({
-    credentials: { client_email: email, private_key: key },
-    scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-  });
-}
-
-function parseValor(val) {
-  if (val === null || val === undefined || val === '') return 0;
-  if (typeof val === 'number') return val;
-  const s = String(val).trim();
-  const cleaned = s
-    .replace(/\$/g, '')
-    .replace(/\.(?=\d{3}(?:[,\s]|$))/g, '')
-    .replace(',', '.');
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? 0 : n;
-}
-
-function parseFecha(s) {
-  if (!s) return null;
-  if (s instanceof Date) return isNaN(s) ? null : s;
-  const num = typeof s === 'number' ? s : parseFloat(String(s));
-  if (!isNaN(num) && num > 40000 && num < 60000) {
-    return new Date((num - 25569) * 86400 * 1000);
-  }
-  const str = String(s).trim();
-  // ISO datetime: YYYY-MM-DD HH:MM:SS (new mayo-2026 format)
-  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::\d{2})?)?/);
-  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3], +(iso[4] || 0), +(iso[5] || 0));
-  // Chilean dd/mm/yyyy or dd-mm-yyyy
-  const m = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::\d{2})?)?/);
-  if (!m) return null;
-  return new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
-}
-
-function getWeekKey(d) {
-  if (!d || isNaN(d)) return null;
-  // Weeks run Friday 00:00 → Thursday 23:59 (epoch = Friday 3 Jan 2020)
-  const epoch = new Date('2020-01-03');
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const wn = Math.floor((d - epoch) / msPerWeek);
-  const weekStart = new Date(epoch.getTime() + wn * msPerWeek);        // Friday
-  const weekEnd   = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000); // Thursday
-  const mn = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const sd = weekStart.getUTCDate(), sm = mn[weekStart.getUTCMonth()];
-  const ed = weekEnd.getUTCDate(),   em = mn[weekEnd.getUTCMonth()];
-  // Same month → "22-28 May" ; cross-month → "27 May-2 Jun"
-  return sm === em ? `${sd}-${ed} ${sm}` : `${sd} ${sm}-${ed} ${em}`;
-}
-
-function normPlate(s) {
-  return String(s || '').toUpperCase().replace(/[-\s]/g, '').trim();
-}
-
-function withTimeout(promise, ms, fallback) {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      console.warn(`[tolls] Hard timeout after ${ms} ms`);
-      resolve(fallback);
-    }, ms);
-    promise.then(
-      (v) => { clearTimeout(timer); resolve(v); },
-      (e) => { clearTimeout(timer); console.warn('[tolls] fetchTolls error:', e.message); resolve(fallback); }
-    );
-  });
-}
-
-// ── Process one file buffer into rows ──────────────────────────────────────────
-
-function parseBuffer(name, buffer) {
-  if (name.endsWith('.csv')) {
-    const text = buffer.toString('utf-8');
-    const lines = text.split(/\r?\n/);
-    const delim = lines[0]?.includes(';') ? ';' : ',';
-    return lines.map(l => l.split(delim).map(c => c.replace(/^"|"$/g, '').trim()));
-  }
-  const wb = XLSX.read(buffer, { type: 'buffer' });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-}
-
-// ── Main fetch ─────────────────────────────────────────────────────────────────
-
-async function fetchTolls() {
-  // Try loading the disk cache on first call after a (re)start
-  loadDiskCache();
-
-  const auth = getAuth();
-  const drive = google.drive({ version: 'v3', auth });
-
-  // 1. List files (lightweight metadata only — no file content downloaded)
-  const listRes = await drive.files.list({
-    q: `'${TOLLS_FOLDER_ID}' in parents and trashed=false`,
-    fields: 'files(id,name,mimeType,modifiedTime)',
-    orderBy: 'modifiedTime asc',
-  });
-  const files = (listRes.data.files || []).filter(f => {
-    const n = f.name.toLowerCase();
-    return n.endsWith('.xls') || n.endsWith('.xlsx') || n.endsWith('.csv');
-  });
-
-  // 2. Build cache key from file IDs + modifiedTimes
-  //    If nothing changed since last load (memory or disk), return immediately.
-  const newKey = files.map(f => `${f.id}:${f.modifiedTime}`).join('|');
-  if (newKey && newKey === _cacheKey && _cacheData) {
-    console.log('[tolls] Cache hit — returning cached result (no Drive downloads)');
-    return _cacheData;
-  }
-
-  // 3. Something changed (or first ever run) → download ALL files in parallel
-  console.log(`[tolls] Downloading ${files.length} file(s) in parallel…`);
-  const t0 = Date.now();
-
-  const downloads = await Promise.all(
-    files.map(async (file) => {
-      try {
-        const res = await drive.files.get(
-          { fileId: file.id, alt: 'media' },
-          { responseType: 'arraybuffer' }
-        );
-        return { file, buffer: Buffer.from(res.data) };
-      } catch (e) {
-        console.warn(`[tolls] Skipping ${file.name}: ${e.message}`);
-        return { file, buffer: null };
-      }
+  _enVuelo = computeTolls()
+    .then((data) => {
+      _memo = { at: Date.now(), data };
+      return data;
     })
-  );
+    .finally(() => { _enVuelo = null; });
 
-  console.log(`[tolls] All downloads done in ${Date.now() - t0} ms`);
-
-  // 4. Parse & aggregate
-  const byPatente  = {};
-  const weekDates  = {};
-  const txnSet     = new Set();
-  const transactions = [];
-  const fileHeaders  = [];
-
-  // String dictionaries — store each unique autopista/portico/tipoTarifa once
-  // and use its index in every transaction object.  Reduces JSON payload from
-  // ~12 MB to ~2-3 MB because long pórtico strings repeat constantly.
-  const autopistaDict  = [];  // index → string
-  const autopistaIdx   = {};  // string → index
-  const porticoDict    = [];
-  const porticoIdx     = {};
-  const tipoTarifaDict = [];
-  const tipoTarifaIdx  = {};
-  const intern = (dict, map, val) => {
-    if (!(val in map)) { map[val] = dict.length; dict.push(val); }
-    return map[val];
-  };
-
-  for (const { file, buffer } of downloads) {
-    if (!buffer) continue;
-
-    let rows;
-    try { rows = parseBuffer(file.name.toLowerCase(), buffer); }
-    catch (e) { console.warn(`[tolls] Parse error ${file.name}: ${e.message}`); continue; }
-
-    // Find header row (first row containing "patente" or "movil")
-    let headerIdx = -1;
-    for (let i = 0; i < Math.min(rows.length, 20); i++) {
-      const joined = rows[i].map(c => String(c).toLowerCase()).join('|');
-      if (joined.includes('patente') || joined.includes('movil') || joined.includes('móvil')) {
-        headerIdx = i; break;
-      }
-    }
-    if (headerIdx === -1) continue;
-
-    const header = rows[headerIdx].map(h => String(h).toLowerCase().trim());
-
-    const ci = (names) => {
-      for (const n of names) {
-        const idx = header.findIndex(h => h.includes(n));
-        if (idx !== -1) return idx;
-      }
-      return -1;
-    };
-
-    const iPatente    = ci(['patente', 'móvil', 'movil', 'placa']);
-    const iValor      = ci(['valor', 'monto', 'importe', 'cobro']);
-    const iFecha      = ci(['fecha inicial', 'fecha inicio', 'fecha_entrada', 'fecha']);
-    // Prefer exact 'autopista' column over 'tipo_autopista' (new format has both)
-    const iAutopista  = (() => {
-      const exact = header.findIndex(h => h === 'autopista');
-      return exact !== -1 ? exact : ci(['autopista', 'ruta', 'vía', 'via']);
-    })();
-    // 'rtico' matches "P?rtico" (Windows-1252 XLS decoded by XLSX.js → U+FFFD char)
-    const iPortico    = ci(['pórtico', 'portico', 'rtico', 'portal', 'plaza de cobro', 'plaza', 'peaje', 'estación', 'estacion', 'cabina']);
-    const iTipoTarifa = ci(['tipo tarifa', 'tipo de tarifa', 'tarifa', 'categoría', 'categoria', 'clase', 'tipo de veh']);
-
-    // Old Rpt_Porticos format: column named exactly 'valor' → integers are centavos (28579 = $285.79)
-    // New mayo-2026 format: column named 'valor_cobro' → integers are already pesos (421 = $421)
-    const valorInCentavos = iValor >= 0 && header[iValor] === 'valor';
-
-    fileHeaders.push({ file: file.name, iPatente, iValor, iFecha, iAutopista, iPortico, iTipoTarifa, valorInCentavos });
-    if (iPatente === -1 || iValor === -1 || iFecha === -1) continue;
-
-    const fileAccum   = {};
-    const fileRawPlate = {};
-
-    for (let i = headerIdx + 1; i < rows.length; i++) {
-      const row = rows[i];
-      const rawPlate = String(row[iPatente] || '').trim();
-      if (!rawPlate) continue;
-      const plate = normPlate(rawPlate);
-      if (!plate) continue;
-
-      const rawValor = row[iValor];
-      // Old format: large integer centavos → divide by 100. New format: direct pesos.
-      const valor = typeof rawValor === 'number' && Number.isInteger(rawValor) && rawValor > 0
-        ? (valorInCentavos ? rawValor / 100 : rawValor)
-        : parseValor(rawValor);
-      if (valor <= 0) continue;
-
-      const fecha = parseFecha(row[iFecha]);
-      const wk    = fecha ? getWeekKey(fecha) : null;
-      if (!wk) continue;
-
-      if (!fileAccum[plate]) { fileAccum[plate] = {}; fileRawPlate[plate] = rawPlate; }
-      fileAccum[plate][wk] = (fileAccum[plate][wk] || 0) + valor;
-
-      if (!weekDates[wk]) weekDates[wk] = fecha;
-      else if (fecha < weekDates[wk]) weekDates[wk] = fecha;
-
-      // Dedup key: full date serial (includes fractional hours) + pórtico → unique per pass
-      const rawFechaStr = String(row[iFecha]);
-      const autopista   = iAutopista  >= 0 ? String(row[iAutopista]  || '').trim() : '';
-      const portico     = iPortico    >= 0 ? String(row[iPortico]    || '').trim() : '';
-      const tipoTarifa  = iTipoTarifa >= 0 ? String(row[iTipoTarifa] || '').trim() : '';
-      const txnKey = `${plate}|${rawFechaStr}|${autopista}|${portico}|${valor}`;
-
-      if (!txnSet.has(txnKey)) {
-        txnSet.add(txnKey);
-        const fechaStr = fecha
-          ? `${fecha.getUTCFullYear()}-${String(fecha.getUTCMonth()+1).padStart(2,'0')}-${String(fecha.getUTCDate()).padStart(2,'0')}`
-          : null;
-        // Extract time-of-day: from ISO string (HH:MM) or Excel serial fractional part
-        let horaStr = null;
-        const rawFval = row[iFecha];
-        if (typeof rawFval === 'string') {
-          const tm = rawFval.match(/[T\s](\d{2}):(\d{2})/);
-          if (tm) horaStr = `${tm[1]}:${tm[2]}`;
-        } else if (typeof rawFval === 'number' && rawFval % 1 !== 0) {
-          const frac = rawFval % 1;
-          const totalMin = Math.round(frac * 1440);
-          const hh = Math.floor(totalMin / 60);
-          const mm = totalMin % 60;
-          horaStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-        }
-        // Store indices instead of full strings → 5-8x smaller JSON payload
-        transactions.push({
-          plate, wk, fechaStr, horaStr, valor,
-          ai: intern(autopistaDict,  autopistaIdx,  autopista),
-          pi: intern(porticoDict,    porticoIdx,    portico),
-          ti: intern(tipoTarifaDict, tipoTarifaIdx, tipoTarifa),
-        });
-      }
-    }
-
-    // Merge into global byPatente (max handles cumulative exports if they ever appear)
-    for (const [plate, wkMap] of Object.entries(fileAccum)) {
-      if (!byPatente[plate]) byPatente[plate] = { _rawPlate: fileRawPlate[plate] };
-      for (const [wk, val] of Object.entries(wkMap)) {
-        byPatente[plate][wk] = Math.max(byPatente[plate][wk] || 0, val);
-      }
-    }
-  }
-
-  const allWeeks = Object.keys(weekDates).sort((a, b) => weekDates[a] - weekDates[b]);
-
-  // weekStartDates: week label → YYYY-MM-DD string of the Friday that starts the week
-  // Used by the frontend to filter tolls by driver start date (per-plate reassignments)
-  const weekStartDates = {};
-  for (const [wk, d] of Object.entries(weekDates)) {
-    // weekDates[wk] = earliest fecha in that week; compute the actual Friday start
-    const epoch = new Date('2020-01-03');
-    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-    const wn = Math.floor((d - epoch) / msPerWeek);
-    const ws = new Date(epoch.getTime() + wn * msPerWeek); // Friday
-    const we = new Date(ws.getTime() + 6 * 24 * 60 * 60 * 1000); // Thursday
-    weekStartDates[wk] = {
-      start: `${ws.getUTCFullYear()}-${String(ws.getUTCMonth()+1).padStart(2,'0')}-${String(ws.getUTCDate()).padStart(2,'0')}`,
-      end:   `${we.getUTCFullYear()}-${String(we.getUTCMonth()+1).padStart(2,'0')}-${String(we.getUTCDate()).padStart(2,'0')}`,
-    };
-  }
-
-  const totalByPatente = {};
-  for (const [plate, data] of Object.entries(byPatente)) {
-    totalByPatente[plate] = allWeeks.reduce((s, wk) => s + (data[wk] || 0), 0);
-  }
-
-  // Monthly aggregate (YYYY-MM) for the financial dashboard recurring-expenses table
-  const totalByMonth = {};
-  for (const txn of transactions) {
-    if (!txn.fechaStr) continue;
-    const monthKey = txn.fechaStr.substring(0, 7); // "2026-05"
-    totalByMonth[monthKey] = (totalByMonth[monthKey] || 0) + txn.valor;
-  }
-
-  // Day-level totals per plate: byPatenteFecha[plate]["YYYY-MM-DD"] = amount
-  // Used by frontend to compute exact amounts for partial first weeks
-  const byPatenteFecha = {};
-  for (const txn of transactions) {
-    if (!txn.fechaStr || !txn.plate) continue;
-    if (!byPatenteFecha[txn.plate]) byPatenteFecha[txn.plate] = {};
-    byPatenteFecha[txn.plate][txn.fechaStr] = (byPatenteFecha[txn.plate][txn.fechaStr] || 0) + txn.valor;
-  }
-
-  const result = {
-    byPatente, allWeeks, weekStartDates, byPatenteFecha, totalByPatente, totalByMonth,
-    transactions, fileHeaders,
-    autopistas: autopistaDict,   // lookup arrays for transaction indices
-    porticos:   porticoDict,
-    tipoTarifas: tipoTarifaDict,
-    sources: files.map(f => f.name),
-  };
-
-  // 5. Update in-memory cache and persist to disk so restarts stay fast
-  _cacheKey  = newKey;
-  _cacheData = result;
-  console.log(`[tolls] Processed ${transactions.length} transactions in ${Date.now() - t0} ms — cache updated`);
-
-  // Save to disk asynchronously (don't block the response)
-  setImmediate(() => saveDiskCache(newKey, result));
-
-  return result;
+  return _enVuelo;
 }
-
-const EMPTY_TOLLS = { byPatente: {}, allWeeks: [], totalByPatente: {}, transactions: [], fileHeaders: [], autopistas: [], porticos: [], tipoTarifas: [], sources: [] };
 
 export async function GET(request) {
   try {
-    const data = await withTimeout(fetchTolls(), 55000, EMPTY_TOLLS);
-
-    // ?plate=XXXX  →  return only that plate's transactions + lookup arrays
-    // Used by the detail panel when a conductor is clicked (lazy load).
     const plate = request.nextUrl?.searchParams?.get('plate');
+
+    // ── ?plate=XXXX → solo las transacciones de esa patente ──────────────────
     if (plate) {
       const p = normPlate(plate);
-      const txns = data.transactions.filter(t => t.plate === p);
+
+      if (snapshotsEnabled()) {
+        const desdeSnapshot = await readPlateTransactions(p);
+        if (desdeSnapshot) {
+          return NextResponse.json({ ...desdeSnapshot, _source: 'snapshot' }, { headers: noStore });
+        }
+      }
+
+      const data = await calcularEnVivo();
       return NextResponse.json({
-        transactions: txns,
+        transactions: data.transactions.filter(t => t.plate === p),
         autopistas:   data.autopistas,
         porticos:     data.porticos,
         tipoTarifas:  data.tipoTarifas,
-      }, { headers: { 'Cache-Control': 'no-store' } });
+        _source: 'computed',
+      }, { headers: noStore });
     }
 
-    // Default  →  pivot data only; NO transactions sent to browser.
-    // Transactions are fetched on demand (see ?plate= above) so the
-    // initial page load stays small and doesn't crash low-RAM machines.
-    return NextResponse.json({
-      byPatente:      data.byPatente,
-      allWeeks:       data.allWeeks,
-      weekStartDates: data.weekStartDates || {},
-      byPatenteFecha: data.byPatenteFecha || {},
-      totalByPatente: data.totalByPatente,
-      totalByMonth:   data.totalByMonth || {},
-      sources:        data.sources,
-    }, { headers: { 'Cache-Control': 'no-store' } });
+    // ── Por defecto → los agregados que consume el dashboard ─────────────────
+    if (snapshotsEnabled()) {
+      const index = await readSnapshot('index');
+      if (index) {
+        return NextResponse.json({ ...index, _source: 'snapshot' }, { headers: noStore });
+      }
+    }
+
+    const data = await calcularEnVivo();
+    const { index } = splitSnapshots(data, new Date().toISOString());
+    return NextResponse.json({ ...index, _source: 'computed' }, { headers: noStore });
 
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('[tolls]', err);
+    return NextResponse.json({ error: err.message }, { status: 500, headers: noStore });
   }
 }
