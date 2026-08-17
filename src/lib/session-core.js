@@ -41,15 +41,20 @@ async function getKey() {
   );
 }
 
-// ── Token creation / verification ────────────────────────────────────────────
+// ── Token genérico ────────────────────────────────────────────────────────────
 
-export async function createSessionToken(user) {
+/**
+ * Firma un token con una audiencia ("aud").
+ *
+ * La audiencia es lo que impide que la sesión de un conductor sirva para entrar
+ * al portal interno: el token va firmado con el mismo secreto, así que sin este
+ * campo un conductor podría pegar su cookie en gocab_session y pasar por staff.
+ */
+export async function firmarToken(datos, aud, segundos) {
   const payload = JSON.stringify({
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    isManager: user.isManager,
-    exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS,
+    ...datos,
+    aud,
+    exp: Math.floor(Date.now() / 1000) + segundos,
   });
 
   const payloadB64 = toBase64url(new TextEncoder().encode(payload));
@@ -58,7 +63,13 @@ export async function createSessionToken(user) {
   return `${payloadB64}.${toBase64url(sig)}`;
 }
 
-export async function verifySessionToken(token) {
+/**
+ * Verifica firma, vencimiento y audiencia. Devuelve null si algo no cuadra.
+ *
+ * Los tokens emitidos antes de que existiera "aud" no lo traen; se leen como
+ * 'staff' para no cerrarle la sesión a quien ya la tenía abierta.
+ */
+export async function verificarToken(token, audEsperada) {
   if (!token) return null;
   const dot = token.lastIndexOf('.');
   if (dot < 1) return null;
@@ -78,10 +89,25 @@ export async function verifySessionToken(token) {
 
     const payload = JSON.parse(new TextDecoder().decode(fromBase64url(payloadB64)));
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if ((payload.aud || 'staff') !== audEsperada) return null;
     return payload;
   } catch {
     return null;
   }
+}
+
+// ── Sesión del equipo interno ────────────────────────────────────────────────
+
+export function createSessionToken(user) {
+  return firmarToken(
+    { email: user.email, name: user.name, role: user.role, isManager: user.isManager },
+    'staff',
+    SESSION_SECONDS
+  );
+}
+
+export function verifySessionToken(token) {
+  return verificarToken(token, 'staff');
 }
 
 export { COOKIE_NAME, SESSION_SECONDS };

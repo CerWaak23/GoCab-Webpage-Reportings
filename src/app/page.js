@@ -31,6 +31,14 @@ export default function LoginPage() {
         <p className="text-center text-gray-700 text-xs mt-6">
           Acceso restringido · Solo cuentas @gocab.io
         </p>
+
+        {/* Red de seguridad para el conductor que llega acá por error. El camino
+            normal es el enlace directo a /conductores que se les manda. */}
+        <p className="text-center mt-8">
+          <a href="/conductores" className="text-sm text-gray-500 hover:text-white transition">
+            ¿Eres conductor? Revisa tus TAG aquí →
+          </a>
+        </p>
       </div>
     </main>
   );
