@@ -909,6 +909,82 @@ function namesMatch(fleetName,billName){
   return false;
 }
 
+// La patente en Bills viene dentro del vehiculo ("BAIC Eu5 (VZSS61)") y en la
+// planilla como columna aparte; se normalizan las dos a solo letras y numeros.
+function normPatente(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
+function patenteDeVehiculo(v){
+  var m=String(v||'').match(/(([^)]+))s*$/);
+  return m?normPatente(m[1]):'';
+}
+
+/* Cargos que llegan sin conductor.
+
+   El sistema de facturacion a veces crea la factura antes de asignarle el
+   conductor. /api/bills arrastra el nombre desde la version anterior de la misma
+   factura, pero una factura nueva no tiene de donde heredarlo y queda en blanco
+   hasta el export siguiente. Sin nombre no calza con la planilla y el reporte la
+   daba por despedida: en agosto eso inflo la deuda irrecuperable en 2,1 millones
+   que en realidad eran peajes de conductores activos.
+
+   Todas las facturas traen la patente, asi que el conductor se recupera por ahi.
+   Solo se asigna si el cargo es posterior a la fecha en que ese conductor tomo el
+   auto: sin esa condicion, un cargo viejo de un auto reasignado se le cobraria al
+   conductor actual, que es peor que dejarlo sin asignar. */
+var SIN_CONDUCTOR='(SIN CONDUCTOR)';
+var HUERFANOS={n:0,monto:0};
+var DIAS_INFERENCIA=7;
+
+/* Cargos que llegan sin conductor.
+
+   El sistema de facturacion a veces crea la factura antes de asignarle el
+   conductor. /api/bills arrastra el nombre desde la version anterior de la misma
+   factura, pero una factura nueva no tiene de donde heredarlo y queda en blanco
+   hasta el export siguiente. Sin nombre no calza con la planilla y el reporte la
+   daba por despedida: en agosto eso inflo la deuda irrecuperable en 2,1 millones
+   que en realidad eran peajes de conductores activos.
+
+   El conductor se deduce del propio sistema de facturacion: la factura mas
+   cercana en el tiempo del mismo auto que si traiga nombre. La planilla de flota
+   NO sirve para esto aunque tenga la patente, porque se desactualiza — dice que
+   VZSS40 es de JOHN ASTUDILLO desde junio mientras facturacion registra a GABRIEL
+   SAAVEDRA manejandolo el 17 de agosto. Atribuirle la deuda al conductor
+   equivocado es peor que dejarla sin asignar.
+
+   Ventana de 7 dias, medida sobre la tanda del 17 de agosto: recupera 173 de 175
+   sin un solo error. Ampliarla suma una sola factura y arriesga cruzar un cambio
+   de conductor; con la planilla, en cambio, 2 quedaban mal atribuidas. */
+function recuperarConductorPorPatente(){
+  // El indice se arma antes de tocar nada, asi que una factura recien deducida
+  // no sirve de fuente para la siguiente: el resultado no depende del orden.
+  var porPatente={};
+  ALL_BILLS.forEach(function(b){
+    if(!String(b.driver||'').trim())return;
+    var f=parseDate(b.createdAt); if(!f)return;
+    var p=patenteDeVehiculo(b.vehicle); if(!p)return;
+    (porPatente[p]=porPatente[p]||[]).push({driver:b.driver,t:f.getTime()});
+  });
+
+  var recuperados=0, tope=DIAS_INFERENCIA*24*60*60*1000;
+  HUERFANOS={n:0,monto:0};
+  ALL_BILLS.forEach(function(b){
+    if(String(b.driver||'').trim())return;
+    var f=parseDate(b.createdAt);
+    var lista=porPatente[patenteDeVehiculo(b.vehicle)];
+    var mejor=null;
+    if(f&&lista){
+      for(var i=0;i<lista.length;i++){
+        var dist=Math.abs(lista[i].t-f.getTime());
+        if(dist<=tope&&(!mejor||dist<mejor.dist))mejor={dist:dist,driver:lista[i].driver};
+      }
+    }
+    if(mejor){b.driver=mejor.driver;b.conductorInferido=true;recuperados++;}
+    else{HUERFANOS.n++;HUERFANOS.monto+=parseAmt(b.amount)-parseAmt(b.paidAmount);}
+  });
+  if(recuperados||HUERFANOS.n){
+    console.log('[Bills] sin conductor: '+recuperados+' deducidos del mismo auto, '+HUERFANOS.n+' sin asignar');
+  }
+}
+
 function isInFleet(normalizedDriver){
   if(!FLEET_NAMES.length) return false;
   return FLEET_NAMES.some(function(fn){return namesMatch(fn,normalizedDriver);});
@@ -966,13 +1042,14 @@ async function loadData(){
     });
     TALLER=fleetJson.taller||[];
     _coordCache={};
+    recuperarConductorPorPatente(); // completa los nombres antes de agrupar
     applyScope(); // depende de FLEET_ROWS: debe correr despues de cargar la planilla
     console.log('[Fleet] Conductores activos en sheet ('+FLEET_NAMES.length+'):', FLEET_NAMES.join(' | '));
     // Render data-quality warnings if any files had suspicious data
     var dataWarnings=(billsJson.dataWarnings||[]).concat((multasJson&&multasJson.dataWarnings)||[]);
     var dqPanel=document.getElementById('dqPanel');
     var dqList=document.getElementById('dqList');
-    if(dataWarnings.length>0&&dqPanel&&dqList){
+    if(dqPanel&&dqList){
       dqList.innerHTML='';
       dataWarnings.forEach(function(w){
         var li=document.createElement('li');li.className='dq-item';
@@ -982,9 +1059,16 @@ async function loadData(){
           +'<span style="color:#92400e">Reemplazá el archivo por uno con los campos completos.</span>';
         dqList.appendChild(li);
       });
-      dqPanel.style.display='flex';
-    }else if(dqPanel){
-      dqPanel.style.display='none';
+      // Los cargos que quedaron sin dueño se avisan acá en vez de sumarse a la
+      // deuda de despedidos, que es donde caían antes por no calzar con nadie.
+      if(HUERFANOS.n>0){
+        var liH=document.createElement('li');liH.className='dq-item';
+        liH.innerHTML='<strong>'+HUERFANOS.n+' cargos sin conductor</strong> por '+fmtAmt(HUERFANOS.monto)
+          +' — la patente no permite deducirlo (auto reasignado o fuera de la planilla). '
+          +'<span style="color:#92400e">No se cuentan como deuda de despedidos; se asignan solos cuando el export traiga el nombre.</span>';
+        dqList.appendChild(liH);
+      }
+      dqPanel.style.display=(dataWarnings.length>0||HUERFANOS.n>0)?'flex':'none';
     }
     aggregateDrivers();
     console.log('[Fleet] isActive por conductor:');
@@ -1014,7 +1098,7 @@ function showError(msg){
 function aggregateDrivers(){
   var map={};
   BILLS.forEach(function(b){
-    var key=b.driver?normalizeName(b.driver):'(SIN CONDUCTOR)';
+    var key=b.driver?normalizeName(b.driver):SIN_CONDUCTOR;
     if(!map[key])map[key]={driver:key,vehicle:b.vehicle||'',bills:0,amount:0,paid:0,types:{},statuses:{},lastDate:null};
     var d=map[key];
     d.bills++;d.amount+=parseAmt(b.amount);d.paid+=parseAmt(b.paidAmount);
@@ -1033,6 +1117,9 @@ function aggregateDrivers(){
     // Active = in fleet control sheet ONLY (source of truth)
     // Active = matches fleet control sheet (word-subset fuzzy match)
     // Fallback to 90-day activity only when fleet sheet returned no rows
+    // Sin nombre no es un despedido: es un dato incompleto. Se marca aparte para
+    // que no contamine la cifra de deuda irrecuperable.
+    d.sinConductor=(d.driver===SIN_CONDUCTOR);
     if(FLEET_NAMES.length>0){
       d.isActive=isInFleet(d.driver);
     }else{
@@ -1278,7 +1365,7 @@ function renderKPIs(){
 
   var driversWithDebt=DRIVERS.filter(function(d){return d.pending>0;});
   var activeWithDebt=DRIVERS.filter(function(d){return d.isActive&&d.pending>0;});
-  var firedWithDebt=DRIVERS.filter(function(d){return !d.isActive&&d.pending>0;});
+  var firedWithDebt=DRIVERS.filter(function(d){return !d.isActive&&!d.sinConductor&&d.pending>0;});
 
   // Row 1: active-only financial totals (fired excluded — see Despedidos section below)
   setText('kpiCharged',fmtAmt(activeCharged));
@@ -1356,7 +1443,7 @@ function renderKPIs(){
 
   setText('fxBadge','1 USD = $'+USD_RATE.toLocaleString('es-CL')+' CLP');
 
-  renderFiredCards(DRIVERS.filter(function(d){return !d.isActive;}));
+  renderFiredCards(DRIVERS.filter(function(d){return !d.isActive&&!d.sinConductor;}));
 }
 
 function renderFiredCards(fired){
@@ -1430,7 +1517,7 @@ function renderFiredCards(fired){
 }
 function toggleFired(){
   _firedExpandido=!_firedExpandido;
-  renderFiredCards(DRIVERS.filter(function(d){return !d.isActive;}));
+  renderFiredCards(DRIVERS.filter(function(d){return !d.isActive&&!d.sinConductor;}));
 }
 
 var MONTHS_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
