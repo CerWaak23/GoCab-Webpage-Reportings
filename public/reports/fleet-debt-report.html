@@ -198,9 +198,9 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 
 /* Weekly breakdown */
 .wk-section{margin-bottom:22px}
-.wk-section-hdr{margin-bottom:12px}
+.wk-section-hdr{margin-bottom:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .wk-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:2px}
-.wk-section-sub{font-size:11px;color:#4b5563}
+.wk-section-sub{font-size:11px;color:#4b5563;max-width:640px}
 .wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:13px}
 .wk-card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:18px 20px}
 .wk-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
@@ -219,6 +219,35 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .wk-pct{font-size:22px;font-weight:800;line-height:1.1}
 .wk-pct-sub{font-size:10px;margin-top:3px;font-weight:500}
 @media(max-width:800px){.wk-grid{grid-template-columns:1fr}}
+
+/* Historial semanal: boton en el encabezado y popup con todas las semanas */
+.wk-hist-btn{background:#111827;border:1px solid #1f2937;color:#93c5fd;font-size:11px;font-weight:600;border-radius:8px;padding:7px 13px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:border-color .15s,color .15s}
+.wk-hist-btn:hover{border-color:#334155;color:#bfdbfe}
+.hmodal{position:fixed;inset:0;background:rgba(3,7,18,.72);display:flex;align-items:center;justify-content:center;z-index:90;padding:20px}
+.hbox{background:#0b1120;border:1px solid #1f2937;border-radius:16px;width:100%;max-width:760px;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.hhdr{padding:18px 22px 14px;border-bottom:1px solid #1f2937;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.hhdr h3{margin:0 0 3px;font-size:13px;font-weight:700;color:#e2e8f0}
+.hhdr p{margin:0;font-size:11px;color:#4b5563;line-height:1.55}
+.hclose{background:none;border:none;color:#6b7280;font-size:19px;cursor:pointer;line-height:1;padding:2px 4px;font-family:inherit}
+.hclose:hover{color:#e2e8f0}
+.hstats{display:flex;gap:10px;padding:14px 22px;border-bottom:1px solid #1f2937;flex-wrap:wrap}
+.hstat{flex:1;min-width:118px;background:#111827;border:1px solid #1f2937;border-radius:10px;padding:10px 12px}
+.hstat-lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:3px}
+.hstat-val{font-size:16px;font-weight:800}
+.hscroll{overflow-y:auto;padding:0 22px 18px}
+.htab{width:100%;border-collapse:collapse;font-size:11px}
+.htab thead th{position:sticky;top:0;background:#0b1120;text-align:right;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;font-weight:600;padding:11px 8px 8px;border-bottom:1px solid #1f2937;z-index:1}
+.htab thead th:first-child,.htab tbody td:first-child{text-align:left}
+.htab tbody td{padding:9px 8px;border-bottom:1px solid #111827;text-align:right;color:#cbd5e1;white-space:nowrap}
+.htab tbody tr:hover td{background:#0f172a}
+.h-sem{font-weight:700;color:#93c5fd}
+.h-cob{color:#4b5563;font-size:10px}
+.h-pct{font-weight:800}
+.h-mini{width:64px;height:6px;border-radius:3px;background:#1f2937;display:inline-block;overflow:hidden;vertical-align:middle}
+.h-mini i{display:block;height:100%}
+.h-nada{color:#374151}
+.hfoot{padding:11px 22px;border-top:1px solid #1f2937;font-size:10px;color:#4b5563}
+@media(max-width:640px){.hscroll{padding:0 12px 14px}.hhdr,.hstats,.hfoot{padding-left:12px;padding-right:12px}}
 
 /* Pagination */
 .pagination{display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:flex-end}
@@ -414,10 +443,41 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   <!-- Weekly payment breakdown — va debajo de los graficos, antes de la tabla de evolucion -->
   <div class="section wk-section" id="weeklySection" style="display:none">
     <div class="wk-section-hdr">
-      <div class="wk-section-title" data-i18n="wk_title">📅 Desglose Semanal de Cobranza</div>
-      <div class="wk-section-sub" data-i18n="wk_sub">De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda</div>
+      <div>
+        <div class="wk-section-title" data-i18n="wk_title">📅 Desglose Semanal de Cobranza</div>
+        <div class="wk-section-sub" data-i18n="wk_sub">De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda</div>
+      </div>
+      <button class="wk-hist-btn" onclick="abrirHistorial()" data-i18n="wk_hist_btn">🕘 Ver historial</button>
     </div>
     <div class="wk-grid" id="wkGrid"></div>
+  </div>
+
+  <!-- Historial semanal: todas las semanas, no solo las cuatro de las tarjetas -->
+  <div id="hModal" class="hmodal" style="display:none" onclick="if(event.target===this)cerrarHistorial()">
+    <div class="hbox">
+      <div class="hhdr">
+        <div>
+          <h3 data-i18n="wk_hist_title">Historial semanal de cobranza</h3>
+          <p data-i18n="wk_hist_sub">Cada fila es una semana de cargos, de sábado a viernes, cobrada durante la semana siguiente. De la más nueva a la más vieja.</p>
+        </div>
+        <button class="hclose" onclick="cerrarHistorial()" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="hstats" id="hStats"></div>
+      <div class="hscroll">
+        <table class="htab">
+          <thead><tr>
+            <th data-i18n="wk_hist_col_sem">Semana de cargos</th>
+            <th data-i18n="wk_hist_col_carg">Cargado</th>
+            <th data-i18n="wk_hist_col_cob">Cobrado</th>
+            <th></th>
+            <th>%</th>
+            <th data-i18n="wk_hist_col_pend">Pendiente</th>
+          </tr></thead>
+          <tbody id="hBody"></tbody>
+        </table>
+      </div>
+      <div class="hfoot" id="hFoot"></div>
+    </div>
   </div>
 
   <!-- Evolution table -->
@@ -596,10 +656,18 @@ var T = {
       kpi_multas_perdida:'Pérdida en Multas — Despedidos',kpi_multas_perdida_sub:'conductores despedidos con multas',kpi_multas_deuda:'Deuda de Conductores por Multas',
       kpi_multas_deuda_sub:'conductores activos con multas',
       wk_title:'📅 Desglose Semanal de Cobranza',
-      wk_sub:'De lo cargado cada semana: qué porcentaje está pagado a hoy — sin importar cuándo entró el pago — y cuánto sigue arrastrando como deuda',
+      wk_sub:'Cada semana de cargos corre de sábado a viernes y se cobra durante la semana siguiente: cuánto de lo cargado se recuperó en esos días y cuánto quedó sin cubrir',
       wk_cargado:'cargado',wk_cubierto:'cubierto',wk_pagado:'Pagado:',wk_impago:'Sigue impago:',
       wk_recibidos:'recibidos',wk_anteriores:'a multas anteriores',
       wk_cobranza:'Se cobra',
+      wk_hist_btn:'🕘 Ver historial',
+      wk_hist_title:'Historial semanal de cobranza',
+      wk_hist_sub:'Cada fila es una semana de cargos, de sábado a viernes, cobrada durante la semana siguiente. De la más nueva a la más vieja.',
+      wk_hist_prom:'Recuperación últimas 8',wk_hist_bajo:'Semanas bajo 80%',wk_hist_nocub:'No cubierto en su semana',
+      wk_hist_col_sem:'Semana de cargos',wk_hist_col_carg:'Cargado',wk_hist_col_cob:'Cobrado',wk_hist_col_pend:'Pendiente',
+      wk_hist_secobro:'se cobró',wk_hist_encurso:'en curso',wk_hist_sincargos:'sin cargos',
+      wk_hist_aanteriores:'a semanas anteriores',wk_hist_consemanas:'semanas con cargos.',
+      wk_hist_nota:'Un pago atrasado cuenta en la semana en que entró, así que “no cubierto” no es la deuda viva — esa está en la tabla de evolución.',
       wk_pct_sub:'De lo cargado esa semana · cobrado en la semana siguiente',wk_sin_cargos:'Sin cargos',wk_semana:'Semana',conector_de:'de',
       wk_sin_cargos_sub:'No hubo multas cargadas',wk_dia:'DÍA',wk_dias:'DÍAS',
       gest_col:'GESTIÓN',gest_comentar:'＋ Comentar',gest_ver:'💬 Ver',gest_hace:'⚠ Hace',
@@ -655,10 +723,18 @@ var T = {
       kpi_multas_perdida:'Fine Losses — Former Drivers',kpi_multas_perdida_sub:'former drivers with fines',kpi_multas_deuda:'Driver Debt from Fines',
       kpi_multas_deuda_sub:'active drivers with fines',
       wk_title:'📅 Weekly Collection Breakdown',
-      wk_sub:'Of what was charged each week: how much is paid as of today — no matter when the payment came in — and how much is still carried as debt',
+      wk_sub:'Each week of charges runs Saturday to Friday and is collected during the following week: how much of it was recovered in those days and how much was left uncovered',
       wk_cargado:'charged',wk_cubierto:'covered',wk_pagado:'Paid:',wk_impago:'Still unpaid:',
       wk_recibidos:'received',wk_anteriores:'to earlier charges',
       wk_cobranza:'Collected',
+      wk_hist_btn:'🕘 View history',
+      wk_hist_title:'Weekly collection history',
+      wk_hist_sub:'Each row is a week of charges, Saturday to Friday, collected during the following week. Newest first.',
+      wk_hist_prom:'Recovery, last 8',wk_hist_bajo:'Weeks below 80%',wk_hist_nocub:'Not covered in its week',
+      wk_hist_col_sem:'Week charged',wk_hist_col_carg:'Charged',wk_hist_col_cob:'Collected',wk_hist_col_pend:'Outstanding',
+      wk_hist_secobro:'collected',wk_hist_encurso:'in progress',wk_hist_sincargos:'no charges',
+      wk_hist_aanteriores:'to earlier weeks',wk_hist_consemanas:'weeks with charges.',
+      wk_hist_nota:'A late payment counts in the week it arrived, so “not covered” is not the live debt — that one is in the evolution table.',
       wk_pct_sub:'Of what was charged that week · collected the following week',wk_sin_cargos:'No charges',wk_semana:'Week',conector_de:'of',
       wk_sin_cargos_sub:'Nothing was charged',wk_dia:'DAY',wk_dias:'DAYS',
       gest_col:'FOLLOW-UP',gest_comentar:'＋ Comment',gest_ver:'💬 View',gest_hace:'⚠',
@@ -714,10 +790,18 @@ var T = {
       kpi_multas_perdida:'Потери по штрафам — уволенные',kpi_multas_perdida_sub:'уволенных водителей со штрафами',kpi_multas_deuda:'Долг водителей по штрафам',
       kpi_multas_deuda_sub:'активных водителей со штрафами',
       wk_title:'📅 Недельная разбивка сборов',
-      wk_sub:'Из начисленного за неделю: какой процент оплачен на сегодня — независимо от даты платежа — и сколько остаётся долгом',
+      wk_sub:'Неделя начислений идёт с субботы по пятницу и взыскивается на следующей неделе: сколько удалось вернуть за эти дни и сколько осталось непокрытым',
       wk_cargado:'начислено',wk_cubierto:'покрыто',wk_pagado:'Оплачено:',wk_impago:'Не оплачено:',
       wk_recibidos:'получено',wk_anteriores:'по прежним начислениям',
       wk_cobranza:'Взыскание',
+      wk_hist_btn:'🕘 История',
+      wk_hist_title:'История еженедельного взыскания',
+      wk_hist_sub:'Каждая строка — неделя начислений, с субботы по пятницу, взыскиваемая на следующей неделе. Сначала самые новые.',
+      wk_hist_prom:'Взыскано за 8 недель',wk_hist_bajo:'Недель ниже 80%',wk_hist_nocub:'Не покрыто в свою неделю',
+      wk_hist_col_sem:'Неделя начислений',wk_hist_col_carg:'Начислено',wk_hist_col_cob:'Взыскано',wk_hist_col_pend:'Остаток',
+      wk_hist_secobro:'взыскано',wk_hist_encurso:'в процессе',wk_hist_sincargos:'без начислений',
+      wk_hist_aanteriores:'на прежние недели',wk_hist_consemanas:'недель с начислениями.',
+      wk_hist_nota:'Просроченный платёж учитывается в неделю поступления, поэтому «не покрыто» — это не текущий долг; он в таблице динамики.',
       wk_pct_sub:'Из начисленного за ту неделю · взыскано на следующей неделе',wk_sin_cargos:'Без начислений',wk_semana:'Неделя',conector_de:'из',
       wk_sin_cargos_sub:'Начислений не было',wk_dia:'ДЕНЬ',wk_dias:'ДН.',
       gest_col:'ВЕДЕНИЕ',gest_comentar:'＋ Комментарий',gest_ver:'💬 Открыть',gest_hace:'⚠',
@@ -1955,7 +2039,8 @@ function applyI18n(){
 }
 
 /* ── WEEKLY BREAKDOWN ──────────────────────────────────────────────────── */
-function computeWeeklyBreakdown(){
+// todas=true devuelve el historial completo; si no, solo las 4 de las tarjetas
+function computeWeeklyBreakdown(todas){
   if(!BILLS.length)return[];
 
   // Mismo filtro de conductores activos que la tabla de evolución
@@ -2002,7 +2087,7 @@ function computeWeeklyBreakdown(){
     .filter(function(s){return s.ini+7*MS_DIA<=finDeHoy;})
     .sort(function(a,b){return a.ini-b.ini;});
   if(!orden.length)return[];
-  var ultimas=orden.slice(-4);
+  var ultimas=todas?orden:orden.slice(-4);
   var pad=function(n){return('0'+n).slice(-2);};
 
   return ultimas.map(function(s,i){
@@ -2075,7 +2160,62 @@ function renderWeeklyBreakdown(){
       +'</div>';
   });
   document.getElementById('wkGrid').innerHTML=html;
+  if(_histAbierto)renderHistorial(); // sigue los filtros y el cambio de idioma
 }
+
+/* ── HISTORIAL SEMANAL ─────────────────────────────────────────────────────
+   Las tarjetas muestran cuatro semanas; acá están todas, con el mismo cálculo.
+   Se recalcula solo cuando cambia algo, porque renderWeeklyBreakdown() se llama
+   tanto al filtrar como al cambiar de idioma. */
+var _histAbierto=false;
+
+function abrirHistorial(){_histAbierto=true;renderHistorial();document.getElementById('hModal').style.display='flex';}
+function cerrarHistorial(){_histAbierto=false;document.getElementById('hModal').style.display='none';}
+
+function renderHistorial(){
+  var todas=computeWeeklyBreakdown(true);
+  var conCargo=todas.filter(function(w){return w.cargado>0;});
+  var colorPct=function(p){return p===null?'#6b7280':p>=80?'#34d399':p>=50?'#fbbf24':'#f87171';};
+
+  /* Ponderado por monto, no promedio de porcentajes: una semana chica al 20% no
+     puede pesar lo mismo que una grande al 95%. */
+  var ultimas8=conCargo.slice(-8);
+  var c8=0,r8=0;
+  ultimas8.forEach(function(w){c8+=w.cargado;r8+=w.cubierto;});
+  var prom=c8>0?Math.round(r8/c8*100):null;
+  var bajo=ultimas8.filter(function(w){return w.pctCobrado!==null&&w.pctCobrado<80;}).length;
+  var deuda=conCargo.reduce(function(a,w){return a+w.pendienteSemana;},0);
+
+  document.getElementById('hStats').innerHTML=
+     '<div class="hstat"><div class="hstat-lbl">'+t('wk_hist_prom')+'</div>'
+    +'<div class="hstat-val" style="color:'+colorPct(prom)+'">'+(prom===null?'—':prom+'%')+'</div></div>'
+    +'<div class="hstat"><div class="hstat-lbl">'+t('wk_hist_bajo')+'</div>'
+    +'<div class="hstat-val" style="color:'+(bajo?'#fbbf24':'#34d399')+'">'+bajo+' '+t('conector_de')+' '+ultimas8.length+'</div></div>'
+    +'<div class="hstat"><div class="hstat-lbl">'+t('wk_hist_nocub')+'</div>'
+    +'<div class="hstat-val" style="color:#f87171">'+fmtShort(deuda)+'</div></div>';
+
+  var filas='';
+  todas.slice().reverse().forEach(function(w){
+    if(w.cargado===0&&w.totalPagado===0)return; // semana muerta, no aporta nada
+    var c=colorPct(w.pctCobrado),ancho=w.pctCobrado===null?0:Math.min(100,w.pctCobrado);
+    filas+='<tr>'
+      +'<td><div class="h-sem">'+esc(w.label)+'</div>'
+      +'<div class="h-cob">'+t('wk_hist_secobro')+' '+esc(w.labelCobranza)
+      +(w.daysLabel?' · '+t('wk_hist_encurso'):'')+'</div></td>'
+      +'<td>'+(w.cargado?fmtAmt(w.cargado):'<span class="h-nada">'+t('wk_hist_sincargos')+'</span>')+'</td>'
+      +'<td>'+(w.cubierto?fmtAmt(w.cubierto):'<span class="h-nada">—</span>')
+      +(w.pagadoVieja>0?'<div class="h-cob">+'+fmtAmt(w.pagadoVieja)+' '+t('wk_hist_aanteriores')+'</div>':'')
+      +'</td>'
+      +'<td><span class="h-mini"><i style="width:'+ancho+'%;background:'+c+'"></i></span></td>'
+      +'<td class="h-pct" style="color:'+c+'">'+(w.pctCobrado===null?'<span class="h-nada">—</span>':w.pctCobrado+'%')+'</td>'
+      +'<td style="color:'+(w.pendienteSemana>0?'#94a3b8':'#374151')+'">'
+      +(w.pendienteSemana>0?fmtAmt(w.pendienteSemana):'—')+'</td></tr>';
+  });
+  document.getElementById('hBody').innerHTML=filas;
+  document.getElementById('hFoot').textContent=
+    conCargo.length+' '+t('wk_hist_consemanas')+' '+t('wk_hist_nota');
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&_histAbierto)cerrarHistorial();});
 
 /* ── GESTIÓN DE DEUDA ──────────────────────────────────────────────────────
    Un comentario por conductor con deuda, editable en cualquier momento, para
