@@ -46,16 +46,19 @@ function fechaHoraCorta(isoUtc) {
   });
 }
 
-// Semana de lunes a domingo. El pivote de gestión usa otro corte, así que se
-// calcula acá y no se toca: el conductor ve su semana, gestión la suya.
-function lunesDe(s) {
+/* Semana de jueves a miércoles: cierra el miércoles, que es el día en que pagan.
+   Así la tarjeta de la semana muestra justo lo que se les cobra ese día.
+
+   Es un corte propio: gestión mira otros dos —domingo a sábado en la tabla de
+   evolución y sábado a viernes en las tarjetas de cobranza— y no se tocan desde
+   acá. El conductor ve su semana, gestión la suya. */
+function inicioSemana(s) {
   const f = aFecha(s);
-  const dow = f.getDay();                       // 0 = domingo
-  f.setDate(f.getDate() - (dow === 0 ? 6 : dow - 1));
+  f.setDate(f.getDate() - ((f.getDay() + 3) % 7)); // 4 = jueves
   return f;
 }
-function etiquetaSemana(lunesIso) {
-  const l = aFecha(lunesIso);
+function etiquetaSemana(inicioIso) {
+  const l = aFecha(inicioIso);
   const d = new Date(l.getFullYear(), l.getMonth(), l.getDate() + 6);
   return l.getMonth() === d.getMonth()
     ? `${l.getDate()} al ${d.getDate()} de ${MESES[d.getMonth()]}`
@@ -104,7 +107,7 @@ export default function MisTags({ inicial }) {
       if (!porDia[t.fecha]) porDia[t.fecha] = { monto: 0, n: 0 };
       porDia[t.fecha].monto += t.valor;
       porDia[t.fecha].n++;
-      const sem = iso(lunesDe(t.fecha));
+      const sem = iso(inicioSemana(t.fecha));
       if (!porSemana[sem]) porSemana[sem] = { monto: 0, n: 0 };
       porSemana[sem].monto += t.valor;
       porSemana[sem].n++;
@@ -155,7 +158,7 @@ export default function MisTags({ inicial }) {
   }
 
   const { total, porDia, porSemana, dias, semanas } = agregados;
-  const semanaActual = dias.length ? iso(lunesDe(HOY)) : null;
+  const semanaActual = dias.length ? iso(inicioSemana(HOY)) : null;
   const recorte = lista.slice(0, visibles);
   const suma = lista.reduce((a, t) => a + t.valor, 0);
 
@@ -201,7 +204,7 @@ export default function MisTags({ inicial }) {
         {/* ── Semanas ────────────────────────────────────────── */}
         <h2 className="mb-1 mt-8 text-xl font-extrabold">Por semana</h2>
         <p className="mb-3 text-[15px] leading-snug text-gray-500">
-          Desliza hacia el lado para ver semanas anteriores. Van de lunes a domingo.
+          Desliza hacia el lado para ver semanas anteriores. Van de jueves a miércoles.
         </p>
         <div className={TIRA}>
           {semanas.map((s) => {
@@ -317,8 +320,9 @@ export default function MisTags({ inicial }) {
         <div className="mt-8 rounded-xl border border-gray-200 bg-white p-5">
           <h3 className="text-base font-bold">¿Cada cuánto se actualiza?</h3>
           <p className="mt-1 text-[15px] leading-relaxed text-gray-600">
-            Todos los viernes se cargan las pasadas de la semana. Por eso los últimos
-            días pueden todavía no aparecer acá.
+            Todos los días por la mañana. Las autopistas informan las pasadas con algo
+            de atraso, así que los últimos días pueden todavía no estar completos: lo
+            del miércoles suele aparecer recién el jueves.
           </p>
 
           <h3 className="mt-5 text-base font-bold">¿Ves una pasada que no reconoces?</h3>
