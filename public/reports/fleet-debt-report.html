@@ -1138,9 +1138,18 @@ async function loadData(){
       dataWarnings.forEach(function(w){
         var li=document.createElement('li');li.className='dq-item';
         var dateStr=w.date?new Date(w.date).toLocaleDateString('es-CL'):'';
-        li.innerHTML='<strong>'+esc(w.file)+'</strong>'+(dateStr?' ('+dateStr+')':'')
-          +' — '+w.emptyDriverPct+'% de '+w.totalRows+' registros sin conductor. '
-          +'<span style="color:#92400e">Reemplazá el archivo por uno con los campos completos.</span>';
+        var cuerpo;
+        if(w.issue==='unknown_format'){
+          // El archivo llegó pero no se pudo leer: sin este aviso los números
+          // se quedan en la versión anterior y parece que no pasó nada.
+          cuerpo=' — no se pudo leer: sus columnas no calzan con ningún formato conocido. '
+            +'<span style="color:#92400e">Los totales siguen mostrando el último archivo válido.</span>'
+            +(w.columns?'<div style="color:#78350f;font-size:10px;margin-top:3px">Columnas: '+esc(w.columns)+'</div>':'');
+        } else {
+          cuerpo=' — '+w.emptyDriverPct+'% de '+w.totalRows+' registros sin conductor. '
+            +'<span style="color:#92400e">Reemplazá el archivo por uno con los campos completos.</span>';
+        }
+        li.innerHTML='<strong>'+esc(w.file)+'</strong>'+(dateStr?' ('+dateStr+')':'')+cuerpo;
         dqList.appendChild(li);
       });
       // Los cargos que quedaron sin dueño se avisan acá en vez de sumarse a la

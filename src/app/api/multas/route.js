@@ -88,6 +88,7 @@ export async function GET() {
 
     const finesMap = new Map();   // key → estado más reciente de la multa
     const paymentEvents = [];     // pagos detectados al pasar de pending a completed
+    const formatosRaros = [];     // archivos cuyas columnas no reconocimos
 
     const tabulares = files.filter((f) => {
       const n = f.name.toLowerCase();
@@ -121,20 +122,48 @@ export async function GET() {
         }
         return -1;
       };
+      // Por nombre completo: con "incluye", 'amount' calza con 'amount to pay' y
+      // 'paid amount', y 'reference' calza con 'bill reference'. Acá eso importa.
+      const colExacta = (names) => {
+        for (const n of names) {
+          const i = header.indexOf(n);
+          if (i !== -1) return i;
+        }
+        return -1;
+      };
 
-      const iRef     = col(['reference', 'ref']);
-      // "Payroll amount" es lo que se le cobra al conductor; "Amount" viene en 0
-      // hasta que la multa se paga, y ahí queda igual al payroll. Ojo con el orden:
-      // 'amount' calzaría con 'payroll amount', así que el payroll se busca primero.
-      const iPayroll = col(['payroll amount', 'payroll']);
-      const iAmount  = header.findIndex((h) => h.trim() === 'amount');
+      /* El export cambió de formato en agosto de 2026 y trae los mismos datos con
+         otros nombres. Se aceptan los dos:
+
+           viejo                    nuevo
+           reference             →  bill reference   (el "reference" nuevo es otro
+                                                      código, el interno de la multa)
+           payroll amount        →  amount to pay
+           amount                →  paid amount
+           driver                →  driver name
+           raison + comment      →  description
+
+         El nombre de la columna es lo único de lo que nos podemos colgar, así que
+         si el charged no aparece se avisa en vez de emitir ceros silenciosos. */
+      const iRef     = colExacta(['bill reference']) !== -1
+                         ? colExacta(['bill reference'])
+                         : col(['reference', 'ref']);
+      const iPayroll = colExacta(['payroll amount', 'amount to pay']);
+      const iAmount  = colExacta(['amount', 'paid amount']);
       const iStatus  = col(['status', 'estado']);
       const iVehicle = col(['vehicle', 'vehículo', 'vehiculo', 'patente']);
-      const iDriver  = col(['driver', 'conductor']);
-      const iComment = col(['comment', 'comentario']);
-      const iReason  = col(['raison', 'reason', 'motivo']);
+      const iDriver  = colExacta(['driver name']) !== -1
+                         ? colExacta(['driver name'])
+                         : col(['driver', 'conductor']);
+      const iComment = colExacta(['comment', 'comentario', 'description']);
+      const iReason  = colExacta(['raison', 'reason', 'motivo']);
       const iDateCon = col(['date of contravention', 'contravention', 'fecha de infracción']);
       const iCreated = col(['created at', 'created']);
+
+      if (iRef === -1 || iPayroll === -1) {
+        formatosRaros.push({ name: file.name, modifiedTime: file.modifiedTime, header: rows[0].filter(Boolean) });
+        continue;
+      }
 
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
@@ -208,6 +237,18 @@ export async function GET() {
     // evolución y del filtro por coordinador. Es plata que se esfuma de la vista
     // sin ningún error, así que el reporte tiene que decirlo.
     const dataWarnings = [];
+
+    // Un archivo que no se pudo leer es peor que uno con datos malos: los números
+    // quedan viejos y nadie se entera. Ya pasó con el cambio de formato de agosto.
+    formatosRaros.forEach((f) => {
+      dataWarnings.push({
+        file: f.name,
+        date: f.modifiedTime,
+        issue: 'unknown_format',
+        columns: f.header.join(', '),
+      });
+    });
+
     const sinDuenio = fines.filter((f) => !f.driver && !f.vehicle);
     if (fines.length && sinDuenio.length / fines.length > 0.2) {
       dataWarnings.push({
