@@ -63,17 +63,25 @@ async function descargarEnParalelo(drive, files, limite = 10) {
  * un conductor distinto. Usarla como llave —como se hace con Bills— fundiría 13
  * filas en 2 y borraría la deuda de 11 personas.
  *
- * Por eso se le suman la patente y la fecha de la contravención. El monto NO
- * entra: el sistema de multas no acepta pagos parciales, así que un abono se
- * registra bajándole el monto a la multa a mano, y si el monto fuera parte de la
- * llave esa rebaja se leería como una multa distinta en vez de como un pago.
+ * Por eso se le suma la fecha de la contravención. Y nada más, porque no queda
+ * nada más estable:
  *
- * Sin el monto sigue siendo única en los datos reales: los 5 archivos dan 23, 29,
- * 25, 25 y 25 filas y ninguna llave repetida. Igual se protege el caso de empate
- * dentro de un mismo archivo, más abajo, para no fundir dos multas en una.
+ * · el MONTO no entra. El sistema de multas no acepta pagos parciales, así que un
+ *   abono se registra bajándole el monto a la multa a mano; con el monto en la
+ *   llave esa rebaja se leería como una multa nueva en vez de como un pago.
+ * · la PATENTE tampoco. Desde el segundo export viene vacía en todas las filas, y
+ *   mientras estuvo en la llave partió en dos la historia de cada multa: la
+ *   versión con patente quedó congelada en su monto viejo y arrancó una segunda
+ *   con la patente en blanco. Luisa Meza aparecía debiendo $566.490 por la misma
+ *   multa contada dos veces, $328.245 y $238.245, cuando debía solo la segunda.
+ * · el CONDUCTOR menos: viene vacío en tres de los cinco archivos.
+ *
+ * Referencia + fecha no repite en ninguno de los 5 archivos (23, 29, 25, 25 y 25
+ * filas, cero colisiones). Igual se protege el empate dentro de un mismo archivo,
+ * más abajo, para no fundir dos multas en una.
  */
-function fineKey(ref, vehicle, dateContravention) {
-  return [clean(ref), clean(vehicle).toUpperCase(), clean(dateContravention).slice(0, 10)].join('|');
+function fineKey(ref, dateContravention) {
+  return [clean(ref), clean(dateContravention).slice(0, 10)].join('|');
 }
 
 export async function GET() {
@@ -178,13 +186,12 @@ export async function GET() {
         const ref = iRef >= 0 ? clean(row[iRef]) : '';
         if (!ref) continue;
 
-        const vehicle = iVehicle >= 0 ? clean(row[iVehicle]).toUpperCase() : '';
         const cargoArchivo = parseAmount(iPayroll >= 0 ? row[iPayroll] : 0);
         const dateCon = iDateCon >= 0 ? clean(row[iDateCon]) : '';
 
-        // Dos multas idénticas en referencia, patente y fecha dentro del mismo
-        // archivo son dos multas, no una: se les da una llave distinta.
-        const base = fineKey(ref, vehicle, dateCon);
+        // Dos multas con la misma referencia y fecha dentro del mismo archivo son
+        // dos multas, no una: se les da una llave distinta.
+        const base = fineKey(ref, dateCon);
         const repes = (vistasEnArchivo.get(base) || 0) + 1;
         vistasEnArchivo.set(base, repes);
         const key = repes > 1 ? `${base}#${repes}` : base;
@@ -192,7 +199,10 @@ export async function GET() {
         const prev = finesMap.get(key) || null;
         const pagoArchivo = parseAmount(iAmount >= 0 ? row[iAmount] : 0);
         const status = (iStatus >= 0 ? clean(row[iStatus]) : '').toLowerCase();
+        // Conductor y patente se conservan de la última vez que vinieron: el
+        // export los dejó de mandar y no por eso la multa perdió dueño.
         const driver = (iDriver >= 0 ? clean(row[iDriver]) : '') || (prev?.driver || '');
+        const vehicle = (iVehicle >= 0 ? clean(row[iVehicle]).toUpperCase() : '') || (prev?.vehicle || '');
         const createdAt = iCreated >= 0 ? clean(row[iCreated]) : '';
 
         /* Un pago se detecta de dos maneras, porque el sistema de multas no
