@@ -1078,6 +1078,30 @@ function isInFleet(normalizedDriver){
 // Usa el mismo match difuso que isInFleet, porque los nombres en Bills suelen
 // traer mas palabras que los de la planilla. Cachea por nombre: se consulta una
 // vez por cada multa y evento de pago.
+/* Un conductor con el auto en el taller queda con dos filas en la planilla: la
+   suya y la del auto de reemplazo. Si esas filas traen coordinadores distintos,
+   toda su deuda se va a la del primero que aparezca en la planilla, y el otro
+   coordinador no lo ve en su filtro. No hay forma de adivinar cuál manda —el auto
+   de reemplazo puede ser de otro pool—, así que se avisa para que se corrija en
+   la planilla, que es donde está el dato. */
+var COORD_CONFLICTO=[];
+function detectarCoordEnConflicto(){
+  var porNombre={};
+  FLEET_ROWS.forEach(function(fr){
+    if(!fr.nameNorm||!fr.coordinador)return;
+    (porNombre[fr.nameNorm]=porNombre[fr.nameNorm]||[]).push(fr);
+  });
+  COORD_CONFLICTO=Object.keys(porNombre).filter(function(n){
+    var vistos={};porNombre[n].forEach(function(fr){vistos[fr.coordinador]=true;});
+    return Object.keys(vistos).length>1;
+  }).map(function(n){
+    return {nombre:n,
+            coords:porNombre[n].map(function(fr){return fr.coordinador;}),
+            patentes:porNombre[n].map(function(fr){return fr.patente;}),
+            asignadoA:porNombre[n][0].coordinador};
+  });
+}
+
 var _coordCache={};
 function coordOf(normalizedDriver){
   if(Object.prototype.hasOwnProperty.call(_coordCache,normalizedDriver))return _coordCache[normalizedDriver];
@@ -1125,6 +1149,7 @@ async function loadData(){
               patente:d.patente||'',tipo:String(d.tipo||'').trim()};
     });
     TALLER=fleetJson.taller||[];
+    detectarCoordEnConflicto();
     _coordCache={};
     recuperarConductorPorPatente(); // completa los nombres antes de agrupar
     applyScope(); // depende de FLEET_ROWS: debe correr despues de cargar la planilla
@@ -1154,6 +1179,14 @@ async function loadData(){
       });
       // Los cargos que quedaron sin dueño se avisan acá en vez de sumarse a la
       // deuda de despedidos, que es donde caían antes por no calzar con nadie.
+      COORD_CONFLICTO.forEach(function(c){
+        var liC=document.createElement('li');liC.className='dq-item';
+        liC.innerHTML='<strong>'+esc(c.nombre)+'</strong> tiene '+c.patentes.length
+          +' autos con coordinadores distintos ('+esc(c.coords.join(' y '))+'): '+esc(c.patentes.join(', '))+'. '
+          +'<span style="color:#92400e">Toda su deuda se está contando en '+esc(c.asignadoA)
+          +'. Dejá el mismo coordinador en las dos filas de Control Flota.</span>';
+        dqList.appendChild(liC);
+      });
       if(HUERFANOS.n>0){
         var liH=document.createElement('li');liH.className='dq-item';
         liH.innerHTML='<strong>'+HUERFANOS.n+' cargos sin conductor</strong> por '+fmtAmt(HUERFANOS.monto)
@@ -1161,7 +1194,7 @@ async function loadData(){
           +'<span style="color:#92400e">No se cuentan como deuda de despedidos; se asignan solos cuando el export traiga el nombre.</span>';
         dqList.appendChild(liH);
       }
-      dqPanel.style.display=(dataWarnings.length>0||HUERFANOS.n>0)?'flex':'none';
+      dqPanel.style.display=(dataWarnings.length>0||HUERFANOS.n>0||COORD_CONFLICTO.length>0)?'flex':'none';
     }
     aggregateDrivers();
     console.log('[Fleet] isActive por conductor:');
@@ -1476,7 +1509,12 @@ function renderKPIs(){
   var flotaFiltrada=FLEET_ROWS.filter(function(fr){
     return fr.nameNorm&&(!_coordFilter||fr.coordinador===_coordFilter);
   });
-  setText('kpiOpenBills',flotaFiltrada.length||activeDrv);
+  /* La planilla tiene una fila por AUTO, no por persona: quien tiene su auto en el
+     taller aparece otra vez con el de reemplazo. Para contar conductores hay que
+     contar nombres distintos; para la modalidad, más abajo, sí se cuentan autos. */
+  var nombresFlota={};
+  flotaFiltrada.forEach(function(fr){nombresFlota[fr.nameNorm]=true;});
+  setText('kpiOpenBills',Object.keys(nombresFlota).length||activeDrv);
 
   // Modalidad: DTO (drive to own) vs renta, según la columna Tipo de la planilla
   var dto=0,renta=0,otroTipo=0;
