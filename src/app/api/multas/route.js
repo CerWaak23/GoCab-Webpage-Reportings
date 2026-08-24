@@ -63,11 +63,17 @@ async function descargarEnParalelo(drive, files, limite = 10) {
  * un conductor distinto. Usarla como llave —como se hace con Bills— fundiría 13
  * filas en 2 y borraría la deuda de 11 personas.
  *
- * La combinación referencia + patente + monto + fecha de la contravención sí es
- * única en los datos reales (35 filas → 35 claves).
+ * Por eso se le suman la patente y la fecha de la contravención. El monto NO
+ * entra: el sistema de multas no acepta pagos parciales, así que un abono se
+ * registra bajándole el monto a la multa a mano, y si el monto fuera parte de la
+ * llave esa rebaja se leería como una multa distinta en vez de como un pago.
+ *
+ * Sin el monto sigue siendo única en los datos reales: los 5 archivos dan 23, 29,
+ * 25, 25 y 25 filas y ninguna llave repetida. Igual se protege el caso de empate
+ * dentro de un mismo archivo, más abajo, para no fundir dos multas en una.
  */
-function fineKey(ref, vehicle, payroll, dateContravention) {
-  return [clean(ref), clean(vehicle).toUpperCase(), payroll, clean(dateContravention).slice(0, 10)].join('|');
+function fineKey(ref, vehicle, dateContravention) {
+  return [clean(ref), clean(vehicle).toUpperCase(), clean(dateContravention).slice(0, 10)].join('|');
 }
 
 export async function GET() {
@@ -165,38 +171,59 @@ export async function GET() {
         continue;
       }
 
+      const vistasEnArchivo = new Map(); // llave → cuántas veces salió en ESTE archivo
+
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const ref = iRef >= 0 ? clean(row[iRef]) : '';
         if (!ref) continue;
 
         const vehicle = iVehicle >= 0 ? clean(row[iVehicle]).toUpperCase() : '';
-        const payroll = parseAmount(iPayroll >= 0 ? row[iPayroll] : 0);
+        const cargoArchivo = parseAmount(iPayroll >= 0 ? row[iPayroll] : 0);
         const dateCon = iDateCon >= 0 ? clean(row[iDateCon]) : '';
-        const key = fineKey(ref, vehicle, payroll, dateCon);
+
+        // Dos multas idénticas en referencia, patente y fecha dentro del mismo
+        // archivo son dos multas, no una: se les da una llave distinta.
+        const base = fineKey(ref, vehicle, dateCon);
+        const repes = (vistasEnArchivo.get(base) || 0) + 1;
+        vistasEnArchivo.set(base, repes);
+        const key = repes > 1 ? `${base}#${repes}` : base;
 
         const prev = finesMap.get(key) || null;
-        const paid = parseAmount(iAmount >= 0 ? row[iAmount] : 0);
+        const pagoArchivo = parseAmount(iAmount >= 0 ? row[iAmount] : 0);
         const status = (iStatus >= 0 ? clean(row[iStatus]) : '').toLowerCase();
         const driver = (iDriver >= 0 ? clean(row[iDriver]) : '') || (prev?.driver || '');
         const createdAt = iCreated >= 0 ? clean(row[iCreated]) : '';
 
-        // Una multa cuenta como pagada cuando su Amount sube. El estado "completed"
-        // acompaña, pero el monto es el dato duro: así también se captan pagos
-        // parciales si algún día el archivo los trae.
+        /* Un pago se detecta de dos maneras, porque el sistema de multas no
+           acepta pagos parciales:
+
+           · sube el monto pagado — es el caso limpio, la multa se pagó entera;
+           · baja el monto de la multa — es lo que se hace a mano cuando el
+             conductor abona una parte: no se puede registrar el abono, así que se
+             le rebaja la deuda. Esa rebaja ES el pago.
+
+           Las rebajas se acumulan en `abonos` para que el monto de la multa siga
+           siendo el original: si se descontara del cargo, el total facturado
+           bajaría solo y el abono no aparecería en ninguna parte. */
+        let abonos = prev ? prev.abonos : 0;
+
         if (prev) {
-          const delta = paid - prev.paidAmount;
-          if (delta > 0) {
+          const subePago = Math.max(0, pagoArchivo - prev._pagoArchivo);
+          const bajaCargo = Math.max(0, prev._cargoArchivo - cargoArchivo);
+          abonos += bajaCargo;
+          const entro = subePago + bajaCargo;
+          if (entro > 0) {
             paymentEvents.push({
               reference: key,
               driver: driver || prev.driver,
               vehicle: vehicle || prev.vehicle,
-              amount: delta,
+              amount: entro,
               date: file.modifiedTime, // el archivo es lo único que fecha el pago
               type: 'Multa',
             });
           }
-        } else if (paid > 0) {
+        } else if (pagoArchivo > 0) {
           // Ya venía pagada la primera vez que la vemos: no hay con qué comparar.
           // Se fecha en la creación de la multa, no en la subida del archivo, para
           // no inventar un peak de pagos el día que se cargó el histórico.
@@ -206,7 +233,7 @@ export async function GET() {
               reference: key,
               driver,
               vehicle,
-              amount: paid,
+              amount: pagoArchivo,
               date: fecha,
               type: 'Multa',
             });
@@ -220,8 +247,11 @@ export async function GET() {
           status,
           vehicle,
           driver,
-          amount: payroll,          // lo que se le carga al conductor
-          paidAmount: paid,         // lo que ya se pagó
+          amount: cargoArchivo + abonos,      // el cargo original, antes de las rebajas
+          paidAmount: pagoArchivo + abonos,   // lo pagado, contando las rebajas a mano
+          abonos,                             // cuánto de eso vino por rebaja manual
+          _cargoArchivo: cargoArchivo,        // lo que dice el archivo hoy, para el próximo diff
+          _pagoArchivo: pagoArchivo,
           description: [iReason >= 0 ? clean(row[iReason]) : '', iComment >= 0 ? clean(row[iComment]) : '']
             .filter(Boolean).join(' · '),
           createdAt,
