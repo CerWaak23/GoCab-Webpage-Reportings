@@ -87,6 +87,7 @@ export default function MisTags({ inicial }) {
   const [datos, setDatos] = useState(inicial || null);
   const [error, setError] = useState('');
   const [diaActivo, setDiaActivo] = useState(null);
+  const [semanaActiva, setSemanaActiva] = useState(null);
   const [visibles, setVisibles] = useState(TOPE_DETALLE);
   const avisoRef = useRef(null);
   const router = useRouter();
@@ -137,18 +138,31 @@ export default function MisTags({ inicial }) {
     };
   }, [datos]);
 
+  /* El día manda sobre la semana: si hay un día elegido se muestra ese y nada
+     más, aunque venga de una semana filtrada. */
   const lista = useMemo(() => {
     if (!datos?.transacciones) return [];
-    const l = diaActivo
-      ? datos.transacciones.filter((t) => t.fecha === diaActivo)
-      : datos.transacciones.slice();
+    let l = datos.transacciones;
+    if (diaActivo) l = l.filter((t) => t.fecha === diaActivo);
+    else if (semanaActiva) l = l.filter((t) => iso(inicioSemana(t.fecha)) === semanaActiva);
+    else l = l.slice();
     return l.sort((a, b) => (b.fecha + (b.hora || '')).localeCompare(a.fecha + (a.hora || '')));
-  }, [datos, diaActivo]);
+  }, [datos, diaActivo, semanaActiva]);
 
   function seleccionar(d) {
     setDiaActivo(d);
     setVisibles(TOPE_DETALLE);   // cambiar de día vuelve a empezar desde arriba
     if (d) setTimeout(() => avisoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+  }
+
+  // Tocar una semana filtra los días y el detalle. Si había un día elegido de
+  // otra semana se suelta, porque si no la pantalla queda mostrando algo que no
+  // pertenece a la semana que se acaba de tocar.
+  function seleccionarSemana(s) {
+    const nueva = s === semanaActiva ? null : s;
+    setSemanaActiva(nueva);
+    if (diaActivo && (!nueva || iso(inicioSemana(diaActivo)) !== nueva)) setDiaActivo(null);
+    setVisibles(TOPE_DETALLE);
   }
 
   async function salir() {
@@ -172,8 +186,12 @@ export default function MisTags({ inicial }) {
     return <p className="px-4 py-16 text-center text-lg text-gray-500">Cargando tus TAG…</p>;
   }
 
-  const { total, porDia, porSemana, dias, semanas } = agregados;
-  const semanaActual = dias.length ? iso(inicioSemana(HOY)) : null;
+  const { total, porDia, porSemana, dias: todosLosDias, semanas } = agregados;
+  const semanaActual = todosLosDias.length ? iso(inicioSemana(HOY)) : null;
+  // La tira de días sigue a la semana elegida
+  const dias = semanaActiva
+    ? todosLosDias.filter((d) => iso(inicioSemana(d)) === semanaActiva)
+    : todosLosDias;
   const recorte = lista.slice(0, visibles);
   const suma = lista.reduce((a, t) => a + t.valor, 0);
 
@@ -221,14 +239,23 @@ export default function MisTags({ inicial }) {
         <p className="mb-3 text-[15px] leading-snug text-gray-500">
           La semana de cobro va de <b>jueves a miércoles</b> y se paga el <b>miércoles</b>.
           Como tus pasadas se cargan al día siguiente de usarlas, ese pago corresponde a
-          lo que usaste <b>del miércoles al martes</b>. Cada tarjeta es un pago.
+          lo que usaste <b>del miércoles al martes</b>. <b>Toca un pago</b> para ver abajo
+          solo esos días.
         </p>
         <div className={TIRA}>
           {semanas.map((s) => {
             const v = porSemana[s];
             const actual = s === semanaActual;
+            const elegida = s === semanaActiva;
             return (
-              <div key={s} className={`${TARJETA} border-t-4 border-marca-oliva`}>
+              <button
+                key={s}
+                onClick={() => seleccionarSemana(s)}
+                aria-pressed={elegida}
+                className={`${TARJETA} border-2 border-t-4 ${elegida
+                  ? 'border-marca-oliva bg-marca-azul-tenue'
+                  : 'border-transparent border-t-marca-oliva'}`}
+              >
                 <div className={`text-[15px] font-bold leading-tight ${actual ? 'text-marca-azul' : ''}`}>
                   {actual ? 'Pago en curso' : 'Pago'}
                 </div>
@@ -245,7 +272,10 @@ export default function MisTags({ inicial }) {
                     todavía sumando
                   </div>
                 )}
-              </div>
+                <div className="mt-2 text-[13px] font-bold text-marca-azul">
+                  Ver estos días{elegida ? ' ✓' : ''}
+                </div>
+              </button>
             );
           })}
         </div>
@@ -253,8 +283,11 @@ export default function MisTags({ inicial }) {
         {/* ── Días ───────────────────────────────────────────── */}
         <h2 className="mb-1 mt-8 text-xl font-extrabold">Por día</h2>
         <p className="mb-3 text-[15px] leading-snug text-gray-500">
-          Desliza hacia el lado para ver más días. <b>Toca un día</b> para ver abajo
-          solo las pasadas de ese día.
+          {semanaActiva
+            ? <>Días del pago del miércoles {diaDePago(semanaActiva)}. <b>Toca un día</b> para
+               ver abajo solo las pasadas de ese día.</>
+            : <>Desliza hacia el lado para ver más días. <b>Toca un día</b> para ver abajo
+               solo las pasadas de ese día.</>}
         </p>
         <div className={TIRA}>
           {dias.map((d) => {
@@ -287,24 +320,26 @@ export default function MisTags({ inicial }) {
         {/* ── Detalle ────────────────────────────────────────── */}
         <h2 className="mb-1 mt-8 text-xl font-extrabold">Detalle de cada pasada</h2>
         <p className="mb-3 text-[15px] leading-snug text-gray-500">
-          {diaActivo
-            ? `Estas son las ${lista.length} ${lista.length === 1 ? 'pasada' : 'pasadas'} de ese día.`
+          {diaActivo || semanaActiva
+            ? `Estas son las ${lista.length} ${lista.length === 1 ? 'pasada' : 'pasadas'} de lo que elegiste.`
             : `Cada línea es una vez que pasaste por un pórtico. Son ${lista.length} en total.`}
         </p>
 
         <div ref={avisoRef}>
-          {diaActivo && (
+          {(diaActivo || semanaActiva) && (
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl
               border-2 border-marca-azul bg-marca-azul-tenue p-4">
               <span className="text-base font-bold first-letter:uppercase">
-                Mostrando solo el {nombreDia(diaActivo)}
+                {diaActivo
+                  ? `Mostrando solo el ${nombreDia(diaActivo)}`
+                  : `Mostrando el pago del miércoles ${diaDePago(semanaActiva)}`}
               </span>
               <button
-                onClick={() => seleccionar(null)}
+                onClick={() => { seleccionar(null); setSemanaActiva(null); }}
                 className="min-h-[44px] rounded-full bg-marca-azul px-5 py-2.5 text-[15px]
                   font-bold text-white hover:bg-marca-azul-oscuro"
               >
-                Ver todos los días
+                Ver todo
               </button>
             </div>
           )}
