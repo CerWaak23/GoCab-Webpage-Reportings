@@ -207,11 +207,15 @@ function enviarCorreo(altas, bajas, total) {
     '<p style="color:#888;font-size:12px">Correo automático. Se envía solo cuando entra o sale un conductor, ' +
     'no cuando se corrige un dato.</p></div>';
 
+  const para = listaCorreos(CONFIG.CORREOS);
+  if (!para) throw new Error('No hay destinatarios: revise CORREOS en la configuración.');
+
   const opciones = { htmlBody: html, name: 'GoCab Chile' };
-  if (CONFIG.COPIA) opciones.cc = CONFIG.COPIA;
+  const copia = listaCorreos(CONFIG.COPIA);
+  if (copia) opciones.cc = copia;
 
   MailApp.sendEmail(
-    CONFIG.CORREOS,
+    para,
     CONFIG.ASUNTO + ' — ' + CONFIG.ETIQUETA_MODALIDAD +
       ' (' + altas.length + ' alta(s), ' + bajas.length + ' baja(s))',
     'Se actualizó la nómina de conductores. Abra el correo en formato HTML para ver el detalle.',
@@ -220,6 +224,25 @@ function enviarCorreo(altas, bajas, total) {
 }
 
 // ─────────────────────────── AUXILIARES ───────────────────────────
+
+/**
+ * Deja la lista de correos como la quiere MailApp: separados por coma y sin nada
+ * alrededor. Acepta comas o punto y coma, aguanta espacios y comas colgando, y
+ * saca los repetidos. Un espacio de más basta para un "Invalid email", y el error
+ * aparece recién al enviar, cuando ya se escribió la planilla.
+ */
+function listaCorreos(v) {
+  const vistos = {};
+  return String(v || '')
+    .split(/[,;]+/)
+    .map(function (c) { return c.trim(); })
+    .filter(function (c) {
+      if (!c || vistos[c.toLowerCase()]) return false;
+      vistos[c.toLowerCase()] = true;
+      return true;
+    })
+    .join(',');
+}
 
 /** Sin tildes, minúsculas y sin espacios de más. */
 function normalizar(v) {
