@@ -46,23 +46,38 @@ function fechaHoraCorta(isoUtc) {
   });
 }
 
-/* Semana de jueves a miércoles: cierra el miércoles, que es el día en que pagan.
-   Así la tarjeta de la semana muestra justo lo que se les cobra ese día.
+/* La semana de cobro va de jueves a miércoles y se paga el miércoles. Pero acá
+   las pasadas se agrupan por el día en que se usó el TAG, no por el día en que se
+   cargó, y el sistema carga con un día de atraso. Así que el bloque que se paga
+   un miércoles son los usos del miércoles anterior al martes:
 
-   Es un corte propio: gestión mira otros dos —domingo a sábado en la tabla de
-   evolución y sábado a viernes en las tarjetas de cobranza— y no se tocan desde
-   acá. El conductor ve su semana, gestión la suya. */
+     usos    mié 19 ─────────────────► mar 25
+     cargas          jue 20 ─────────────────► mié 26   ← se paga este día
+
+   Por eso las tarjetas empiezan en miércoles: cada una es exactamente lo que se
+   cobra en su pago, y arriba dice de qué pago se trata.
+
+   Es un corte propio del conductor. Gestión mira otros dos —domingo a sábado en
+   la tabla de evolución y sábado a viernes en las tarjetas de cobranza— y no se
+   tocan desde acá. */
 function inicioSemana(s) {
   const f = aFecha(s);
-  f.setDate(f.getDate() - ((f.getDay() + 3) % 7)); // 4 = jueves
+  f.setDate(f.getDate() - ((f.getDay() + 4) % 7)); // 3 = miércoles
   return f;
 }
+// Rango de USO de la semana: del miércoles al martes siguiente
 function etiquetaSemana(inicioIso) {
   const l = aFecha(inicioIso);
   const d = new Date(l.getFullYear(), l.getMonth(), l.getDate() + 6);
   return l.getMonth() === d.getMonth()
     ? `${l.getDate()} al ${d.getDate()} de ${MESES[d.getMonth()]}`
     : `${l.getDate()} ${MESES_CORTOS[l.getMonth()]} al ${d.getDate()} ${MESES_CORTOS[d.getMonth()]}`;
+}
+// Miércoles en que se paga: 7 días después del miércoles en que empezó el uso
+function diaDePago(inicioIso) {
+  const l = aFecha(inicioIso);
+  const p = new Date(l.getFullYear(), l.getMonth(), l.getDate() + 7);
+  return `${p.getDate()} de ${MESES_CORTOS[p.getMonth()]}`;
 }
 
 const TARJETA = 'flex-none w-[168px] snap-start rounded-xl bg-white p-4 shadow-sm text-left';
@@ -202,9 +217,11 @@ export default function MisTags({ inicial }) {
         </div>
 
         {/* ── Semanas ────────────────────────────────────────── */}
-        <h2 className="mb-1 mt-8 text-xl font-extrabold">Por semana</h2>
+        <h2 className="mb-1 mt-8 text-xl font-extrabold">Por semana de pago</h2>
         <p className="mb-3 text-[15px] leading-snug text-gray-500">
-          Desliza hacia el lado para ver semanas anteriores. Van de jueves a miércoles.
+          La semana de cobro va de <b>jueves a miércoles</b> y se paga el <b>miércoles</b>.
+          Como tus pasadas se cargan al día siguiente de usarlas, ese pago corresponde a
+          lo que usaste <b>del miércoles al martes</b>. Cada tarjeta es un pago.
         </p>
         <div className={TIRA}>
           {semanas.map((s) => {
@@ -213,11 +230,21 @@ export default function MisTags({ inicial }) {
             return (
               <div key={s} className={`${TARJETA} border-t-4 border-marca-oliva`}>
                 <div className={`text-[15px] font-bold leading-tight ${actual ? 'text-marca-azul' : ''}`}>
-                  {actual ? 'Esta semana' : 'Semana'}
+                  {actual ? 'Pago en curso' : 'Pago'}
                 </div>
-                <div className="mt-0.5 text-[13px] text-gray-500">{etiquetaSemana(s)}</div>
+                <div className="mt-0.5 text-[13px] font-semibold text-gray-600">
+                  miércoles {diaDePago(s)}
+                </div>
                 <div className="mt-2.5 text-[22px] font-extrabold">{plata(v.monto)}</div>
                 <div className="text-[13px] text-gray-500">{v.n === 1 ? '1 pasada' : `${v.n} pasadas`}</div>
+                <div className="mt-1.5 text-[12px] leading-snug text-gray-500">
+                  usos del {etiquetaSemana(s)}
+                </div>
+                {actual && (
+                  <div className="mt-1 text-[12px] font-semibold leading-snug text-marca-azul">
+                    todavía sumando
+                  </div>
+                )}
               </div>
             );
           })}
