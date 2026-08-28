@@ -26,6 +26,31 @@ function parseAmount(val) {
 
 const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
 
+/**
+ * Multas de fiscalización de Carabineros.
+ *
+ * No hay forma de distinguirlas en el archivo: el sistema no las tipifica y la
+ * descripción es texto libre, casi siempre solo el rol de la causa. Adivinar por
+ * frases no sirve —de 37 multas, 20 no dicen el motivo—, así que se marcan a mano
+ * escribiendo #carabineros en la descripción, en el mismo sistema donde ya se
+ * anotan los pagos parciales. Eso sobrevive a cada re-exportación del archivo.
+ *
+ * Se acepta con o sin tildes y en cualquier caja, porque lo escribe una persona.
+ */
+// Las vocales van con y sin tilde: lo escribe una persona y "#carabíneros" es un
+// typo esperable. Detectar y borrar usan la MISMA expresión, así no puede pasar
+// que se reconozca la etiqueta pero quede escrita a la vista.
+const RE_CARABINEROS = /#\s*c[aá]r[aá]b[ií]n[eé]r[oó]s/gi;
+
+function esCarabineros(descripcion) {
+  RE_CARABINEROS.lastIndex = 0; // la bandera /g guarda posición entre llamadas
+  return RE_CARABINEROS.test(String(descripcion || ''));
+}
+// La etiqueta es una marca para el reporte, no parte del motivo: no se muestra.
+function sinEtiqueta(descripcion) {
+  return clean(String(descripcion || '').replace(RE_CARABINEROS, ''));
+}
+
 /** Igual que en bills: el costo es el ida y vuelta con Drive, no el tamaño. */
 async function descargarEnParalelo(drive, files, limite = 10) {
   const buffers = new Array(files.length);
@@ -218,6 +243,14 @@ export async function GET() {
            bajaría solo y el abono no aparecería en ninguna parte. */
         let abonos = prev ? prev.abonos : 0;
 
+        /* La descripción es lo único que puede decir que fue una fiscalización de
+           Carabineros. Si en algún archivo vino con la etiqueta, la multa la
+           conserva aunque después se reexporte sin ella. */
+        const descripcion = [iReason >= 0 ? clean(row[iReason]) : '', iComment >= 0 ? clean(row[iComment]) : '']
+          .filter(Boolean).join(' · ');
+        const carabineros = esCarabineros(descripcion) || !!prev?.carabineros;
+        const tipo = carabineros ? 'Carabineros' : 'Multa';
+
         if (prev) {
           const subePago = Math.max(0, pagoArchivo - prev._pagoArchivo);
           const bajaCargo = Math.max(0, prev._cargoArchivo - cargoArchivo);
@@ -230,7 +263,7 @@ export async function GET() {
               vehicle: vehicle || prev.vehicle,
               amount: entro,
               date: file.modifiedTime, // el archivo es lo único que fecha el pago
-              type: 'Multa',
+              type: tipo,
             });
           }
         } else if (pagoArchivo > 0) {
@@ -245,7 +278,7 @@ export async function GET() {
               vehicle,
               amount: pagoArchivo,
               date: fecha,
-              type: 'Multa',
+              type: tipo,
             });
           }
         }
@@ -253,7 +286,8 @@ export async function GET() {
         finesMap.set(key, {
           reference: key,
           refOriginal: ref,
-          type: 'Multa',
+          type: tipo,
+          carabineros,
           status,
           vehicle,
           driver,
@@ -262,8 +296,7 @@ export async function GET() {
           abonos,                             // cuánto de eso vino por rebaja manual
           _cargoArchivo: cargoArchivo,        // lo que dice el archivo hoy, para el próximo diff
           _pagoArchivo: pagoArchivo,
-          description: [iReason >= 0 ? clean(row[iReason]) : '', iComment >= 0 ? clean(row[iComment]) : '']
-            .filter(Boolean).join(' · '),
+          description: sinEtiqueta(descripcion),
           createdAt,
           dateContravention: dateCon,
         });

@@ -121,7 +121,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .bar-fill{height:100%;border-radius:2px;background:#34d399;transition:width .3s}
 .type-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
 .dot-energy{background:#60a5fa}.dot-toll{background:#34d399}.dot-repair{background:#fbbf24}
-.dot-admin{background:#f87171}.dot-other{background:#9ca3af}.dot-multa{background:#a78bfa}
+.dot-carab{background:#f472b6}.dot-admin{background:#f87171}.dot-other{background:#9ca3af}.dot-multa{background:#a78bfa}
 
 /* Filter chip */
 .filter-chip{display:inline-flex;align-items:center;gap:6px;background:#1e3a5f;border:1px solid #2563eb44;color:#93c5fd;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;margin-bottom:10px}
@@ -625,6 +625,7 @@ var _donutChart = null;
 // tránsito vienen de su propio archivo. Compartir categoría las volvía
 // indistinguibles justo en el filtro que sirve para separarlas.
 var TYPE_MAP = {
+  carabineros:['carabineros'],
   multa:['multa','fine','infracción','infraccion','parte'],
   energy:['energy','energía','energia','luz','electricidad','carga'],
   toll:['toll','peaje','autopista'],
@@ -632,12 +633,12 @@ var TYPE_MAP = {
   administrative:['administrative','administrativo','admin','permiso','licencia']
 };
 var TYPE_LABELS = {
-  es:{multa:'Multas',energy:'Energía',toll:'Peaje',reparation:'Reparación',administrative:'Administrativo',other:'Otro'},
-  en:{multa:'Fines',energy:'Energy',toll:'Toll',reparation:'Repair',administrative:'Administrative',other:'Other'},
-  ru:{multa:'Штрафы',energy:'Энергия',toll:'Пошлина',reparation:'Ремонт',administrative:'Административные',other:'Прочее'}
+  es:{carabineros:'Carabineros',multa:'Multas',energy:'Energía',toll:'Peaje',reparation:'Reparación',administrative:'Administrativo',other:'Otro'},
+  en:{carabineros:'Police stop',multa:'Fines',energy:'Energy',toll:'Toll',reparation:'Repair',administrative:'Administrative',other:'Other'},
+  ru:{carabineros:'Полиция',multa:'Штрафы',energy:'Энергия',toll:'Пошлина',reparation:'Ремонт',administrative:'Административные',other:'Прочее'}
 };
-var TYPE_COLORS = {multa:'#a78bfa',energy:'#60a5fa',toll:'#34d399',reparation:'#fbbf24',administrative:'#f87171',other:'#9ca3af'};
-var TYPE_DOT = {multa:'dot-multa',energy:'dot-energy',toll:'dot-toll',reparation:'dot-repair',administrative:'dot-admin',other:'dot-other'};
+var TYPE_COLORS = {carabineros:'#f472b6',multa:'#a78bfa',energy:'#60a5fa',toll:'#34d399',reparation:'#fbbf24',administrative:'#f87171',other:'#9ca3af'};
+var TYPE_DOT = {carabineros:'dot-carab',multa:'dot-multa',energy:'dot-energy',toll:'dot-toll',reparation:'dot-repair',administrative:'dot-admin',other:'dot-other'};
 
 var T = {
   es:{title:'Reporte de Deudas de Flota',sub:'conductores activos y cesados',refresh:'Actualizar',
@@ -1368,7 +1369,7 @@ function applyScope(){
 }
 
 // Orden fijo de los chips; solo se muestran los tipos presentes en los datos
-var TYPE_ORDER=['toll','multa','administrative','reparation','energy','other'];
+var TYPE_ORDER=['toll','multa','carabineros','administrative','reparation','energy','other'];
 
 // Solo tipos con monto facturado: hoy "Otro" agrupa ~1100 filas sin tipo y sin monto,
 // y su chip dejaria el reporte entero en cero. Si algun dia caen cargos reales ahi,
