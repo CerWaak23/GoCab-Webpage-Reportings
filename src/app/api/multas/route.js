@@ -42,7 +42,23 @@ const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
 // que se reconozca la etiqueta pero quede escrita a la vista.
 const RE_CARABINEROS = /#\s*c[aá]r[aá]b[ií]n[eé]r[oó]s/gi;
 
-function esCarabineros(descripcion) {
+/**
+ * Multas que van a Carabineros sin llevar la etiqueta.
+ *
+ * Se usa para las que ya ocurrieron: pedirle a alguien que vuelva atrás a editar
+ * la descripción de una multa vieja es más frágil que dejarlo escrito acá. De
+ * aquí en adelante la vía normal es la etiqueta, y esta lista no debería crecer.
+ *
+ * La llave es referencia + fecha de la contravención, la misma de fineKey().
+ */
+const CARABINEROS_FORZADAS = new Set([
+  // MARTIN ROJAS, $716.490. Fiscalización de Carabineros: le sacaron el auto por
+  // trabajar en aplicaciones de pasajeros.
+  '2026-M-9798|2026-08-09',
+]);
+
+function esCarabineros(key, descripcion) {
+  if (CARABINEROS_FORZADAS.has(key)) return true;
   RE_CARABINEROS.lastIndex = 0; // la bandera /g guarda posición entre llamadas
   return RE_CARABINEROS.test(String(descripcion || ''));
 }
@@ -248,7 +264,7 @@ export async function GET() {
            conserva aunque después se reexporte sin ella. */
         const descripcion = [iReason >= 0 ? clean(row[iReason]) : '', iComment >= 0 ? clean(row[iComment]) : '']
           .filter(Boolean).join(' · ');
-        const carabineros = esCarabineros(descripcion) || !!prev?.carabineros;
+        const carabineros = esCarabineros(base, descripcion) || !!prev?.carabineros;
         const tipo = carabineros ? 'Carabineros' : 'Multa';
 
         if (prev) {
