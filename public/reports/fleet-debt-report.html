@@ -1375,7 +1375,13 @@ function excluirCargos(){
 
    Lo que todavía no cierra no se muestra: un peaje del jueves aparece recién el
    miércoles siguiente, dentro de su bloque. Si se mostrara suelto y después
-   dentro del bloque, el mismo cargo se veria dos veces. */
+   dentro del bloque, el mismo cargo se veria dos veces.
+
+   El PAGO del peaje se mueve igual que su cargo. Es lo que hace que el porcentaje
+   signifique algo: si el cargo se difiere al miércoles y el pago se queda en su
+   día, el mismo peaje termina con el cargo en una semana y el pago en otra, y un
+   conductor que no debe nada aparece cobrado al 94%. Moviendo los dos, el cargo y
+   su pago caen siempre en el mismo bloque. */
 var PEAJES_PENDIENTES={n:0,monto:0,cierra:null};
 
 function miercolesDeCierre(d){
@@ -1399,6 +1405,18 @@ function consolidarPeajes(){
     }
     b._fechaReal=b.createdAt;            // se guarda por si hay que auditar
     b.createdAt=cierre.toISOString().slice(0,10);
+    return true;
+  });
+
+  // El pago del peaje sigue a su cargo, o el porcentaje deja de significar nada
+  ALL_PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.filter(function(p){
+    if(classifyType(p.type)!=='toll')return true;
+    var d=parseDate(p.date);
+    if(!d||isNaN(d))return true;
+    var cierre=miercolesDeCierre(d);
+    if(cierre.getTime()>hoy)return false;
+    p._fechaReal=p.date;
+    p.date=cierre.toISOString().slice(0,10);
     return true;
   });
 }
