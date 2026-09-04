@@ -486,6 +486,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       <div>
         <div class="section-title" id="evolTitle" style="margin-bottom:1px">Evolución semanal de pagos</div>
         <div style="font-size:10px;color:#4b5563" data-i18n="evol_sub">Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado</div>
+        <div id="avisoPeajes" style="display:none;font-size:10px;color:#fbbf24;margin-top:3px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="sw-group">
@@ -693,6 +694,7 @@ var T = {
       chart_pending_by_type:'Deuda Pendiente por Tipo',chart_pending_sub:'Conductores activos · saldo sin cobrar según categoría',
       chart_charges_title:'Cobros, pagos y saldo neto',chart_charges_sub:'Conductores activos · cobros (rojo) y pagos (verde) · línea = saldo acumulado',
       period_weekly:'Semanal',period_daily:'Diario',
+      peaje_pend_a:'peajes esperando el miércoles:',peaje_pend_b:'aparecen el',peaje_nota:'El peaje cuenta el miércoles que cierra su tramo jueves→miércoles, no el día que se cargó.',
       evol_title:'Evolución Semanal de Pagos',evol_sub:'Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado',
       evol_pending_col:'PENDIENTE ACTUAL',evol_total:'Total',
       fired_section_title:'Deuda Irrecuperable — Conductores Despedidos',
@@ -760,6 +762,7 @@ var T = {
       chart_pending_by_type:'Pending Debt by Type',chart_pending_sub:'Active drivers · pending balance by category',
       chart_charges_title:'Charges, Payments & Balance',chart_charges_sub:'Active drivers · charges (red) & payments (green) · line = running balance',
       period_weekly:'Weekly',period_daily:'Daily',
+      peaje_pend_a:'tolls waiting for Wednesday:',peaje_pend_b:'they show up on',peaje_nota:'Tolls count on the Wednesday that closes their Thursday→Wednesday block, not on the day they were charged.',
       evol_title:'Weekly Payment Evolution',evol_sub:'Red +X = charges added · Green −X = payments logged · Bold = accumulated pending balance',
       evol_pending_col:'CURRENT PENDING',evol_total:'Total',
       fired_section_title:'Irrecoverable Debt — Fired Drivers',
@@ -827,6 +830,7 @@ var T = {
       chart_pending_by_type:'Долг по типу',chart_pending_sub:'Активные водители · долг по категориям',
       chart_charges_title:'Начисления, платежи и сальдо',chart_charges_sub:'Активные водители · начисления (красный) и платежи (зелёный) · линия = сальдо',
       period_weekly:'Недельно',period_daily:'Дневно',
+      peaje_pend_a:'пошлины ждут среды:',peaje_pend_b:'появятся',peaje_nota:'Пошлина учитывается в среду, закрывающую отрезок четверг→среда, а не в день начисления.',
       evol_title:'Еженедельная динамика платежей',evol_sub:'Красный +X = начисления · Зелёный −X = платежи · Жирный = накопленный долг',
       evol_pending_col:'ТЕКУЩИЙ ДОЛГ',evol_total:'Итого',
       fired_section_title:'Безвозвратный долг — Уволенные водители',
@@ -1143,6 +1147,7 @@ async function loadData(){
     ALL_BILLS=ALL_BILLS.concat(MULTAS);
     ALL_PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.concat((multasJson&&multasJson.paymentEvents)||[]);
     excluirCargos();
+    consolidarPeajes(); // el peaje pasa a contar el miércoles que cierra su tramo
     var fleetDrivers=fleetJson.drivers||[];
     FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
     FLEET_ROWS=fleetDrivers.map(function(d){
@@ -1350,6 +1355,57 @@ function excluirCargos(){
     av.textContent='⚠ '+fuera+' '+t('excl_cargos')+' '
       +dm(CARGOS_EXCLUIDOS_DESDE)+' '+t('excl_al')+' '+dm(CARGOS_EXCLUIDOS_HASTA);
   }
+}
+
+/* ── PEAJES CONSOLIDADOS AL MIÉRCOLES ──────────────────────────────────────
+   El peaje no cuenta el día que se cargó: se junta de jueves a miércoles y el
+   bloque entero cuenta el miércoles que cierra ese tramo. Los TAG se cobran así,
+   y verlos día a día no dice nada porque nadie los cobra día a día.
+
+   Vale para todo el reporte —tabla diaria y semanal, gráficos, KPIs y tarjetas—,
+   así que se cambia la fecha del cargo una sola vez, acá, y todo lo de abajo lo
+   hereda. Las multas y el resto no se tocan: siguen contando el día que se
+   cargaron. La semana de la tabla sigue siendo domingo a sábado.
+
+   Lo que todavía no cierra no se muestra: un peaje del jueves aparece recién el
+   miércoles siguiente, dentro de su bloque. Si se mostrara suelto y después
+   dentro del bloque, el mismo cargo se veria dos veces. */
+var PEAJES_PENDIENTES={n:0,monto:0,cierra:null};
+
+function miercolesDeCierre(d){
+  var x=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));
+  return new Date(x.getTime()+((3-x.getUTCDay()+7)%7)*MS_DIA); // 3 = miércoles
+}
+
+function consolidarPeajes(){
+  PEAJES_PENDIENTES={n:0,monto:0,cierra:null};
+  var hoy=hoyChile().getTime();
+  ALL_BILLS=ALL_BILLS.filter(function(b){
+    if(classifyType(b.type)!=='toll')return true;
+    var d=parseDate(b.createdAt);
+    if(!d||isNaN(d))return true;
+    var cierre=miercolesDeCierre(d);
+    if(cierre.getTime()>hoy){
+      PEAJES_PENDIENTES.n++;
+      PEAJES_PENDIENTES.monto+=parseAmt(b.amount);
+      PEAJES_PENDIENTES.cierra=cierre;
+      return false;
+    }
+    b._fechaReal=b.createdAt;            // se guarda por si hay que auditar
+    b.createdAt=cierre.toISOString().slice(0,10);
+    return true;
+  });
+}
+
+// Peaje que todavía no cierra: se avisa para que nadie lo lea como una caída
+function renderAvisoPeajes(){
+  var el=document.getElementById('avisoPeajes');if(!el)return;
+  if(!PEAJES_PENDIENTES.n){el.style.display='none';el.textContent='';return;}
+  var c=PEAJES_PENDIENTES.cierra,p=function(n){return('0'+n).slice(-2);};
+  el.style.display='';
+  el.textContent='⏳ '+t('peaje_nota')+'  '+PEAJES_PENDIENTES.n+' '+t('peaje_pend_a')+' '
+    +fmtAmt(PEAJES_PENDIENTES.monto)+', '+t('peaje_pend_b')+' '
+    +p(c.getUTCDate())+'/'+p(c.getUTCMonth()+1)+'.';
 }
 
 function applyScope(){
@@ -2533,6 +2589,7 @@ function renderAll(){
   renderCoordFilterBar();
   renderTaller();
   applyI18n();
+  renderAvisoPeajes(); // después de applyI18n: su texto se arma con t(), no con data-i18n
 }
 
 function setLang(lang){if(!T[lang])return;LANG=lang;renderAll();}
