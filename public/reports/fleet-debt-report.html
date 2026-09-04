@@ -662,19 +662,19 @@ var T = {
       kpi_multas_perdida:'Pérdida en Multas — Despedidos',kpi_multas_perdida_sub:'conductores despedidos con multas',kpi_multas_deuda:'Deuda de Conductores por Multas',
       kpi_multas_deuda_sub:'conductores activos con multas',
       wk_title:'📅 Desglose Semanal de Cobranza',
-      wk_sub:'Cada semana de cargos corre de sábado a viernes y se cobra durante la semana siguiente: cuánto de lo cargado se recuperó en esos días y cuánto quedó sin cubrir',
+      wk_sub:'Cada semana corre de sábado a viernes y contiene el miércoles en que cae el bloque de peaje: cuánto de lo cargado se cobró en esos mismos días y cuánto quedó sin cubrir',
       wk_cargado:'cargado',wk_cubierto:'cubierto',wk_pagado:'Pagado:',wk_impago:'Sigue impago:',
       wk_recibidos:'recibidos',wk_anteriores:'a multas anteriores',
-      wk_cobranza:'Se cobra',
+      wk_caja:'Caja de la semana:',
       wk_hist_btn:'🕘 Ver historial',
       wk_hist_title:'Historial semanal de cobranza',
-      wk_hist_sub:'Cada fila es una semana de cargos, de sábado a viernes, cobrada durante la semana siguiente. De la más nueva a la más vieja.',
+      wk_hist_sub:'Cada fila es una semana de sábado a viernes: lo cargado y lo cobrado en esos mismos días. De la más nueva a la más vieja.',
       wk_hist_prom:'Recuperación últimas 8',wk_hist_bajo:'Semanas bajo 80%',wk_hist_nocub:'No cubierto en su semana',
       wk_hist_col_sem:'Semana de cargos',wk_hist_col_carg:'Cargado',wk_hist_col_cob:'Cobrado',wk_hist_col_pend:'Pendiente',
-      wk_hist_secobro:'se cobró',wk_hist_encurso:'en curso',wk_hist_sincargos:'sin cargos',
+      wk_hist_encurso:'en curso',wk_hist_sincargos:'sin cargos',
       wk_hist_aanteriores:'a semanas anteriores',wk_hist_consemanas:'semanas con cargos.',
       wk_hist_nota:'Un pago atrasado cuenta en la semana en que entró, así que “no cubierto” no es la deuda viva — esa está en la tabla de evolución.',
-      wk_pct_sub:'De lo cargado esa semana · cobrado en la semana siguiente',wk_sin_cargos:'Sin cargos',wk_semana:'Semana',conector_de:'de',
+      wk_pct_sub:'De lo cargado esa semana · cobrado en esos mismos días',wk_sin_cargos:'Sin cargos',wk_semana:'Semana',conector_de:'de',
       wk_sin_cargos_sub:'No hubo multas cargadas',wk_dia:'DÍA',wk_dias:'DÍAS',
       gest_col:'GESTIÓN',gest_comentar:'＋ Comentar',gest_ver:'💬 Ver',gest_hace:'⚠ Hace',
       gest_d:'d',gest_ind_btn:'📌 Indicación',gest_sin_com:'Sin comentario',gest_ind_de:'Indicación de',
@@ -732,19 +732,19 @@ var T = {
       kpi_multas_perdida:'Fine Losses — Former Drivers',kpi_multas_perdida_sub:'former drivers with fines',kpi_multas_deuda:'Driver Debt from Fines',
       kpi_multas_deuda_sub:'active drivers with fines',
       wk_title:'📅 Weekly Collection Breakdown',
-      wk_sub:'Each week of charges runs Saturday to Friday and is collected during the following week: how much of it was recovered in those days and how much was left uncovered',
+      wk_sub:'Each week runs Saturday to Friday and holds the Wednesday when the toll block lands: how much of what was charged got collected in those same days, and how much was left uncovered',
       wk_cargado:'charged',wk_cubierto:'covered',wk_pagado:'Paid:',wk_impago:'Still unpaid:',
       wk_recibidos:'received',wk_anteriores:'to earlier charges',
-      wk_cobranza:'Collected',
+      wk_caja:'Cash this week:',
       wk_hist_btn:'🕘 View history',
       wk_hist_title:'Weekly collection history',
-      wk_hist_sub:'Each row is a week of charges, Saturday to Friday, collected during the following week. Newest first.',
+      wk_hist_sub:'Each row is one Saturday-to-Friday week: what was charged and what was collected in those same days. Newest first.',
       wk_hist_prom:'Recovery, last 8',wk_hist_bajo:'Weeks below 80%',wk_hist_nocub:'Not covered in its week',
       wk_hist_col_sem:'Week charged',wk_hist_col_carg:'Charged',wk_hist_col_cob:'Collected',wk_hist_col_pend:'Outstanding',
-      wk_hist_secobro:'collected',wk_hist_encurso:'in progress',wk_hist_sincargos:'no charges',
+      wk_hist_encurso:'in progress',wk_hist_sincargos:'no charges',
       wk_hist_aanteriores:'to earlier weeks',wk_hist_consemanas:'weeks with charges.',
       wk_hist_nota:'A late payment counts in the week it arrived, so “not covered” is not the live debt — that one is in the evolution table.',
-      wk_pct_sub:'Of what was charged that week · collected the following week',wk_sin_cargos:'No charges',wk_semana:'Week',conector_de:'of',
+      wk_pct_sub:'Of what was charged that week · collected in those same days',wk_sin_cargos:'No charges',wk_semana:'Week',conector_de:'of',
       wk_sin_cargos_sub:'Nothing was charged',wk_dia:'DAY',wk_dias:'DAYS',
       gest_col:'FOLLOW-UP',gest_comentar:'＋ Comment',gest_ver:'💬 View',gest_hace:'⚠',
       gest_d:'d ago',gest_ind_btn:'📌 Instruction',gest_sin_com:'No comment',gest_ind_de:'Instruction from',
@@ -802,19 +802,19 @@ var T = {
       kpi_multas_perdida:'Потери по штрафам — уволенные',kpi_multas_perdida_sub:'уволенных водителей со штрафами',kpi_multas_deuda:'Долг водителей по штрафам',
       kpi_multas_deuda_sub:'активных водителей со штрафами',
       wk_title:'📅 Недельная разбивка сборов',
-      wk_sub:'Неделя начислений идёт с субботы по пятницу и взыскивается на следующей неделе: сколько удалось вернуть за эти дни и сколько осталось непокрытым',
+      wk_sub:'Неделя идёт с субботы по пятницу и содержит среду, когда приходит блок пошлин: сколько из начисленного взыскали в те же дни и сколько осталось непокрытым',
       wk_cargado:'начислено',wk_cubierto:'покрыто',wk_pagado:'Оплачено:',wk_impago:'Не оплачено:',
       wk_recibidos:'получено',wk_anteriores:'по прежним начислениям',
-      wk_cobranza:'Взыскание',
+      wk_caja:'Поступления недели:',
       wk_hist_btn:'🕘 История',
       wk_hist_title:'История еженедельного взыскания',
-      wk_hist_sub:'Каждая строка — неделя начислений, с субботы по пятницу, взыскиваемая на следующей неделе. Сначала самые новые.',
+      wk_hist_sub:'Каждая строка — неделя с субботы по пятницу: начисленное и взысканное за те же дни. Сначала самые новые.',
       wk_hist_prom:'Взыскано за 8 недель',wk_hist_bajo:'Недель ниже 80%',wk_hist_nocub:'Не покрыто в свою неделю',
       wk_hist_col_sem:'Неделя начислений',wk_hist_col_carg:'Начислено',wk_hist_col_cob:'Взыскано',wk_hist_col_pend:'Остаток',
-      wk_hist_secobro:'взыскано',wk_hist_encurso:'в процессе',wk_hist_sincargos:'без начислений',
+      wk_hist_encurso:'в процессе',wk_hist_sincargos:'без начислений',
       wk_hist_aanteriores:'на прежние недели',wk_hist_consemanas:'недель с начислениями.',
       wk_hist_nota:'Просроченный платёж учитывается в неделю поступления, поэтому «не покрыто» — это не текущий долг; он в таблице динамики.',
-      wk_pct_sub:'Из начисленного за ту неделю · взыскано на следующей неделе',wk_sin_cargos:'Без начислений',wk_semana:'Неделя',conector_de:'из',
+      wk_pct_sub:'Из начисленного за ту неделю · взыскано в те же дни',wk_sin_cargos:'Без начислений',wk_semana:'Неделя',conector_de:'из',
       wk_sin_cargos_sub:'Начислений не было',wk_dia:'ДЕНЬ',wk_dias:'ДН.',
       gest_col:'ВЕДЕНИЕ',gest_comentar:'＋ Комментарий',gest_ver:'💬 Открыть',gest_hace:'⚠',
       gest_d:'дн. назад',gest_ind_btn:'📌 Указание',gest_sin_com:'Без комментария',gest_ind_de:'Указание от',
@@ -898,49 +898,45 @@ function parseDate(s){
 }
 
 function getWeekKey(d){
-  /* El ciclo corre de domingo 00:00 UTC a sábado 23:59 UTC.
-     Desde ahora se cobra a diario lo del día anterior, así que un sábado se ve
-     el cobro del viernes: la semana domingo→sábado corresponde a la actividad
-     real de sábado a viernes.
-     2020-01-05 fue domingo y es el ancla de todo el cálculo. Cambiar esta fecha
-     mueve la semana en el reporte entero, tarjetas y tabla, porque ambas pasan
-     por acá. */
+  /* Un solo ciclo para todo el reporte: sábado 00:00 UTC a viernes 23:59 UTC.
+     Tabla, gráficos, KPIs, tarjetas y semáforo pasan todos por acá, así que
+     cambiar esta fecha ancla mueve el reporte entero.
+
+     Dentro de cada semana cae exactamente un miércoles, que es el día en que
+     entra el bloque de peaje y el día en que los conductores pagan. Por eso el
+     cargo y el cobro se miden en la misma ventana: la semana del sábado 29/08 al
+     viernes 04/09 contiene el bloque del miércoles 02/09 y los pagos de esos
+     mismos días.
+
+     2020-01-04 fue sábado. */
   if(!d)return null;
   var msPerWeek=7*24*60*60*1000;
-  var epoch=new Date('2020-01-05');
+  var epoch=new Date('2020-01-04');
   var wn=Math.floor((d-epoch)/msPerWeek);
   var weekStart=new Date(epoch.getTime()+wn*msPerWeek);
   var mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return weekStart.getUTCDate()+' '+mn[weekStart.getUTCMonth()];
 }
 
-/* ── SEMANA DE LAS TARJETAS ────────────────────────────────────────────────
-   Solo el desglose semanal usa este ciclo. El resto del reporte —tabla de
-   evolución, gráficos, KPIs— sigue con getWeekKey(), domingo a sábado.
+/* ── LA SEMANA DEL REPORTE ─────────────────────────────────────────────────
+   Un solo ciclo para todo: sábado a viernes, en getWeekKey(). Tabla, gráficos,
+   KPIs, tarjetas y semáforo miran el mismo tramo, así que los números de una
+   vista se pueden contrastar con los de otra.
 
-   Cada tarjeta es una semana de CARGOS que corre de sábado a viernes, y se cobra
-   durante la semana siguiente. El sábado cae de golpe todo lo cargado de sábado a
-   viernes, y desde ese día hasta el viernes siguiente se trabaja en recuperarlo.
+   Cada semana contiene exactamente un miércoles, y ese miércoles es el día en que
+   cae el bloque de peaje —ver consolidarPeajes()— y también el día en que los
+   conductores pagan. Por eso el cargo y el cobro se miden en la misma ventana: la
+   semana del sábado 29/08 al viernes 04/09 tiene el bloque del miércoles 02/09 y
+   los pagos de esos mismos días.
 
-   Y el sistema carga con un día de atraso: el cargo que aparece un día es el
-   consumo del día anterior. Así que la semana 08/08 → 14/08 no son los cargos
-   fechados del 8 al 14, sino los fechados del 9 al 15: el del 15 es el consumo
-   del viernes 14, y el del 8 es el del viernes 7, que pertenece a la semana
-   pasada.
+   Una semana aparece recién cuando pasó su miércoles. Antes de eso solo tendría
+   multas sueltas y un porcentaje que no significa nada.
 
-   Ejemplo completo: la tarjeta 08/08 → 14/08 junta los cargos fechados entre el
-   9 y el 15, aparece el sábado 15 —cuando cae el último— y se cobra entre el 15
-   y el 21. La tarjeta 15/08 → 21/08 no se muestra hasta el sábado 22.
-
-   Por eso cargo y pago se agrupan distinto:
-
-   · un CARGO se corre un día hacia atrás, al consumo que representa, y va a la
-     semana sábado→viernes de ese día.
-   · un PAGO va a la semana ANTERIOR a la suya, porque lo que se paga entre el 15
-     y el 21 es la deuda cargada entre el 8 y el 14.
-
-   Así cada tarjeta responde una sola pregunta: de lo que se cargó esa semana,
-   cuánto se recuperó en la semana de cobranza. */
+   Historia, por si alguien se pregunta por qué había tres relojes: la tabla corría
+   de domingo a sábado, las tarjetas de sábado a viernes cobrando contra la semana
+   siguiente, y el cargo se corría un día atrás para compensar que el peaje se
+   cargaba con un día de retraso. Consolidar el peaje al miércoles dejó todo eso
+   sin sentido y sin nada que compensar. */
 var MS_DIA=24*60*60*1000;
 
 /* Hoy en Chile, a medianoche UTC, para poder compararlo con las fechas de los
@@ -965,13 +961,13 @@ function weekKeyToDate(wk){
   if(m<0)return null;
   var now=new Date(),yr=now.getUTCFullYear();
   /* La clave solo trae día y mes, así que el año hay que deducirlo. Antes se
-     asumía que una fecha futura era del año pasado, y eso devolvía un sábado del
+     asumía que una fecha futura era del año pasado, y eso devolvía un día del
      año equivocado para cualquier semana que empiece después de hoy.
-     Un inicio de semana siempre cae domingo: se prueban los años vecinos, se
-     descartan los que no den domingo y se elige el más cercano a hoy. */
+     Un inicio de semana siempre cae sábado: se prueban los años vecinos, se
+     descartan los que no den sábado y se elige el más cercano a hoy. */
   var opciones=[yr,yr-1,yr+1]
     .map(function(y){return new Date(Date.UTC(y,m,d));})
-    .filter(function(x){return x.getUTCDay()===0;});
+    .filter(function(x){return x.getUTCDay()===6;});
   if(!opciones.length)return new Date(Date.UTC(yr,m,d));
   opciones.sort(function(a,b){return Math.abs(a-now)-Math.abs(b-now);});
   return opciones[0];
@@ -1919,11 +1915,11 @@ function renderMixedChart(){
    le cargó en su semana, ¿cuánto pagó en la semana de cobranza? Verde si cubrió
    todo, amarillo si abonó algo, rojo si no pagó nada.
 
-   Se mide sobre la última semana visible de las tarjetas, que es la que se está
-   cobrando ahora: es la que sirve para ir a buscar a alguien. Usa exactamente el
-   mismo agrupamiento que computeWeeklyBreakdown() —el cargo corrido un día, el
-   pago contra la semana anterior— para que la columna y las tarjetas no puedan
-   contradecirse. */
+   Se mide sobre la última semana visible de las tarjetas: la que contiene el
+   miércoles más reciente, o sea el último bloque de peaje que cayó. Usa el mismo
+   agrupamiento que computeWeeklyBreakdown() —cargo y cobro en la misma ventana
+   sábado→viernes— para que la columna y las tarjetas no puedan contradecirse: la
+   suma de los conductores da exactamente el porcentaje de la tarjeta. */
 var _evolOrden='deuda'; // 'deuda' o 'semaforo'
 function setEvolOrden(o){
   _evolOrden=o;
@@ -1950,20 +1946,19 @@ function semaforoSemana(){
   BILLS.forEach(function(b){
     var drv=normalizeName(b.driver);if(!activos[drv])return;
     var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
-    var c=casilla(sabadoDeSemana(new Date(d.getTime()-MS_DIA)),drv);
+    var c=casilla(sabadoDeSemana(d),drv);
     if(c)c.cargado+=parseAmt(b.amount);
   });
   PAYMENT_EVENTS.forEach(function(p){
     var drv=normalizeName(p.driver);if(!activos[drv])return;
     var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var sab=sabadoDeSemana(d);if(!sab)return;
-    var c=casilla(new Date(sab.getTime()-7*MS_DIA),drv);
+    var c=casilla(sabadoDeSemana(d),drv);
     if(c)c.cobrado+=p.amount;
   });
 
   var finDeHoy=hoyChile().getTime();
   var vis=Object.keys(sem).map(function(k){return sem[k];})
-    .filter(function(s){return s.ini+7*MS_DIA<=finDeHoy;})
+    .filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;})
     .sort(function(a,b){return a.ini-b.ini;});
   if(!vis.length)return res;
 
@@ -2286,12 +2281,19 @@ function computeWeeklyBreakdown(todas){
   /* Estas tarjetas miden el esfuerzo de cobranza de la semana, no el estado
      acumulado de cada multa.
 
-     Cada tarjeta es una semana de cargos, de sábado a viernes, que se cobra
-     durante la semana siguiente. Ver el bloque SEMANA DE LAS TARJETAS.
+     Cargo y cobro se miden en la MISMA ventana, la semana sábado→viernes que usa
+     todo el reporte. Cada semana contiene un solo miércoles, que es el día en que
+     entra el bloque de peaje y el día en que los conductores pagan, así que la
+     tarjeta responde derecho: de lo que cayó ese miércoles, ¿cuánto entró en esos
+     mismos días?
 
-     Consecuencia: un pago que llega tarde cuenta en la semana de cobranza en que
-     entró, no contra el cargo que le corresponde. Cada tarjeta queda como una
-     nota cerrada de cómo se cobró esa semana, y no cambia después. */
+     Antes el cobro se media contra la semana siguiente, de cuando el cargo caía
+     el sábado de golpe. Con el peaje consolidado al miércoles ese desfase dejaba
+     la tarjeta y la tabla mostrando números distintos del mismo tramo.
+
+     Consecuencia: un pago atrasado cuenta en la semana en que entró, no contra el
+     cargo que le corresponde. Cada tarjeta queda como una nota cerrada de cómo se
+     cobró esa semana. */
   var sem={};
   function casilla(sab){
     if(!sab)return null;
@@ -2299,28 +2301,24 @@ function computeWeeklyBreakdown(todas){
     if(!sem[k])sem[k]={ini:k,cargado:0,caja:0};
     return sem[k];
   }
-  // El cargo se corre un día atrás —es el consumo del día anterior— y de ahí
-  // sale su semana: los cargos del 9 al 15 son la semana del 8 al 14
   BILLS.forEach(function(b){
     if(!activeSet[normalizeName(b.driver)])return;
     var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
-    var s=casilla(sabadoDeSemana(new Date(d.getTime()-MS_DIA)));
+    var s=casilla(sabadoDeSemana(d));
     if(s)s.cargado+=parseAmt(b.amount);
   });
-  // El pago va a la semana anterior: lo que entra esta semana paga la pasada
   PAYMENT_EVENTS.forEach(function(p){
     if(!activeSet[normalizeName(p.driver)])return;
     var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var sab=sabadoDeSemana(d);if(!sab)return;
-    var s=casilla(new Date(sab.getTime()-7*MS_DIA));if(s)s.caja+=p.amount;
+    var s=casilla(sabadoDeSemana(d));if(s)s.caja+=p.amount;
   });
 
-  /* Una semana recién se muestra cuando termina de cargarse, o sea el sábado
-     siguiente, que es el día en que caen sus cargos y empieza su cobranza. Los
-     cargos que se están acumulando ahora no se ven hasta ese día. */
+  /* Una semana aparece cuando ya pasó su miércoles, que es cuando cae el bloque
+     de peaje. Antes de eso la tarjeta mostraría solo multas sueltas y un 0% que
+     no significa nada. El miércoles es el cuarto día de la semana. */
   var finDeHoy=hoyChile().getTime();
   var orden=Object.keys(sem).map(function(k){return sem[k];})
-    .filter(function(s){return s.ini+7*MS_DIA<=finDeHoy;})
+    .filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;})
     .sort(function(a,b){return a.ini-b.ini;});
   if(!orden.length)return[];
   var ultimas=todas?orden:orden.slice(-4);
@@ -2333,12 +2331,12 @@ function computeWeeklyBreakdown(todas){
       return pad(a.getUTCDate())+'/'+pad(a.getUTCMonth()+1)
         +' → '+pad(b.getUTCDate())+'/'+pad(b.getUTCMonth()+1);
     };
-    var lbl=rango(s.ini),lblCobranza=rango(s.ini+7*MS_DIA);
+    var lbl=rango(s.ini);
 
-    // Días que lleva la cobranza, en la tarjeta que se está cobrando ahora
+    // Días corridos de la semana en curso: la última, que todavía puede moverse
     var daysLabel=null;
     if(i===ultimas.length-1){
-      var diff=Math.round((finDeHoy-(s.ini+7*MS_DIA))/MS_DIA)+1;
+      var diff=Math.round((finDeHoy-s.ini)/MS_DIA)+1;
       if(diff>0&&diff<=7)daysLabel=diff+' '+(diff===1?t('wk_dia'):t('wk_dias'));
     }
 
@@ -2350,7 +2348,6 @@ function computeWeeklyBreakdown(todas){
       weekNum:i+1,
       weekKey:lbl,
       label:lbl,
-      labelCobranza:lblCobranza,      // semana en que se cobra lo cargado arriba
       daysLabel:daysLabel,
       cargado:s.cargado,
       cubierto:recuperado,            // de lo cargado esa semana, cuánto se recuperó en esos días
@@ -2390,8 +2387,8 @@ function renderWeeklyBreakdown(){
       +'<div class="wk-amounts"><span class="wk-cargado">+'+fmtShort(w.cargado)+' '+t('wk_cargado')+'</span><span class="wk-pagado">'+fmtShort(w.cubierto)+' '+t('wk_cubierto')+'</span></div>'
       +'<div class="wk-bar"><div class="wk-bar-actual" style="width:'+wA+'%"></div><div class="wk-bar-vieja" style="width:'+wV+'%"></div></div>'
       +'<div class="wk-bar-labels"><span><span class="wk-dot actual"></span>'+t('wk_pagado')+' '+fmtShort(w.cubierto)+'</span><span><span class="wk-dot vieja"></span>'+t('wk_impago')+' '+fmtShort(w.pendienteSemana)+'</span>'
-      +'<span style="flex-basis:100%;color:#6b7280">'+t('wk_cobranza')+' '+esc(w.labelCobranza)
-      +(tot>0?' · '+fmtShort(tot)+' '+t('wk_recibidos')+(w.pagadoVieja>0?' ('+fmtShort(w.pagadoVieja)+' '+t('wk_anteriores')+')':''):'')+'</span></div>'
+      +(tot>0?'<span style="flex-basis:100%;color:#6b7280">'+t('wk_caja')+' '+fmtShort(tot)+' '+t('wk_recibidos')
+        +(w.pagadoVieja>0?' ('+fmtShort(w.pagadoVieja)+' '+t('wk_anteriores')+')':'')+'</span>':'')+'</div>'
       +'<div class="wk-pct-box" style="background:'+pBg+';border:1px solid '+pBorder+'"><div class="wk-pct" style="color:'+pColor+'">'+pMain+'</div><div class="wk-pct-sub" style="color:'+pColor+'">'+pSub+'</div></div>'
       +'</div>';
   });
@@ -2436,8 +2433,7 @@ function renderHistorial(){
     var c=colorPct(w.pctCobrado),ancho=w.pctCobrado===null?0:Math.min(100,w.pctCobrado);
     filas+='<tr>'
       +'<td><div class="h-sem">'+esc(w.label)+'</div>'
-      +'<div class="h-cob">'+t('wk_hist_secobro')+' '+esc(w.labelCobranza)
-      +(w.daysLabel?' · '+t('wk_hist_encurso'):'')+'</div></td>'
+      +(w.daysLabel?'<div class="h-cob">'+t('wk_hist_encurso')+'</div>':'')+'</td>'
       +'<td>'+(w.cargado?fmtAmt(w.cargado):'<span class="h-nada">'+t('wk_hist_sincargos')+'</span>')+'</td>'
       +'<td>'+(w.cubierto?fmtAmt(w.cubierto):'<span class="h-nada">—</span>')
       +(w.pagadoVieja>0?'<div class="h-cob">+'+fmtAmt(w.pagadoVieja)+' '+t('wk_hist_aanteriores')+'</div>':'')
