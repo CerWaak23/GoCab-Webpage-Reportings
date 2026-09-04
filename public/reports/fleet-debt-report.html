@@ -1377,11 +1377,9 @@ function excluirCargos(){
    miércoles siguiente, dentro de su bloque. Si se mostrara suelto y después
    dentro del bloque, el mismo cargo se veria dos veces.
 
-   El PAGO del peaje se mueve igual que su cargo. Es lo que hace que el porcentaje
-   signifique algo: si el cargo se difiere al miércoles y el pago se queda en su
-   día, el mismo peaje termina con el cargo en una semana y el pago en otra, y un
-   conductor que no debe nada aparece cobrado al 94%. Moviendo los dos, el cargo y
-   su pago caen siempre en el mismo bloque. */
+   El PAGO no se mueve: cuenta el día que entró. Lo que compensa el desfase con su
+   cargo es la regla del excedente, en semanasPorConductor(): lo que un conductor
+   paga de más en una semana cubre lo que le quedó debiendo en la anterior. */
 var PEAJES_PENDIENTES={n:0,monto:0,cierra:null};
 
 function miercolesDeCierre(d){
@@ -1408,17 +1406,6 @@ function consolidarPeajes(){
     return true;
   });
 
-  // El pago del peaje sigue a su cargo, o el porcentaje deja de significar nada
-  ALL_PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.filter(function(p){
-    if(classifyType(p.type)!=='toll')return true;
-    var d=parseDate(p.date);
-    if(!d||isNaN(d))return true;
-    var cierre=miercolesDeCierre(d);
-    if(cierre.getTime()>hoy)return false;
-    p._fechaReal=p.date;
-    p.date=cierre.toISOString().slice(0,10);
-    return true;
-  });
 }
 
 // Peaje que todavía no cierra: se avisa para que nadie lo lea como una caída
@@ -1950,45 +1937,19 @@ function setEvolOrden(o){
 function semaforoSemana(){
   var res={semana:null,porConductor:{}};
   if(!BILLS.length)return res;
-  var activos={};
-  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activos[d.driver]=true;});
-
-  var sem={};
-  function casilla(sab,drv){
-    if(!sab)return null;
-    var k=sab.getTime();
-    if(!sem[k])sem[k]={ini:k,drv:{}};
-    if(!sem[k].drv[drv])sem[k].drv[drv]={cargado:0,cobrado:0};
-    return sem[k].drv[drv];
-  }
-  BILLS.forEach(function(b){
-    var drv=normalizeName(b.driver);if(!activos[drv])return;
-    var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
-    var c=casilla(sabadoDeSemana(d),drv);
-    if(c)c.cargado+=parseAmt(b.amount);
-  });
-  PAYMENT_EVENTS.forEach(function(p){
-    var drv=normalizeName(p.driver);if(!activos[drv])return;
-    var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var c=casilla(sabadoDeSemana(d),drv);
-    if(c)c.cobrado+=p.amount;
-  });
-
-  var finDeHoy=hoyChile().getTime();
-  var vis=Object.keys(sem).map(function(k){return sem[k];})
-    .filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;})
-    .sort(function(a,b){return a.ini-b.ini;});
+  var vis=semanasPorConductor();
   if(!vis.length)return res;
-
   var ult=vis[vis.length-1];
   res.semana=ult.ini;
   Object.keys(ult.drv).forEach(function(drv){
     var v=ult.drv[drv];
-    var estado=v.cargado<=0?'gris'
-      :v.cobrado>=v.cargado?'verde'
-      :v.cobrado>0?'amarillo':'rojo';
-    res.porConductor[drv]={cargado:v.cargado,cobrado:v.cobrado,estado:estado,
-      pct:v.cargado>0?Math.round(Math.min(v.cobrado,v.cargado)/v.cargado*100):null};
+    res.porConductor[drv]={
+      cargado:v.cargado,
+      cobrado:v.cubierto,          // lo que se le abonó a esa semana, excedente incluido
+      caja:v.caja,                 // lo que efectivamente entró en esos días
+      pct:v.pct,
+      estado:v.cargado<=0?'gris':v.pct>=100?'verde':v.pct>0?'amarillo':'rojo'
+    };
   });
   return res;
 }
@@ -2288,56 +2249,87 @@ function applyI18n(){
 }
 
 /* ── WEEKLY BREAKDOWN ──────────────────────────────────────────────────── */
+/* ── LAS SEMANAS, CONDUCTOR POR CONDUCTOR ──────────────────────────────────
+   De acá salen las tarjetas y el semáforo, así que no pueden contradecirse: las
+   tarjetas son la suma de estas filas.
+
+   Cargo y pago se agrupan en la misma semana sábado→viernes, cada uno por su
+   fecha. Encima corre una sola regla: lo que un conductor paga DE MÁS en una
+   semana cubre lo que le quedó debiendo en la ANTERIOR.
+
+   Eso es lo que pasa de verdad. El peaje se carga en bloque el miércoles y el
+   conductor lo paga en cuotas durante los días siguientes, así que parte de esa
+   plata cruza el corte del viernes. Sin esta regla, alguien que no debe nada
+   aparecía cobrado al 94%: la semana vieja quedaba corta y la nueva sobrada.
+
+   Va solo una semana hacia atrás, no en cascada. */
+function semanasPorConductor(){
+  var activos={};
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activos[d.driver]=true;});
+
+  var sem={};
+  function casilla(sab,drv){
+    if(!sab)return null;
+    var k=sab.getTime();
+    if(!sem[k])sem[k]={ini:k,drv:{}};
+    if(!sem[k].drv[drv])sem[k].drv[drv]={cargado:0,caja:0,recibido:0};
+    return sem[k].drv[drv];
+  }
+  BILLS.forEach(function(b){
+    var drv=normalizeName(b.driver);if(!activos[drv])return;
+    var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
+    var c=casilla(sabadoDeSemana(d),drv);if(c)c.cargado+=parseAmt(b.amount);
+  });
+  PAYMENT_EVENTS.forEach(function(p){
+    var drv=normalizeName(p.driver);if(!activos[drv])return;
+    var d=parseDate(p.date);if(!d||isNaN(d))return;
+    var c=casilla(sabadoDeSemana(d),drv);if(c)c.caja+=p.amount;
+  });
+
+  /* Una semana aparece cuando ya pasó su miércoles, que es cuando cae el bloque
+     de peaje. Antes de eso solo tendría multas sueltas y un 0% que no dice nada. */
+  var finDeHoy=hoyChile().getTime();
+  var vis=Object.keys(sem).map(function(k){return sem[k];})
+    .filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;})
+    .sort(function(a,b){return a.ini-b.ini;});
+
+  // De la más nueva a la más vieja: el excedente de cada una baja a la anterior
+  for(var i=vis.length-1;i>0;i--){
+    var actual=vis[i],previa=vis[i-1];
+    Object.keys(actual.drv).forEach(function(drv){
+      var v=actual.drv[drv];
+      var sobra=Math.max(0,v.caja-v.cargado);
+      if(sobra<=0)return;
+      if(!previa.drv[drv])previa.drv[drv]={cargado:0,caja:0,recibido:0};
+      previa.drv[drv].recibido+=sobra;
+    });
+  }
+  vis.forEach(function(s){
+    Object.keys(s.drv).forEach(function(drv){
+      var v=s.drv[drv];
+      v.cubierto=Math.min(v.cargado,v.caja+v.recibido);
+      v.pct=v.cargado>0?Math.round(v.cubierto/v.cargado*100):null;
+      v.excedente=Math.max(0,v.caja-v.cargado); // lo que se fue a la semana anterior
+    });
+  });
+  return vis;
+}
+
 // todas=true devuelve el historial completo; si no, solo las 4 de las tarjetas
 function computeWeeklyBreakdown(todas){
   if(!BILLS.length)return[];
 
-  // Mismo filtro de conductores activos que la tabla de evolución
-  var activeSet={};
-  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
-
-  /* Estas tarjetas miden el esfuerzo de cobranza de la semana, no el estado
-     acumulado de cada multa.
-
-     Cargo y cobro se miden en la MISMA ventana, la semana sábado→viernes que usa
-     todo el reporte. Cada semana contiene un solo miércoles, que es el día en que
-     entra el bloque de peaje y el día en que los conductores pagan, así que la
-     tarjeta responde derecho: de lo que cayó ese miércoles, ¿cuánto entró en esos
-     mismos días?
-
-     Antes el cobro se media contra la semana siguiente, de cuando el cargo caía
-     el sábado de golpe. Con el peaje consolidado al miércoles ese desfase dejaba
-     la tarjeta y la tabla mostrando números distintos del mismo tramo.
-
-     Consecuencia: un pago atrasado cuenta en la semana en que entró, no contra el
-     cargo que le corresponde. Cada tarjeta queda como una nota cerrada de cómo se
-     cobró esa semana. */
-  var sem={};
-  function casilla(sab){
-    if(!sab)return null;
-    var k=sab.getTime();
-    if(!sem[k])sem[k]={ini:k,cargado:0,caja:0};
-    return sem[k];
-  }
-  BILLS.forEach(function(b){
-    if(!activeSet[normalizeName(b.driver)])return;
-    var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
-    var s=casilla(sabadoDeSemana(d));
-    if(s)s.cargado+=parseAmt(b.amount);
+  /* Las tarjetas son la suma de semanasPorConductor(): mismo cálculo, misma regla
+     del excedente. Acá solo se agrega y se arman las etiquetas. */
+  var orden=semanasPorConductor().map(function(s){
+    var tot={ini:s.ini,cargado:0,caja:0,cubierto:0,excedente:0};
+    Object.keys(s.drv).forEach(function(drv){
+      var v=s.drv[drv];
+      tot.cargado+=v.cargado;tot.caja+=v.caja;
+      tot.cubierto+=v.cubierto;tot.excedente+=v.excedente;
+    });
+    return tot;
   });
-  PAYMENT_EVENTS.forEach(function(p){
-    if(!activeSet[normalizeName(p.driver)])return;
-    var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var s=casilla(sabadoDeSemana(d));if(s)s.caja+=p.amount;
-  });
-
-  /* Una semana aparece cuando ya pasó su miércoles, que es cuando cae el bloque
-     de peaje. Antes de eso la tarjeta mostraría solo multas sueltas y un 0% que
-     no significa nada. El miércoles es el cuarto día de la semana. */
-  var finDeHoy=hoyChile().getTime();
-  var orden=Object.keys(sem).map(function(k){return sem[k];})
-    .filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;})
-    .sort(function(a,b){return a.ini-b.ini;});
   if(!orden.length)return[];
   var ultimas=todas?orden:orden.slice(-4);
   var pad=function(n){return('0'+n).slice(-2);};
@@ -2354,25 +2346,21 @@ function computeWeeklyBreakdown(todas){
     // Días corridos de la semana en curso: la última, que todavía puede moverse
     var daysLabel=null;
     if(i===ultimas.length-1){
-      var diff=Math.round((finDeHoy-s.ini)/MS_DIA)+1;
+      var diff=Math.round((hoyChile().getTime()-s.ini)/MS_DIA)+1;
       if(diff>0&&diff<=7)daysLabel=diff+' '+(diff===1?t('wk_dia'):t('wk_dias'));
     }
 
-    // Lo recuperado no puede pasar de lo cargado: si entró de más, el excedente
-    // se fue a deuda de semanas anteriores y se muestra aparte
-    var recuperado=Math.min(s.cargado,s.caja);
-    var excedente=Math.max(0,s.caja-s.cargado);
     return {
       weekNum:i+1,
       weekKey:lbl,
       label:lbl,
       daysLabel:daysLabel,
       cargado:s.cargado,
-      cubierto:recuperado,            // de lo cargado esa semana, cuánto se recuperó en esos días
+      cubierto:s.cubierto,            // incluye lo que bajó como excedente de la semana siguiente
       totalPagado:s.caja,             // toda la plata que entró en la semana
-      pagadoVieja:excedente,          // lo que sobró y fue a deuda anterior
-      pctCobrado:s.cargado>0?Math.round(recuperado/s.cargado*100):null,
-      pendienteSemana:Math.max(0,s.cargado-recuperado)
+      pagadoVieja:s.excedente,        // lo que sobró y bajó a la semana anterior
+      pctCobrado:s.cargado>0?Math.round(s.cubierto/s.cargado*100):null,
+      pendienteSemana:Math.max(0,s.cargado-s.cubierto)
     };
   });
 }
