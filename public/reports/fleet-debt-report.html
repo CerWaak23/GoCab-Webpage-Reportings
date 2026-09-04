@@ -490,6 +490,10 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="sw-group">
+          <button id="evol-btn-orden-sem" onclick="setEvolOrden('semaforo')" data-i18n="orden_semaforo">🚦 Rojo primero</button>
+          <button id="evol-btn-orden-deuda" onclick="setEvolOrden('deuda')" class="active" data-i18n="orden_deuda">Mayor deuda</button>
+        </div>
+        <div class="sw-group">
           <button id="evol-btn-weekly" onclick="setEvolPeriod('weekly')" class="active" data-i18n="period_weekly">Semanal</button>
           <button id="evol-btn-daily" onclick="setEvolPeriod('daily')" data-i18n="period_daily">Diario</button>
         </div>
@@ -696,6 +700,8 @@ var T = {
       period_weekly:'Semanal',period_daily:'Diario',
       peaje_pend_a:'peajes esperando el miércoles:',peaje_pend_b:'aparecen el',peaje_nota:'El peaje cuenta el miércoles que cierra su tramo jueves→miércoles, no el día que se cargó.',
       evol_title:'Evolución Semanal de Pagos',evol_sub:'Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado',
+      sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cobrado / cargado esa semana:',sem_sin_cargos:'No se le cargó nada esa semana',
+      orden_semaforo:'🚦 Rojo primero',orden_deuda:'Mayor deuda',
       evol_pending_col:'PENDIENTE ACTUAL',evol_total:'Total',
       fired_section_title:'Deuda Irrecuperable — Conductores Despedidos',
       f_pending:'Pendiente',f_charged:'Facturado',f_recovered:'Recuperado',f_recovery_pct:'% Recuperación',
@@ -764,6 +770,8 @@ var T = {
       period_weekly:'Weekly',period_daily:'Daily',
       peaje_pend_a:'tolls waiting for Wednesday:',peaje_pend_b:'they show up on',peaje_nota:'Tolls count on the Wednesday that closes their Thursday→Wednesday block, not on the day they were charged.',
       evol_title:'Weekly Payment Evolution',evol_sub:'Red +X = charges added · Green −X = payments logged · Bold = accumulated pending balance',
+      sem_col:'PAID THEIR WEEK',sem_tooltip:'Collected / charged that week:',sem_sin_cargos:'Nothing was charged to them that week',
+      orden_semaforo:'🚦 Red first',orden_deuda:'Largest debt',
       evol_pending_col:'CURRENT PENDING',evol_total:'Total',
       fired_section_title:'Irrecoverable Debt — Fired Drivers',
       f_pending:'Pending',f_charged:'Charged',f_recovered:'Recovered',f_recovery_pct:'% Recovery',
@@ -832,6 +840,8 @@ var T = {
       period_weekly:'Недельно',period_daily:'Дневно',
       peaje_pend_a:'пошлины ждут среды:',peaje_pend_b:'появятся',peaje_nota:'Пошлина учитывается в среду, закрывающую отрезок четверг→среда, а не в день начисления.',
       evol_title:'Еженедельная динамика платежей',evol_sub:'Красный +X = начисления · Зелёный −X = платежи · Жирный = накопленный долг',
+      sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Взыскано / начислено за неделю:',sem_sin_cargos:'За ту неделю ему ничего не начислили',
+      orden_semaforo:'🚦 Сначала красные',orden_deuda:'Больший долг',
       evol_pending_col:'ТЕКУЩИЙ ДОЛГ',evol_total:'Итого',
       fired_section_title:'Безвозвратный долг — Уволенные водители',
       f_pending:'Задолженность',f_charged:'Начислено',f_recovered:'Погашено',f_recovery_pct:'% Погашения',
@@ -1904,6 +1914,93 @@ function renderMixedChart(){
   });
 }
 
+/* ── SEMÁFORO DE LA SEMANA ──────────────────────────────────────────────────
+   La misma pregunta de las tarjetas, pero conductor por conductor: de lo que se
+   le cargó en su semana, ¿cuánto pagó en la semana de cobranza? Verde si cubrió
+   todo, amarillo si abonó algo, rojo si no pagó nada.
+
+   Se mide sobre la última semana visible de las tarjetas, que es la que se está
+   cobrando ahora: es la que sirve para ir a buscar a alguien. Usa exactamente el
+   mismo agrupamiento que computeWeeklyBreakdown() —el cargo corrido un día, el
+   pago contra la semana anterior— para que la columna y las tarjetas no puedan
+   contradecirse. */
+var _evolOrden='deuda'; // 'deuda' o 'semaforo'
+function setEvolOrden(o){
+  _evolOrden=o;
+  var a=document.getElementById('evol-btn-orden-sem'),b=document.getElementById('evol-btn-orden-deuda');
+  if(a)a.className=o==='semaforo'?'active':'';
+  if(b)b.className=o==='deuda'?'active':'';
+  renderEvolTable();
+}
+
+function semaforoSemana(){
+  var res={semana:null,porConductor:{}};
+  if(!BILLS.length)return res;
+  var activos={};
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activos[d.driver]=true;});
+
+  var sem={};
+  function casilla(sab,drv){
+    if(!sab)return null;
+    var k=sab.getTime();
+    if(!sem[k])sem[k]={ini:k,drv:{}};
+    if(!sem[k].drv[drv])sem[k].drv[drv]={cargado:0,cobrado:0};
+    return sem[k].drv[drv];
+  }
+  BILLS.forEach(function(b){
+    var drv=normalizeName(b.driver);if(!activos[drv])return;
+    var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
+    var c=casilla(sabadoDeSemana(new Date(d.getTime()-MS_DIA)),drv);
+    if(c)c.cargado+=parseAmt(b.amount);
+  });
+  PAYMENT_EVENTS.forEach(function(p){
+    var drv=normalizeName(p.driver);if(!activos[drv])return;
+    var d=parseDate(p.date);if(!d||isNaN(d))return;
+    var sab=sabadoDeSemana(d);if(!sab)return;
+    var c=casilla(new Date(sab.getTime()-7*MS_DIA),drv);
+    if(c)c.cobrado+=p.amount;
+  });
+
+  var finDeHoy=hoyChile().getTime();
+  var vis=Object.keys(sem).map(function(k){return sem[k];})
+    .filter(function(s){return s.ini+7*MS_DIA<=finDeHoy;})
+    .sort(function(a,b){return a.ini-b.ini;});
+  if(!vis.length)return res;
+
+  var ult=vis[vis.length-1];
+  res.semana=ult.ini;
+  Object.keys(ult.drv).forEach(function(drv){
+    var v=ult.drv[drv];
+    var estado=v.cargado<=0?'gris'
+      :v.cobrado>=v.cargado?'verde'
+      :v.cobrado>0?'amarillo':'rojo';
+    res.porConductor[drv]={cargado:v.cargado,cobrado:v.cobrado,estado:estado,
+      pct:v.cargado>0?Math.round(Math.min(v.cobrado,v.cargado)/v.cargado*100):null};
+  });
+  return res;
+}
+
+var SEM_COLOR={verde:'#34d399',amarillo:'#fbbf24',rojo:'#f87171',gris:'#4b5563'};
+var SEM_FONDO={verde:'#05150d',amarillo:'#130d02',rojo:'#150505',gris:'#0d1117'};
+var SEM_BORDE={verde:'#064e3b66',amarillo:'#78350f66',rojo:'#7f1d1d66',gris:'#37415144'};
+var SEM_PESO={rojo:0,amarillo:1,verde:2,gris:3}; // rojo primero: es a quien hay que ir a buscar
+
+// Una celda del semáforo: el porcentaje manda, y debajo cuánto de cuánto
+function celdaSemaforo(s){
+  if(!s||s.estado==='gris'){
+    return '<td style="text-align:center"><span style="color:#374151;font-size:11px" title="'
+      +esc(t('sem_sin_cargos'))+'">—</span></td>';
+  }
+  var c=SEM_COLOR[s.estado];
+  return '<td style="text-align:center">'
+    +'<span title="'+esc(t('sem_tooltip')+' '+fmtAmt(s.cobrado)+' / '+fmtAmt(s.cargado))+'" '
+    +'style="background:'+SEM_FONDO[s.estado]+';border:1px solid '+SEM_BORDE[s.estado]+';color:'+c
+    +';border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block;white-space:nowrap">'
+    +'●&nbsp;'+s.pct+'%</span>'
+    +'<div style="font-size:9px;color:#4b5563;margin-top:2px;white-space:nowrap">'
+    +fmtShort(s.cobrado)+' / '+fmtShort(s.cargado)+'</div></td>';
+}
+
 function renderEvolTable(){
   var tbl=document.getElementById('evolTable');if(!tbl)return;
 
@@ -1991,7 +2088,20 @@ function renderEvolTable(){
     allWeeks.forEach(function(w){r+=(chargeMap[w]&&chargeMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);});
     driverFinalRunning[drv]=Math.max(0,r);
   });
-  allDrivers.sort(function(a,b){return (driverPending[b]||0)-(driverPending[a]||0);});
+  var SEM=semaforoSemana();
+  var pesoSem=function(drv){
+    var s=SEM.porConductor[drv];
+    return s?SEM_PESO[s.estado]:SEM_PESO.gris;
+  };
+  if(_evolOrden==='semaforo'){
+    // Dentro de cada color, primero el que más debe: es el orden en que se llama
+    allDrivers.sort(function(a,b){
+      var d=pesoSem(a)-pesoSem(b);
+      return d!==0?d:(driverPending[b]||0)-(driverPending[a]||0);
+    });
+  } else {
+    allDrivers.sort(function(a,b){return (driverPending[b]||0)-(driverPending[a]||0);});
+  }
   var topDrivers=allDrivers; // all drivers — vertical scroll handles overflow
 
   var maxCharge=0;
@@ -2006,6 +2116,15 @@ function renderEvolTable(){
   allWeeks.forEach(function(w){html+='<th>'+esc(w.toUpperCase())+'</th>';});
   html+='<th style="background:#1e2a42;color:#93c5fd;text-align:right">'+pendingLabel.replace(' ','<br>')+'</th>';
   html+='<th style="background:#1e2a42;color:#93c5fd;text-align:center">'+t('gest_col')+'</th>';
+  var rangoSem='';
+  if(SEM.semana!==null){
+    var p2=function(n){return('0'+n).slice(-2);};
+    var si=new Date(SEM.semana),sf=new Date(SEM.semana+6*MS_DIA);
+    rangoSem=p2(si.getUTCDate())+'/'+p2(si.getUTCMonth()+1)+'→'+p2(sf.getUTCDate())+'/'+p2(sf.getUTCMonth()+1);
+  }
+  html+='<th style="background:#1e2a42;color:#93c5fd;text-align:center">'+t('sem_col')
+    +(rangoSem?'<div style="font-weight:400;color:#64748b;font-size:9px;text-transform:none;letter-spacing:0">'+rangoSem+'</div>':'')
+    +'</th>';
   html+='</tr></thead><tbody>';
 
   topDrivers.forEach(function(drv){
@@ -2039,6 +2158,7 @@ function renderEvolTable(){
       html+='<td style="text-align:right"><span style="background:#3b0a0a;border:1px solid #7f1d1d55;color:#fca5a5;border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block">'+fmtShort(pendienteActual)+'</span></td>';
     }
     html+=celdaGestion(drv,pendienteActual);
+    html+=celdaSemaforo(SEM.porConductor[drv]);
     html+='</tr>';
   });
 
@@ -2062,7 +2182,19 @@ function renderEvolTable(){
     return !r.texto||(r.ind.fecha||0)>(r.fecha||0); // indicación sin responder
   }).length;
   html+='<td style="text-align:center;font-weight:600;color:#6b7280;font-size:11px">'+conCom+' '+t('conector_de')+' '+conDeudaList.length+
-    (conInd?'<div style="color:#93c5fd;font-weight:600">📌 '+conInd+'</div>':'')+'</td></tr></tfoot>';
+    (conInd?'<div style="color:#93c5fd;font-weight:600">📌 '+conInd+'</div>':'')+'</td>';
+
+  // Cuántos hay de cada color: es el resumen que se mira antes de ordenar
+  var conteo={verde:0,amarillo:0,rojo:0};
+  topDrivers.forEach(function(drv){
+    var s=SEM.porConductor[drv];
+    if(s&&conteo[s.estado]!==undefined)conteo[s.estado]++;
+  });
+  html+='<td style="text-align:center;font-size:11px;font-weight:700;white-space:nowrap">'
+    +'<span style="color:'+SEM_COLOR.rojo+'">'+conteo.rojo+'</span>'
+    +' <span style="color:#374151">·</span> <span style="color:'+SEM_COLOR.amarillo+'">'+conteo.amarillo+'</span>'
+    +' <span style="color:#374151">·</span> <span style="color:'+SEM_COLOR.verde+'">'+conteo.verde+'</span>'
+    +'</td></tr></tfoot>';
   tbl.innerHTML=html;
 }
 
