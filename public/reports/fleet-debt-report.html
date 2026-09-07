@@ -666,6 +666,7 @@ var T = {
       wk_sub:'Cada semana corre de sábado a viernes y contiene el miércoles en que cae el bloque de peaje: cuánto de lo cargado se cobró en esos mismos días y cuánto quedó sin cubrir',
       wk_cargado:'cargado',wk_cubierto:'cubierto',wk_pagado:'Pagado:',wk_impago:'Sigue impago:',
       wk_recibidos:'recibidos',wk_anteriores:'a multas anteriores',
+      wk_recibido:'recibido',
       wk_falta_bloque:'Semana en curso',wk_falta_bloque_sub:'El peaje de la semana entra el miércoles · por ahora solo se ve lo que ya se pagó',
       wk_caja:'Caja de la semana:',
       wk_hist_btn:'🕘 Ver historial',
@@ -737,6 +738,7 @@ var T = {
       wk_sub:'Each week runs Saturday to Friday and holds the Wednesday when the toll block lands: how much of what was charged got collected in those same days, and how much was left uncovered',
       wk_cargado:'charged',wk_cubierto:'covered',wk_pagado:'Paid:',wk_impago:'Still unpaid:',
       wk_recibidos:'received',wk_anteriores:'to earlier charges',
+      wk_recibido:'received',
       wk_falta_bloque:'Week in progress',wk_falta_bloque_sub:'Weekly tolls land on Wednesday · for now this only shows what has been paid',
       wk_caja:'Cash this week:',
       wk_hist_btn:'🕘 View history',
@@ -808,6 +810,7 @@ var T = {
       wk_sub:'Неделя идёт с субботы по пятницу и содержит среду, когда приходит блок пошлин: сколько из начисленного взыскали в те же дни и сколько осталось непокрытым',
       wk_cargado:'начислено',wk_cubierto:'покрыто',wk_pagado:'Оплачено:',wk_impago:'Не оплачено:',
       wk_recibidos:'получено',wk_anteriores:'по прежним начислениям',
+      wk_recibido:'получено',
       wk_falta_bloque:'Неделя в процессе',wk_falta_bloque_sub:'Пошлины недели приходят в среду · пока видно только оплаченное',
       wk_caja:'Поступления недели:',
       wk_hist_btn:'🕘 История',
@@ -2406,13 +2409,18 @@ function renderWeeklyBreakdown(){
       pColor='#93c5fd';pBg='#0c1522';pBorder='#1e3a5f55';
       pMain=t('wk_falta_bloque');pSub=t('wk_falta_bloque_sub');
     }
+    /* Mientras no caiga el bloque, "cubierto" es 0 contra 0 y esconde la plata que
+       sí entró. En esos días el segundo número es la caja, que es el dato que hay
+       que ver, y se calla la línea de pagado/impago, que diría 0 y 0. */
     html+='<div class="wk-card">'
       +'<div class="wk-header"><span class="wk-week-lbl">'+t('wk_semana')+' '+w.weekNum+' · '+esc(w.label)+'</span>'+(w.daysLabel?'<span class="wk-days-badge">'+esc(w.daysLabel)+'</span>':'')+'</div>'
-      +'<div class="wk-amounts"><span class="wk-cargado">+'+fmtShort(w.cargado)+' '+t('wk_cargado')+'</span><span class="wk-pagado">'+fmtShort(w.cubierto)+' '+t('wk_cubierto')+'</span></div>'
-      +'<div class="wk-bar"><div class="wk-bar-actual" style="width:'+wA+'%"></div><div class="wk-bar-vieja" style="width:'+wV+'%"></div></div>'
-      +'<div class="wk-bar-labels"><span><span class="wk-dot actual"></span>'+t('wk_pagado')+' '+fmtShort(w.cubierto)+'</span><span><span class="wk-dot vieja"></span>'+t('wk_impago')+' '+fmtShort(w.pendienteSemana)+'</span>'
+      +'<div class="wk-amounts"><span class="wk-cargado">+'+fmtShort(w.cargado)+' '+t('wk_cargado')+'</span>'
+      +'<span class="wk-pagado">'+fmtShort(w.sinBloque?tot:w.cubierto)+' '+t(w.sinBloque?'wk_recibido':'wk_cubierto')+'</span></div>'
+      +(w.sinBloque?'':'<div class="wk-bar"><div class="wk-bar-actual" style="width:'+wA+'%"></div><div class="wk-bar-vieja" style="width:'+wV+'%"></div></div>')
+      +'<div class="wk-bar-labels">'
+      +(w.sinBloque?'':'<span><span class="wk-dot actual"></span>'+t('wk_pagado')+' '+fmtShort(w.cubierto)+'</span><span><span class="wk-dot vieja"></span>'+t('wk_impago')+' '+fmtShort(w.pendienteSemana)+'</span>')
       +(tot>0?'<span style="flex-basis:100%;color:#6b7280">'+t('wk_caja')+' '+fmtShort(tot)+' '+t('wk_recibidos')
-        +(w.pagadoVieja>0?' ('+fmtShort(w.pagadoVieja)+' '+t('wk_anteriores')+')':'')+'</span>':'')+'</div>'
+        +(w.pagadoVieja>0&&!w.sinBloque?' ('+fmtShort(w.pagadoVieja)+' '+t('wk_anteriores')+')':'')+'</span>':'')+'</div>'
       +'<div class="wk-pct-box" style="background:'+pBg+';border:1px solid '+pBorder+'"><div class="wk-pct" style="color:'+pColor+'">'+pMain+'</div><div class="wk-pct-sub" style="color:'+pColor+'">'+pSub+'</div></div>'
       +'</div>';
   });
