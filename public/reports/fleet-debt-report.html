@@ -2354,6 +2354,31 @@ function semanasPorConductor(){
       abiertas[drv]=pila;
     });
   });
+
+  /* Calce con la deuda real. Las semanas sin pagar de un conductor no pueden
+     sumar más de lo que debe según sus boletas, que es el PENDIENTE ACTUAL de la
+     tabla. Si suman más, la diferencia es plata que sí pagó pero que cayó fuera
+     de su semana: el peaje del jueves y el viernes se mueve al miércoles
+     siguiente y muchos lo pagan el mismo día, antes de que caiga el bloque, y la
+     cascada solo baja hacia atrás; o una boleta figura pagada sin que se haya
+     detectado el pago entre dos archivos. Esa diferencia se cuenta como pago de
+     sus semanas pendientes, la más vieja primero. Sin esto, 10 conductores sin
+     ninguna deuda salían bajo 100% en el semáforo. */
+  var deudaReal={};
+  BILLS.forEach(function(b){
+    var drv=normalizeName(b.driver);if(!activos[drv])return;
+    if(!parseDate(b.createdAt))return;    // mismo criterio que el PENDIENTE ACTUAL
+    deudaReal[drv]=(deudaReal[drv]||0)+parseAmt(b.amount)-parseAmt(b.paidAmount);
+  });
+  Object.keys(abiertas).forEach(function(drv){
+    var pila=abiertas[drv];
+    var sinCubrir=pila.reduce(function(a,x){return a+x.falta;},0);
+    var extra=sinCubrir-Math.max(0,deudaReal[drv]||0);
+    for(var i=0;i<pila.length&&extra>0.5;i++){
+      var x=Math.min(extra,pila[i].falta);
+      pila[i].falta-=x;pila[i].v.cubierto+=x;extra-=x;
+    }
+  });
   return orden;
 }
 
