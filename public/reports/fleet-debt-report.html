@@ -663,21 +663,21 @@ var T = {
       kpi_multas_perdida:'Pérdida en Multas — Despedidos',kpi_multas_perdida_sub:'conductores despedidos con multas',kpi_multas_deuda:'Deuda de Conductores por Multas',
       kpi_multas_deuda_sub:'conductores activos con multas',
       wk_title:'📅 Desglose Semanal de Cobranza',
-      wk_sub:'Cada semana corre de sábado a viernes y contiene el miércoles en que cae el bloque de peaje: cuánto de lo cargado se cobró en esos mismos días y cuánto quedó sin cubrir',
+      wk_sub:'Cada semana corre de sábado a viernes y contiene el miércoles en que cae el bloque de peaje: cuánto de lo cargado ya está pagado, contando lo que cada conductor pagó de más después para ponerse al día',
       wk_cargado:'cargado',wk_cubierto:'cubierto',wk_pagado:'Pagado:',wk_impago:'Sigue impago:',
-      wk_recibidos:'recibidos',wk_anteriores:'a multas anteriores',
+      wk_recibidos:'recibidos',wk_anteriores:'a deuda de semanas anteriores',
       wk_recibido:'recibido',
       wk_falta_bloque:'Semana en curso',wk_falta_bloque_sub:'El peaje de la semana entra el miércoles · por ahora solo se ve lo que ya se pagó',
       wk_caja:'Caja de la semana:',
       wk_hist_btn:'🕘 Ver historial',
       wk_hist_title:'Historial semanal de cobranza',
-      wk_hist_sub:'Cada fila es una semana de sábado a viernes: lo cargado y lo cobrado en esos mismos días. De la más nueva a la más vieja.',
-      wk_hist_prom:'Recuperación últimas 8',wk_hist_bajo:'Semanas bajo 80%',wk_hist_nocub:'No cubierto en su semana',
+      wk_hist_sub:'Cada fila es una semana de sábado a viernes: lo cargado y cuánto está pagado a hoy. De la más nueva a la más vieja.',
+      wk_hist_prom:'Recuperación últimas 8',wk_hist_bajo:'Semanas bajo 80%',wk_hist_nocub:'Sigue sin pagar',
       wk_hist_col_sem:'Semana de cargos',wk_hist_col_carg:'Cargado',wk_hist_col_cob:'Cobrado',wk_hist_col_pend:'Pendiente',
       wk_hist_encurso:'en curso',wk_hist_sincargos:'sin cargos',
       wk_hist_aanteriores:'a semanas anteriores',wk_hist_consemanas:'semanas con cargos.',
-      wk_hist_nota:'Un pago atrasado cuenta en la semana en que entró, así que “no cubierto” no es la deuda viva — esa está en la tabla de evolución.',
-      wk_pct_sub:'De lo cargado esa semana · cobrado en esos mismos días',wk_sin_cargos:'Sin cargos',wk_semana:'Semana',conector_de:'de',
+      wk_hist_nota:'Lo que un conductor paga de más baja a su propia deuda de semanas anteriores, la más cercana primero, así que una semana vieja puede subir cuando alguien se pone al día.',
+      wk_pct_sub:'De lo cargado esa semana · pagado a hoy',wk_sin_cargos:'Sin cargos',wk_semana:'Semana',conector_de:'de',
       wk_sin_cargos_sub:'No hubo multas cargadas',wk_dia:'DÍA',wk_dias:'DÍAS',
       gest_col:'GESTIÓN',gest_comentar:'＋ Comentar',gest_ver:'💬 Ver',gest_hace:'⚠ Hace',
       gest_d:'d',gest_ind_btn:'📌 Indicación',gest_sin_com:'Sin comentario',gest_ind_de:'Indicación de',
@@ -703,7 +703,7 @@ var T = {
       period_weekly:'Semanal',period_daily:'Diario',
       peaje_pend_a:'peajes esperando el miércoles:',peaje_pend_b:'aparecen el',peaje_nota:'El peaje cuenta el miércoles que cierra su tramo jueves→miércoles, no el día que se cargó.',
       evol_title:'Evolución Semanal de Pagos',evol_sub:'Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado',
-      sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cobrado / cargado esa semana:',sem_sin_cargos:'No se le cargó nada esa semana',
+      sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cubierto / cargado de su semana:',sem_a_deuda:'a deuda anterior',sem_sin_deuda:'sin deuda que cubrir',sem_tip_pago:'Pagó',sem_tip_semana:'esta semana',sem_tip_cubren:'cubren su semana',sem_tip_a:'a su deuda de la semana',sem_sin_cargos:'No se le cargó nada esa semana',
       orden_semaforo:'🚦 Rojo primero',orden_deuda:'Mayor deuda',
       evol_pending_col:'PENDIENTE ACTUAL',evol_total:'Total',
       fired_section_title:'Deuda Irrecuperable — Conductores Despedidos',
@@ -735,21 +735,21 @@ var T = {
       kpi_multas_perdida:'Fine Losses — Former Drivers',kpi_multas_perdida_sub:'former drivers with fines',kpi_multas_deuda:'Driver Debt from Fines',
       kpi_multas_deuda_sub:'active drivers with fines',
       wk_title:'📅 Weekly Collection Breakdown',
-      wk_sub:'Each week runs Saturday to Friday and holds the Wednesday when the toll block lands: how much of what was charged got collected in those same days, and how much was left uncovered',
+      wk_sub:'Each week runs Saturday to Friday and holds the Wednesday when the toll block lands: how much of what was charged is paid by now, counting what each driver overpaid later to catch up',
       wk_cargado:'charged',wk_cubierto:'covered',wk_pagado:'Paid:',wk_impago:'Still unpaid:',
-      wk_recibidos:'received',wk_anteriores:'to earlier charges',
+      wk_recibidos:'received',wk_anteriores:'to debt from earlier weeks',
       wk_recibido:'received',
       wk_falta_bloque:'Week in progress',wk_falta_bloque_sub:'Weekly tolls land on Wednesday · for now this only shows what has been paid',
       wk_caja:'Cash this week:',
       wk_hist_btn:'🕘 View history',
       wk_hist_title:'Weekly collection history',
-      wk_hist_sub:'Each row is one Saturday-to-Friday week: what was charged and what was collected in those same days. Newest first.',
-      wk_hist_prom:'Recovery, last 8',wk_hist_bajo:'Weeks below 80%',wk_hist_nocub:'Not covered in its week',
+      wk_hist_sub:'Each row is one Saturday-to-Friday week: what was charged and how much of it is paid by now. Newest first.',
+      wk_hist_prom:'Recovery, last 8',wk_hist_bajo:'Weeks below 80%',wk_hist_nocub:'Still unpaid',
       wk_hist_col_sem:'Week charged',wk_hist_col_carg:'Charged',wk_hist_col_cob:'Collected',wk_hist_col_pend:'Outstanding',
       wk_hist_encurso:'in progress',wk_hist_sincargos:'no charges',
       wk_hist_aanteriores:'to earlier weeks',wk_hist_consemanas:'weeks with charges.',
-      wk_hist_nota:'A late payment counts in the week it arrived, so “not covered” is not the live debt — that one is in the evolution table.',
-      wk_pct_sub:'Of what was charged that week · collected in those same days',wk_sin_cargos:'No charges',wk_semana:'Week',conector_de:'of',
+      wk_hist_nota:'What a driver overpays goes to their own debt from earlier weeks, nearest first, so an old week can rise when someone catches up.',
+      wk_pct_sub:'Of what was charged that week · paid to date',wk_sin_cargos:'No charges',wk_semana:'Week',conector_de:'of',
       wk_sin_cargos_sub:'Nothing was charged',wk_dia:'DAY',wk_dias:'DAYS',
       gest_col:'FOLLOW-UP',gest_comentar:'＋ Comment',gest_ver:'💬 View',gest_hace:'⚠',
       gest_d:'d ago',gest_ind_btn:'📌 Instruction',gest_sin_com:'No comment',gest_ind_de:'Instruction from',
@@ -775,7 +775,7 @@ var T = {
       period_weekly:'Weekly',period_daily:'Daily',
       peaje_pend_a:'tolls waiting for Wednesday:',peaje_pend_b:'they show up on',peaje_nota:'Tolls count on the Wednesday that closes their Thursday→Wednesday block, not on the day they were charged.',
       evol_title:'Weekly Payment Evolution',evol_sub:'Red +X = charges added · Green −X = payments logged · Bold = accumulated pending balance',
-      sem_col:'PAID THEIR WEEK',sem_tooltip:'Collected / charged that week:',sem_sin_cargos:'Nothing was charged to them that week',
+      sem_col:'PAID THEIR WEEK',sem_tooltip:'Covered / charged for their week:',sem_a_deuda:'to earlier debt',sem_sin_deuda:'no earlier debt to cover',sem_tip_pago:'Paid',sem_tip_semana:'this week',sem_tip_cubren:'cover their own week',sem_tip_a:'to their debt from the week of',sem_sin_cargos:'Nothing was charged to them that week',
       orden_semaforo:'🚦 Red first',orden_deuda:'Largest debt',
       evol_pending_col:'CURRENT PENDING',evol_total:'Total',
       fired_section_title:'Irrecoverable Debt — Fired Drivers',
@@ -807,21 +807,21 @@ var T = {
       kpi_multas_perdida:'Потери по штрафам — уволенные',kpi_multas_perdida_sub:'уволенных водителей со штрафами',kpi_multas_deuda:'Долг водителей по штрафам',
       kpi_multas_deuda_sub:'активных водителей со штрафами',
       wk_title:'📅 Недельная разбивка сборов',
-      wk_sub:'Неделя идёт с субботы по пятницу и содержит среду, когда приходит блок пошлин: сколько из начисленного взыскали в те же дни и сколько осталось непокрытым',
+      wk_sub:'Неделя идёт с субботы по пятницу и содержит среду, когда приходит блок пошлин: сколько из начисленного уже оплачено, с учётом того, что водитель доплатил позже',
       wk_cargado:'начислено',wk_cubierto:'покрыто',wk_pagado:'Оплачено:',wk_impago:'Не оплачено:',
-      wk_recibidos:'получено',wk_anteriores:'по прежним начислениям',
+      wk_recibidos:'получено',wk_anteriores:'на долг прежних недель',
       wk_recibido:'получено',
       wk_falta_bloque:'Неделя в процессе',wk_falta_bloque_sub:'Пошлины недели приходят в среду · пока видно только оплаченное',
       wk_caja:'Поступления недели:',
       wk_hist_btn:'🕘 История',
       wk_hist_title:'История еженедельного взыскания',
-      wk_hist_sub:'Каждая строка — неделя с субботы по пятницу: начисленное и взысканное за те же дни. Сначала самые новые.',
-      wk_hist_prom:'Взыскано за 8 недель',wk_hist_bajo:'Недель ниже 80%',wk_hist_nocub:'Не покрыто в свою неделю',
+      wk_hist_sub:'Каждая строка — неделя с субботы по пятницу: начисленное и сколько из этого оплачено на сегодня. Сначала самые новые.',
+      wk_hist_prom:'Взыскано за 8 недель',wk_hist_bajo:'Недель ниже 80%',wk_hist_nocub:'Всё ещё не оплачено',
       wk_hist_col_sem:'Неделя начислений',wk_hist_col_carg:'Начислено',wk_hist_col_cob:'Взыскано',wk_hist_col_pend:'Остаток',
       wk_hist_encurso:'в процессе',wk_hist_sincargos:'без начислений',
       wk_hist_aanteriores:'на прежние недели',wk_hist_consemanas:'недель с начислениями.',
-      wk_hist_nota:'Просроченный платёж учитывается в неделю поступления, поэтому «не покрыто» — это не текущий долг; он в таблице динамики.',
-      wk_pct_sub:'Из начисленного за ту неделю · взыскано в те же дни',wk_sin_cargos:'Без начислений',wk_semana:'Неделя',conector_de:'из',
+      wk_hist_nota:'Переплата водителя идёт на его собственный долг прошлых недель, начиная с ближайшей, поэтому старая неделя может вырасти, когда кто-то гасит долг.',
+      wk_pct_sub:'Из начисленного за ту неделю · оплачено на сегодня',wk_sin_cargos:'Без начислений',wk_semana:'Неделя',conector_de:'из',
       wk_sin_cargos_sub:'Начислений не было',wk_dia:'ДЕНЬ',wk_dias:'ДН.',
       gest_col:'ВЕДЕНИЕ',gest_comentar:'＋ Комментарий',gest_ver:'💬 Открыть',gest_hace:'⚠',
       gest_d:'дн. назад',gest_ind_btn:'📌 Указание',gest_sin_com:'Без комментария',gest_ind_de:'Указание от',
@@ -847,7 +847,7 @@ var T = {
       period_weekly:'Недельно',period_daily:'Дневно',
       peaje_pend_a:'пошлины ждут среды:',peaje_pend_b:'появятся',peaje_nota:'Пошлина учитывается в среду, закрывающую отрезок четверг→среда, а не в день начисления.',
       evol_title:'Еженедельная динамика платежей',evol_sub:'Красный +X = начисления · Зелёный −X = платежи · Жирный = накопленный долг',
-      sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Взыскано / начислено за неделю:',sem_sin_cargos:'За ту неделю ему ничего не начислили',
+      sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Покрыто / начислено за его неделю:',sem_a_deuda:'на прежний долг',sem_sin_deuda:'нет долга для погашения',sem_tip_pago:'Оплатил',sem_tip_semana:'на этой неделе',sem_tip_cubren:'покрывают его неделю',sem_tip_a:'на его долг недели',sem_sin_cargos:'За ту неделю ему ничего не начислили',
       orden_semaforo:'🚦 Сначала красные',orden_deuda:'Больший долг',
       evol_pending_col:'ТЕКУЩИЙ ДОЛГ',evol_total:'Итого',
       fired_section_title:'Безвозвратный долг — Уволенные водители',
@@ -1939,45 +1939,28 @@ function setEvolOrden(o){
 function semaforoSemana(){
   var res={semana:null,porConductor:{}};
   if(!BILLS.length)return res;
-  var activos={};
-  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activos[d.driver]=true;});
-
-  var sem={};
-  function casilla(sab,drv){
-    if(!sab)return null;
-    var k=sab.getTime();
-    if(!sem[k])sem[k]={ini:k,drv:{}};
-    if(!sem[k].drv[drv])sem[k].drv[drv]={cargado:0,cobrado:0};
-    return sem[k].drv[drv];
-  }
-  BILLS.forEach(function(b){
-    var drv=normalizeName(b.driver);if(!activos[drv])return;
-    var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
-    var c=casilla(sabadoDeSemana(d),drv);
-    if(c)c.cargado+=parseAmt(b.amount);
-  });
-  PAYMENT_EVENTS.forEach(function(p){
-    var drv=normalizeName(p.driver);if(!activos[drv])return;
-    var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var c=casilla(sabadoDeSemana(d),drv);
-    if(c)c.cobrado+=p.amount;
-  });
-
+  /* La última semana que ya tiene su bloque de peaje, conductor por conductor,
+     con la misma cascada que las tarjetas. */
   var finDeHoy=hoyChile().getTime();
-  var vis=Object.keys(sem).map(function(k){return sem[k];})
-    .filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;})
-    .sort(function(a,b){return a.ini-b.ini;});
+  var vis=semanasPorConductor().filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;});
   if(!vis.length)return res;
 
   var ult=vis[vis.length-1];
   res.semana=ult.ini;
   Object.keys(ult.drv).forEach(function(drv){
     var v=ult.drv[drv];
-    var estado=v.cargado<=0?'gris'
-      :v.cobrado>=v.cargado?'verde'
-      :v.cobrado>0?'amarillo':'rojo';
-    res.porConductor[drv]={cargado:v.cargado,cobrado:v.cobrado,estado:estado,
-      pct:v.cargado>0?Math.round(Math.min(v.cobrado,v.cargado)/v.cargado*100):null};
+    var completo=v.cubierto>=v.cargado-0.5;
+    res.porConductor[drv]={
+      cargado:v.cargado,
+      cobrado:Math.min(v.cubierto,v.cargado), // lo que cubrió SU semana
+      caja:v.caja,                            // lo que pagó de verdad en esos días
+      alPasado:v.alPasado,                    // lo que pagó de más y bajó a su deuda anterior
+      atras:v.atras,                          // a qué semanas fue, la más cercana primero
+      sobra:v.sobra,                          // lo que pagó de más sin deuda que cubrir
+      // 99% como máximo si no está completa: redondear a 100 pintaría verde lo que no es
+      pct:v.cargado>0?(completo?100:Math.min(99,Math.round(v.cubierto/v.cargado*100))):null,
+      estado:v.cargado<=0?'gris':completo?'verde':v.cubierto>0.5?'amarillo':'rojo'
+    };
   });
   return res;
 }
@@ -1987,11 +1970,29 @@ var SEM_FONDO={verde:'#05150d',amarillo:'#130d02',rojo:'#150505',gris:'#0d1117'}
 var SEM_BORDE={verde:'#064e3b66',amarillo:'#78350f66',rojo:'#7f1d1d66',gris:'#37415144'};
 var SEM_PESO={rojo:0,amarillo:1,verde:2,gris:3}; // rojo primero: es a quien hay que ir a buscar
 
-// Una celda del semáforo: el porcentaje manda, y debajo cuánto de cuánto
+/* Una celda del semáforo: el porcentaje manda, debajo cuánto cubrió de SU semana,
+   y si pagó de más una tercera línea con lo que sobró. Pasando el mouse sobre
+   esa línea se ve a qué semanas fue, la más cercana primero. */
+function lineaSobrepago(s){
+  if(!s||!(s.alPasado>0||s.sobra>0))return '';
+  var p=function(n){return('0'+n).slice(-2);};
+  var tip=t('sem_tip_pago')+' '+fmtAmt(s.caja)+' '+t('sem_tip_semana');
+  if(s.cargado>0)tip+='\n  '+fmtAmt(Math.min(s.cargado,s.caja))+' '+t('sem_tip_cubren');
+  (s.atras||[]).forEach(function(a){
+    var d=new Date(a.ini);
+    tip+='\n  '+fmtAmt(a.monto)+' '+t('sem_tip_a')+' '+p(d.getUTCDate())+'/'+p(d.getUTCMonth()+1);
+  });
+  if(s.sobra>0)tip+='\n  '+fmtAmt(s.sobra)+' '+t('sem_sin_deuda');
+  var texto=s.alPasado>0
+    ?'+'+fmtShort(s.alPasado)+' '+t('sem_a_deuda')
+    :'+'+fmtShort(s.sobra)+' '+t('sem_sin_deuda');
+  return '<div title="'+esc(tip)+'" style="font-size:9px;color:#34d399;margin-top:1px;white-space:nowrap;cursor:help">'
+    +texto+'</div>';
+}
 function celdaSemaforo(s){
   if(!s||s.estado==='gris'){
     return '<td style="text-align:center"><span style="color:#374151;font-size:11px" title="'
-      +esc(t('sem_sin_cargos'))+'">—</span></td>';
+      +esc(t('sem_sin_cargos'))+'">—</span>'+lineaSobrepago(s)+'</td>';
   }
   var c=SEM_COLOR[s.estado];
   return '<td style="text-align:center">'
@@ -2000,7 +2001,7 @@ function celdaSemaforo(s){
     +';border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block;white-space:nowrap">'
     +'●&nbsp;'+s.pct+'%</span>'
     +'<div style="font-size:9px;color:#4b5563;margin-top:2px;white-space:nowrap">'
-    +fmtShort(s.cobrado)+' / '+fmtShort(s.cargado)+'</div></td>';
+    +fmtShort(s.cobrado)+' / '+fmtShort(s.cargado)+'</div>'+lineaSobrepago(s)+'</td>';
 }
 
 function renderEvolTable(){
@@ -2287,56 +2288,97 @@ function applyI18n(){
 
 /* ── WEEKLY BREAKDOWN ──────────────────────────────────────────────────── */
 // todas=true devuelve el historial completo; si no, solo las 4 de las tarjetas
+/* ── LAS SEMANAS, CONDUCTOR POR CONDUCTOR ──────────────────────────────────
+   De acá salen las tarjetas y el semáforo, así que no pueden contradecirse: la
+   tarjeta es la suma de las filas del semáforo.
+
+   Cargo y pago se agrupan en la semana sábado→viernes de su fecha. Lo que un
+   conductor paga en una semana cubre primero su propio cargo de esa semana. Si
+   pagó de más, ese extra va a SU deuda de semanas anteriores: primero a la más
+   cercana y, si sobra, sigue en cascada hacia las más viejas. Si no tenía deuda,
+   el extra se queda en la semana y no suma nada, porque esa semana ya estaba al
+   100%.
+
+   Nunca se cruza entre conductores: el que paga de más no tapa al que no pagó.
+   Antes la tarjeta comparaba totales de la flota y daba 98% con 22 personas en
+   cero, porque $729.000 que algunos pagaron de más tapaban esos ceros.
+
+   Consecuencia: una semana pasada puede subir después, cuando alguien se pone al
+   día con ella. La cascada corre sobre toda la historia, no solo sobre las
+   semanas que se ven, para que la deuda vieja reciba lo que le toca. */
+function semanasPorConductor(){
+  var activos={};
+  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activos[d.driver]=true;});
+
+  var sem={};
+  function casilla(sab,drv){
+    if(!sab)return null;
+    var k=sab.getTime();
+    if(!sem[k])sem[k]={ini:k,drv:{}};
+    if(!sem[k].drv[drv])sem[k].drv[drv]={cargado:0,caja:0,cubierto:0,alPasado:0,sobra:0,atras:[]};
+    return sem[k].drv[drv];
+  }
+  BILLS.forEach(function(b){
+    var drv=normalizeName(b.driver);if(!activos[drv])return;
+    var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
+    var c=casilla(sabadoDeSemana(d),drv);if(c)c.cargado+=parseAmt(b.amount);
+  });
+  PAYMENT_EVENTS.forEach(function(p){
+    var drv=normalizeName(p.driver);if(!activos[drv])return;
+    var d=parseDate(p.date);if(!d||isNaN(d))return;
+    var c=casilla(sabadoDeSemana(d),drv);if(c)c.caja+=p.amount;
+  });
+
+  var orden=Object.keys(sem).map(Number).sort(function(a,b){return a-b;})
+    .map(function(k){return sem[k];});
+
+  // Deuda abierta de cada conductor, en orden cronológico: [{v, ini, falta}]
+  var abiertas={};
+  orden.forEach(function(s){
+    Object.keys(s.drv).forEach(function(drv){
+      var v=s.drv[drv];
+      var propia=Math.min(v.cargado,v.caja);
+      v.cubierto+=propia;
+      var extra=v.caja-propia;
+      var pila=abiertas[drv]||[];
+      // La deuda más cercana primero, y hacia atrás lo que sobre
+      for(var i=pila.length-1;i>=0&&extra>0.5;i--){
+        var x=Math.min(extra,pila[i].falta);
+        pila[i].falta-=x;pila[i].v.cubierto+=x;
+        extra-=x;v.alPasado+=x;
+        v.atras.push({ini:pila[i].ini,monto:x});
+      }
+      v.sobra=extra>0.5?extra:0;          // pagó de más y no tenía deuda que cubrir
+      pila=pila.filter(function(a){return a.falta>0.5;});
+      if(v.cargado-propia>0.5)pila.push({v:v,ini:s.ini,falta:v.cargado-propia});
+      abiertas[drv]=pila;
+    });
+  });
+  return orden;
+}
+
 function computeWeeklyBreakdown(todas){
   if(!BILLS.length)return[];
 
-  // Mismo filtro de conductores activos que la tabla de evolución
-  var activeSet={};
-  DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activeSet[d.driver]=true;});
+  /* Las tarjetas son la suma de semanasPorConductor(): mismo cálculo y misma
+     cascada que el semáforo. Acá solo se agrega por semana y se arman las
+     etiquetas.
 
-  /* Estas tarjetas miden el esfuerzo de cobranza de la semana, no el estado
-     acumulado de cada multa.
-
-     Cargo y cobro se miden en la MISMA ventana, la semana sábado→viernes que usa
-     todo el reporte. Cada semana contiene un solo miércoles, que es el día en que
-     entra el bloque de peaje y el día en que los conductores pagan, así que la
-     tarjeta responde derecho: de lo que cayó ese miércoles, ¿cuánto entró en esos
-     mismos días?
-
-     Antes el cobro se media contra la semana siguiente, de cuando el cargo caía
-     el sábado de golpe. Con el peaje consolidado al miércoles ese desfase dejaba
-     la tarjeta y la tabla mostrando números distintos del mismo tramo.
-
-     Consecuencia: un pago atrasado cuenta en la semana en que entró, no contra el
-     cargo que le corresponde. Cada tarjeta queda como una nota cerrada de cómo se
-     cobró esa semana. */
-  var sem={};
-  function casilla(sab){
-    if(!sab)return null;
-    var k=sab.getTime();
-    if(!sem[k])sem[k]={ini:k,cargado:0,caja:0};
-    return sem[k];
-  }
-  BILLS.forEach(function(b){
-    if(!activeSet[normalizeName(b.driver)])return;
-    var d=parseDate(b.createdAt);if(!d||isNaN(d))return;
-    var s=casilla(sabadoDeSemana(d));
-    if(s)s.cargado+=parseAmt(b.amount);
-  });
-  PAYMENT_EVENTS.forEach(function(p){
-    if(!activeSet[normalizeName(p.driver)])return;
-    var d=parseDate(p.date);if(!d||isNaN(d))return;
-    var s=casilla(sabadoDeSemana(d));if(s)s.caja+=p.amount;
-  });
-
-  /* La tarjeta aparece el lunes, tercer día de la semana. El bloque de peaje
+     La tarjeta aparece el lunes, tercer día de la semana. El bloque de peaje
      recién cae el miércoles, así que el lunes y el martes la tarjeta va sin él —
-     marcada como tal— pero muestra la plata que ya entró. Esperar al miércoles
-     dejaba cuatro días sin ver los pagos de la semana en curso. */
+     marcada como tal— pero muestra la plata que ya entró. */
   var finDeHoy=hoyChile().getTime();
-  var orden=Object.keys(sem).map(function(k){return sem[k];})
+  var orden=semanasPorConductor()
     .filter(function(s){return s.ini+2*MS_DIA<=finDeHoy;})
-    .sort(function(a,b){return a.ini-b.ini;});
+    .map(function(s){
+      var tot={ini:s.ini,cargado:0,caja:0,cubierto:0,alPasado:0};
+      Object.keys(s.drv).forEach(function(drv){
+        var v=s.drv[drv];
+        tot.cargado+=v.cargado;tot.caja+=v.caja;
+        tot.cubierto+=v.cubierto;tot.alPasado+=v.alPasado;
+      });
+      return tot;
+    });
   if(!orden.length)return[];
   var ultimas=todas?orden:orden.slice(-4);
   var pad=function(n){return('0'+n).slice(-2);};
@@ -2357,21 +2399,21 @@ function computeWeeklyBreakdown(todas){
       if(diff>0&&diff<=7)daysLabel=diff+' '+(diff===1?t('wk_dia'):t('wk_dias'));
     }
 
-    // Lo recuperado no puede pasar de lo cargado: si entró de más, el excedente
-    // se fue a deuda de semanas anteriores y se muestra aparte
-    var recuperado=Math.min(s.cargado,s.caja);
-    var excedente=Math.max(0,s.caja-s.cargado);
+    // Cubierto sale de la cascada por conductor: lo propio de la semana más lo
+    // que cada uno pagó de más en las siguientes. pagadoVieja es lo que la plata
+    // de esta semana bajó a deuda anterior.
+    var cubierto=Math.min(s.cargado,s.cubierto);
     return {
       weekNum:i+1,
       weekKey:lbl,
       label:lbl,
       daysLabel:daysLabel,
       cargado:s.cargado,
-      cubierto:recuperado,            // de lo cargado esa semana, cuánto se recuperó en esos días
+      cubierto:cubierto,              // de lo cargado esa semana, cuánto está pagado
       totalPagado:s.caja,             // toda la plata que entró en la semana
-      pagadoVieja:excedente,          // lo que sobró y fue a deuda anterior
-      pctCobrado:s.cargado>0?Math.round(recuperado/s.cargado*100):null,
-      pendienteSemana:Math.max(0,s.cargado-recuperado),
+      pagadoVieja:s.alPasado,         // lo que se pagó de más y bajó a deuda anterior
+      pctCobrado:s.cargado>0?Math.round(cubierto/s.cargado*100):null,
+      pendienteSemana:Math.max(0,s.cargado-cubierto),
       // Lunes y martes: el bloque de peaje todavía no cae, así que el porcentaje
       // aún no se puede leer como resultado
       sinBloque:(s.ini+4*MS_DIA)>finDeHoy
