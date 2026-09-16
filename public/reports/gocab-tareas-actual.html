@@ -260,10 +260,35 @@
   .pstep .sd{font-size:12px;color:var(--muted);line-height:1.55;margin-top:2px;white-space:pre-wrap}
   .pstep .sm{font-size:10.5px;color:var(--muted);margin-top:4px;opacity:.85}
   .stag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:rgba(91,120,240,.16);color:var(--blue)}
-  .pcontacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px}
-  .pcontact{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:12px}
-  .pcontact b{display:block;font-size:12px;color:var(--ink)}
-  .pcontact span{color:var(--muted);font-size:11.5px}
+  /* Contactos agrupados por empresa: la persona y sus datos en la misma tarjeta */
+  .cgrupo{margin-bottom:9px}
+  .cgrupo h5{margin:0 0 5px;font-size:10.5px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--blue)}
+  .cgrupo.sinemp h5{color:var(--muted)}
+  .pcontacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:7px}
+  .pcontact{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12px}
+  .cnom{display:flex;align-items:flex-start;gap:6px}
+  .cnom b{flex:1;min-width:0}
+  .pcontact b{display:block;font-size:12.5px;color:var(--ink)}
+  .pcontact .ccargo{color:var(--muted);font-size:11px;margin-top:1px}
+  .cvias{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+  .cvia{display:flex;align-items:center;gap:6px;font-size:11.5px;min-width:0}
+  .cvia a{color:var(--blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cvia a:hover{text-decoration:underline}
+  .cvia .ico{flex:none;opacity:.7}
+  .copybtn{flex:none;font-family:inherit;font-size:10px;color:var(--muted);background:transparent;
+    border:1px solid var(--line);border-radius:6px;padding:1px 5px;cursor:pointer}
+  .copybtn:hover{color:var(--ink);border-color:var(--blue)}
+  .ctambien{font-size:10px;color:var(--muted);margin-top:5px;opacity:.8}
+  /* Editor de contactos: una tarjeta por persona, sin formatos que recordar */
+  .cfila{border:1px solid var(--line);border-radius:9px;padding:9px;margin-bottom:7px;background:var(--paper)}
+  .cfila .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .cfila input{width:100%}
+  .cfila .cemp{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:7px}
+  .cchk{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);
+    border:1px solid var(--line);border-radius:7px;padding:2px 7px;cursor:pointer}
+  .cchk.on{border-color:var(--blue);color:var(--blue)}
+  .cchk input{display:none}
   .minibtn{font-family:inherit;font-size:10.5px;font-weight:700;color:var(--muted);background:transparent;
     border:1px solid var(--line);border-radius:7px;padding:3px 8px;cursor:pointer}
   .minibtn:hover{color:var(--ink);border-color:var(--blue)}
@@ -456,9 +481,10 @@
     <label data-es="Nombre" data-en="Name" data-ru="Название">Nombre</label>
     <input id="pNombre">
     <label data-es="Variantes — una por línea, en blanco si no hay" data-en="Variants — one per line, blank if none" data-ru="Варианты — по одному в строке, пусто если нет">Variantes</label>
-    <textarea id="pVariantes" rows="2"></textarea>
-    <label data-es="Contactos — uno por línea, formato Nombre | dato" data-en="Contacts — one per line, format Name | detail" data-ru="Контакты — по одному в строке: Имя | данные">Contactos</label>
-    <textarea id="pContactos" rows="3"></textarea>
+    <textarea id="pVariantes" rows="2" oninput="pintaEditorContactos()"></textarea>
+    <label data-es="Contactos — una persona por tarjeta, con sus empresas" data-en="Contacts — one person per card, with their companies" data-ru="Контакты — один человек на карточку, с его компаниями">Contactos</label>
+    <div id="pContactosLista"></div>
+    <button type="button" class="minibtn" onclick="agregarContacto()" data-es="＋ contacto" data-en="＋ contact" data-ru="＋ контакт">＋ contacto</button>
     <label data-es="Documentos y enlaces — uno por línea, formato Nombre | link" data-en="Documents and links — one per line, format Name | link" data-ru="Документы и ссылки — по одной в строке: Название | ссылка">Documentos y enlaces</label>
     <textarea id="pLinks" rows="3"></textarea>
     <div class="factions">
@@ -1129,7 +1155,6 @@
     ph('protoQ','Buscar paso, contacto, texto…','Search step, contact, text…','Поиск по шагам, контактам, тексту…');
     ph('pNombre','Pérdida total de vehículo','Total loss of vehicle','Полная гибель автомобиля');
     ph('pVariantes','Taller Bruno Fritsch\nTaller Kaufmann','Bruno Fritsch shop\nKaufmann shop','Сервис Bruno Fritsch\nСервис Kaufmann');
-    ph('pContactos','Grúas Vera | +56 9 8123 4567','Vera Towing | +56 9 8123 4567','Эвакуатор Vera | +56 9 8123 4567');
     ph('sTitulo','Avisar a la aseguradora','Notify the insurer','Сообщить страховой');
     ph('sDesc','Llamar dentro de las primeras 24 h. Pedir número de siniestro…','Call within the first 24 h. Ask for the claim number…','Позвонить в первые 24 ч. Запросить номер страхового дела…');
     ph('sResp','Ops manager','Ops manager','Операционный менеджер');
@@ -1323,7 +1348,7 @@
     document.getElementById('protoModalTitle').textContent='Nuevo protocolo';
     document.getElementById('pNombre').value='';
     document.getElementById('pVariantes').value='';
-    document.getElementById('pContactos').value='';
+    edContactos=[];pintaEditorContactos();
     document.getElementById('pLinks').value='';
     document.getElementById('pBorrar').style.display='none';
     document.getElementById('protoModal').hidden=false;
@@ -1336,7 +1361,7 @@
     document.getElementById('protoModalTitle').textContent='Editar protocolo';
     document.getElementById('pNombre').value=p.nombre||'';
     document.getElementById('pVariantes').value=(p.variantes||[]).join('\n');
-    document.getElementById('pContactos').value=(p.contactos||[]).map(c=>c.nombre+' | '+c.dato).join('\n');
+    edContactos=contactosDe(p);pintaEditorContactos();
     document.getElementById('pLinks').value=(p.linksRaw!=null&&p.linksRaw!=='')?p.linksRaw:linksATexto(p.links);
     document.getElementById('pBorrar').style.display='';
     document.getElementById('protoModal').hidden=false;
@@ -1345,10 +1370,11 @@
     const nombre=document.getElementById('pNombre').value.trim();
     if(!nombre){ alert('Ponle un nombre al protocolo.'); return; }
     const variantes=document.getElementById('pVariantes').value.split('\n').map(s=>s.trim()).filter(Boolean);
-    const contactos=document.getElementById('pContactos').value.split('\n').map(s=>s.trim()).filter(Boolean).map(l=>{
-      const i=l.indexOf('|');
-      return i<0?{nombre:l,dato:''}:{nombre:l.slice(0,i).trim(),dato:l.slice(i+1).trim()};
-    });
+    const contactos=edContactos.map(c=>({
+      empresas:(c.empresas||[]).filter(Boolean),
+      nombre:(c.nombre||'').trim(), cargo:(c.cargo||'').trim(),
+      tel:(c.tel||'').trim(),      email:(c.email||'').trim()
+    })).filter(c=>c.nombre||c.tel||c.email);
     // Se guarda tambien el texto tal cual se escribio: asi nada de lo que puso
     // la persona desaparece, aunque no se pueda convertir en boton.
     const linksRaw=document.getElementById('pLinks').value;
@@ -1370,6 +1396,134 @@
     guardarProtos(); cerrarModal('protoModal'); renderProtos();
   }
   function toggleProto(id){ protoAbierto=protoAbierto===id?null:id; renderProtos(); }
+
+  /* ---------- Contactos de un protocolo ----------
+     Formato viejo: {nombre, dato} — una línea de texto, y si alguien escribía el
+     nombre y el teléfono en líneas distintas quedaban como dos contactos sueltos.
+     Formato nuevo: {empresas[], nombre, cargo, tel, email}. Se normaliza al leer
+     para que todo lo cargado antes siga apareciendo sin tocar nada.
+
+     Una persona puede atender a varias empresas —un taller y una liquidadora, por
+     decir— y entonces aparece bajo cada una: cuando estás resolviendo algo con
+     una empresa, ves ahí a toda su gente sin tener que acordarte del resto. */
+  function contactosDe(p){
+    return (p.contactos||[]).map(function(c){
+      if(c.empresas||c.tel!==undefined||c.email!==undefined){
+        return {empresas:(c.empresas||[]).filter(Boolean),nombre:c.nombre||'',
+                cargo:c.cargo||'',tel:c.tel||'',email:c.email||''};
+      }
+      var d=String(c.dato||'').trim();
+      var esMail=d.indexOf('@')>=0, esTel=!esMail&&/\d/.test(d);
+      return {empresas:[],nombre:c.nombre||'',cargo:(esMail||esTel)?'':d,
+              tel:esTel?d:'',email:esMail?d:''};
+    });
+  }
+
+  function copiarDato(btn){
+    var txt=btn.getAttribute('data-copy')||'';
+    var ok=function(){var t=btn.textContent;btn.textContent='✓';setTimeout(function(){btn.textContent=t;},900);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,function(){});return;}
+    var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');ok();}catch(e){}
+    ta.remove();
+  }
+  function viaContacto(ico,href,texto){
+    return '<div class="cvia"><span class="ico">'+ico+'</span>'
+      +'<a href="'+pesc(href)+'">'+pesc(texto)+'</a>'
+      +'<button class="copybtn" data-copy="'+pesc(texto)+'" onclick="copiarDato(this)" title="'
+      +pesc(PT('Copiar','Copy','Копировать'))+'">⧉</button></div>';
+  }
+  function tarjetaContacto(c,empresa,pid){
+    var otras=c.empresas.filter(function(e){return e!==empresa;});
+    return '<div class="pcontact"><div class="cnom"><b>'+pesc(c.nombre)+'</b>'
+      +'<button class="copybtn" onclick="editarProtocolo(\''+pid+'\',event)" title="'
+      +pesc(PT('Editar','Edit','Изменить'))+'">✎</button></div>'
+      +(c.cargo?'<div class="ccargo">'+pesc(c.cargo)+'</div>':'')
+      +'<div class="cvias">'
+      +(c.tel?viaContacto('📞','tel:'+String(c.tel).replace(/[^\d+]/g,''),c.tel):'')
+      +(c.email?viaContacto('✉','mailto:'+c.email,c.email):'')
+      +'</div>'
+      +(otras.length?'<div class="ctambien">'+PT('también en','also at','также в')+' '+pesc(otras.join(' · '))+'</div>':'')
+      +'</div>';
+  }
+  // Los que no tienen empresa van primero: sirven para todas.
+  function pintaContactos(p){
+    var cs=contactosDe(p).filter(function(c){return c.nombre||c.tel||c.email;});
+    if(!cs.length)return '';
+    var grupos={},orden=[];
+    cs.forEach(function(c){
+      var emps=c.empresas.length?c.empresas:[''];
+      emps.forEach(function(e){
+        if(!grupos[e]){grupos[e]=[];orden.push(e);}
+        grupos[e].push(c);
+      });
+    });
+    if(!orden.length)return '';
+    orden.sort(function(a,b){return a===''?-1:b===''?1:a.localeCompare(b);});
+    var bloques=orden.map(function(e){
+      return '<div class="cgrupo'+(e?'':' sinemp')+'"><h5>'
+        +(e?pesc(e):PT('Sin empresa','No company','Без компании'))+'</h5>'
+        +'<div class="pcontacts">'+grupos[e].map(function(c){return tarjetaContacto(c,e,p.id);}).join('')+'</div></div>';
+    }).join('');
+    return '<div><div class="sm" style="margin-bottom:6px">'
+      +PT('Contactos del protocolo','Protocol contacts','Контакты протокола')+'</div>'+bloques+'</div>';
+  }
+
+  /* ---------- Editor de contactos ----------
+     Una tarjeta por persona en vez de una línea con formato: así nadie puede
+     partir un contacto en dos escribiendo el teléfono abajo del nombre.
+     Las empresas se marcan con casillas; se sugieren las variantes del protocolo
+     y las empresas ya usadas, pero se puede agregar una nueva —una liquidadora o
+     una aseguradora— sin convertirla en variante, que ensuciaría el filtro. */
+  var edContactos=[],edSugeridas=[];
+  function empresasSugeridas(){
+    var vs=(document.getElementById('pVariantes').value||'').split('\n')
+      .map(function(s){return s.trim();}).filter(Boolean);
+    edContactos.forEach(function(c){(c.empresas||[]).forEach(function(e){
+      if(e&&vs.indexOf(e)<0)vs.push(e);});});
+    return vs;
+  }
+  function pintaEditorContactos(){
+    var cont=document.getElementById('pContactosLista');if(!cont)return;
+    edSugeridas=empresasSugeridas();
+    cont.innerHTML=edContactos.map(function(c,i){
+      var chips=edSugeridas.map(function(e,j){
+        var on=(c.empresas||[]).indexOf(e)>=0;
+        return '<label class="cchk'+(on?' on':'')+'"><input type="checkbox"'+(on?' checked':'')
+          +' onchange="toggleEmpresa('+i+','+j+')">'+pesc(e)+'</label>';
+      }).join('');
+      return '<div class="cfila"><div class="cgrid">'
+        +'<input value="'+pesc(c.nombre||'')+'" oninput="edContactos['+i+'].nombre=this.value" placeholder="'+pesc(PT('Nombre','Name','Имя'))+'">'
+        +'<input value="'+pesc(c.cargo||'')+'" oninput="edContactos['+i+'].cargo=this.value" placeholder="'+pesc(PT('Cargo o nota','Role or note','Должность или заметка'))+'">'
+        +'<input value="'+pesc(c.tel||'')+'" oninput="edContactos['+i+'].tel=this.value" placeholder="+56 9 1234 5678">'
+        +'<input value="'+pesc(c.email||'')+'" oninput="edContactos['+i+'].email=this.value" placeholder="correo@empresa.cl">'
+        +'</div><div class="cemp">'+chips
+        +'<button type="button" class="minibtn" onclick="otraEmpresa('+i+')">＋ '+pesc(PT('otra empresa','other company','другая компания'))+'</button>'
+        +'<button type="button" class="minibtn" style="margin-left:auto;color:var(--red)" onclick="borrarContacto('+i+')">'
+        +pesc(PT('Quitar','Remove','Убрать'))+'</button></div></div>';
+    }).join('')||'<div class="pempty">'+PT('Sin contactos todavía.','No contacts yet.','Контактов пока нет.')+'</div>';
+  }
+  function agregarContacto(){
+    edContactos.push({empresas:[],nombre:'',cargo:'',tel:'',email:''});
+    pintaEditorContactos();
+  }
+  function borrarContacto(i){ edContactos.splice(i,1); pintaEditorContactos(); }
+  function toggleEmpresa(i,j){
+    var e=edSugeridas[j];if(e==null)return;
+    var arr=edContactos[i].empresas||(edContactos[i].empresas=[]);
+    var k=arr.indexOf(e);
+    if(k>=0)arr.splice(k,1);else arr.push(e);
+    pintaEditorContactos();
+  }
+  function otraEmpresa(i){
+    var e=prompt(PT('Nombre de la empresa','Company name','Название компании'));
+    if(!e||!e.trim())return;
+    e=e.trim();
+    var arr=edContactos[i].empresas||(edContactos[i].empresas=[]);
+    if(arr.indexOf(e)<0)arr.push(e);
+    pintaEditorContactos();
+  }
+
 
   /* ---------- Pasos ---------- */
   function nuevoPaso(protoId,ev){
@@ -1445,7 +1599,7 @@
     if(!q) return true;
     const blob=[p.nombre,(p.variantes||[]).join(' '),
       (p.pasos||[]).map(s=>[s.titulo,s.desc,s.resp].join(' ')).join(' '),
-      (p.contactos||[]).map(c=>c.nombre+' '+c.dato).join(' '),
+      contactosDe(p).map(c=>[c.nombre,c.cargo,c.tel,c.email,(c.empresas||[]).join(' ')].join(' ')).join(' '),
       (p.links||[]).map(l=>l.nombre+' '+l.url).join(' '),
       (p.pasos||[]).map(s=>(s.links||[]).map(l=>l.nombre+' '+l.url).join(' ')).join(' ')].join(' ').toLowerCase();
     return blob.indexOf(q)>=0;
@@ -1485,8 +1639,7 @@
             ${sm?`<div class="sm">${sm}</div>`:''}
           </div>`;
         }).join(''):`<div class="pempty">${PT('Sin pasos todavía.','No steps yet.','Шагов пока нет.')}</div>`;
-        const cont=(p.contactos||[]).length?`<div><div class="sm" style="margin-bottom:6px">${PT('Contactos del protocolo','Protocol contacts','Контакты протокола')}</div>
-          <div class="pcontacts">${p.contactos.map(c=>`<div class="pcontact"><b>${pesc(c.nombre)}</b><span>${pesc(c.dato)}</span></div>`).join('')}</div></div>`:'';
+        const cont=pintaContactos(p);
         const docs=(p.links||[]).length?`<div><div class="sm" style="margin-bottom:6px">${PT('Documentos del protocolo','Protocol documents','Документы протокола')}</div>${pintaLinks(p.links)}</div>`:'';
         body=`<div class="pbody">${tags}${pasos}${cont}${docs}
           <div style="display:flex;gap:6px;margin-top:2px">
