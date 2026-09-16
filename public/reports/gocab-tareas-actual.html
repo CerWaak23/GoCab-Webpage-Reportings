@@ -261,6 +261,8 @@
   .pstep .sm{font-size:10.5px;color:var(--muted);margin-top:4px;opacity:.85}
   .stag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:rgba(91,120,240,.16);color:var(--blue)}
   /* Contactos agrupados por empresa: la persona y sus datos en la misma tarjeta */
+  .pdesc{font-size:12.5px;color:var(--muted);line-height:1.55;white-space:pre-wrap;
+    border-left:2px solid var(--line);padding-left:12px}
   .cgrupo{margin-bottom:9px}
   .cgrupo h5{margin:0 0 5px;font-size:10.5px;font-weight:800;letter-spacing:.04em;
     text-transform:uppercase;color:var(--blue)}
@@ -480,6 +482,8 @@
     <h3 id="protoModalTitle">Protocolo</h3>
     <label data-es="Nombre" data-en="Name" data-ru="Название">Nombre</label>
     <input id="pNombre">
+    <label data-es="Descripción — de qué se trata y cuándo se usa" data-en="Description — what it is about and when to use it" data-ru="Описание — о чём и когда применяется">Descripción</label>
+    <textarea id="pDescripcion" rows="3"></textarea>
     <label data-es="Variantes — una por línea, en blanco si no hay" data-en="Variants — one per line, blank if none" data-ru="Варианты — по одному в строке, пусто если нет">Variantes</label>
     <textarea id="pVariantes" rows="2" oninput="pintaEditorContactos()"></textarea>
     <label data-es="Contactos — una persona por tarjeta, con sus empresas" data-en="Contacts — one person per card, with their companies" data-ru="Контакты — один человек на карточку, с его компаниями">Contactos</label>
@@ -1154,6 +1158,9 @@
     ['fLinks','eLinks'].forEach(i=>ph(i,'Un link por línea…','One link per line…','По одной ссылке на строку…'));
     ph('protoQ','Buscar paso, contacto, texto…','Search step, contact, text…','Поиск по шагам, контактам, тексту…');
     ph('pNombre','Pérdida total de vehículo','Total loss of vehicle','Полная гибель автомобиля');
+    ph('pDescripcion','Qué cubre este protocolo, cuándo se activa y quién lo lleva.',
+       'What this protocol covers, when it kicks in and who owns it.',
+       'Что охватывает этот протокол, когда применяется и кто им занимается.');
     ph('pVariantes','Taller Bruno Fritsch\nTaller Kaufmann','Bruno Fritsch shop\nKaufmann shop','Сервис Bruno Fritsch\nСервис Kaufmann');
     ph('sTitulo','Avisar a la aseguradora','Notify the insurer','Сообщить страховой');
     ph('sDesc','Llamar dentro de las primeras 24 h. Pedir número de siniestro…','Call within the first 24 h. Ask for the claim number…','Позвонить в первые 24 ч. Запросить номер страхового дела…');
@@ -1348,6 +1355,7 @@
     document.getElementById('protoModalTitle').textContent='Nuevo protocolo';
     document.getElementById('pNombre').value='';
     document.getElementById('pVariantes').value='';
+    document.getElementById('pDescripcion').value='';
     edContactos=[];pintaEditorContactos();
     document.getElementById('pLinks').value='';
     document.getElementById('pBorrar').style.display='none';
@@ -1361,6 +1369,7 @@
     document.getElementById('protoModalTitle').textContent='Editar protocolo';
     document.getElementById('pNombre').value=p.nombre||'';
     document.getElementById('pVariantes').value=(p.variantes||[]).join('\n');
+    document.getElementById('pDescripcion').value=p.descripcion||'';
     edContactos=contactosDe(p);pintaEditorContactos();
     document.getElementById('pLinks').value=(p.linksRaw!=null&&p.linksRaw!=='')?p.linksRaw:linksATexto(p.links);
     document.getElementById('pBorrar').style.display='';
@@ -1369,6 +1378,7 @@
   function guardarProtocolo(){
     const nombre=document.getElementById('pNombre').value.trim();
     if(!nombre){ alert('Ponle un nombre al protocolo.'); return; }
+    const descripcion=document.getElementById('pDescripcion').value.trim();
     const variantes=document.getElementById('pVariantes').value.split('\n').map(s=>s.trim()).filter(Boolean);
     const contactos=edContactos.map(c=>({
       empresas:(c.empresas||[]).filter(Boolean),
@@ -1382,9 +1392,9 @@
     const links=det.ok;
     if(editandoProto){
       const p=PROTOS.protocolos.find(x=>x.id===editandoProto);
-      Object.assign(p,{nombre,variantes,contactos,links,linksRaw});
+      Object.assign(p,{nombre,descripcion,variantes,contactos,links,linksRaw});
     }else{
-      const p={id:nid('p'),nombre,variantes,contactos,links,linksRaw,pasos:[],creadoPor:quienSoy(),creadoEl:Date.now()};
+      const p={id:nid('p'),nombre,descripcion,variantes,contactos,links,linksRaw,pasos:[],creadoPor:quienSoy(),creadoEl:Date.now()};
       PROTOS.protocolos.push(p); protoAbierto=p.id;
     }
     guardarProtos(); cerrarModal('protoModal'); renderProtos(); avisaMalas(det.malas);
@@ -1597,7 +1607,7 @@
 
   function protoCoincide(p,q){
     if(!q) return true;
-    const blob=[p.nombre,(p.variantes||[]).join(' '),
+    const blob=[p.nombre,p.descripcion||'',(p.variantes||[]).join(' '),
       (p.pasos||[]).map(s=>[s.titulo,s.desc,s.resp].join(' ')).join(' '),
       contactosDe(p).map(c=>[c.nombre,c.cargo,c.tel,c.email,(c.empresas||[]).join(' ')].join(' ')).join(' '),
       (p.links||[]).map(l=>l.nombre+' '+l.url).join(' '),
@@ -1640,8 +1650,10 @@
           </div>`;
         }).join(''):`<div class="pempty">${PT('Sin pasos todavía.','No steps yet.','Шагов пока нет.')}</div>`;
         const cont=pintaContactos(p);
+        // De qué se trata el protocolo: va arriba de todo, antes de los pasos
+        const desc=p.descripcion?`<div class="pdesc">${pesc(p.descripcion)}</div>`:'';
         const docs=(p.links||[]).length?`<div><div class="sm" style="margin-bottom:6px">${PT('Documentos del protocolo','Protocol documents','Документы протокола')}</div>${pintaLinks(p.links)}</div>`:'';
-        body=`<div class="pbody">${tags}${pasos}${cont}${docs}
+        body=`<div class="pbody">${desc}${tags}${pasos}${cont}${docs}
           <div style="display:flex;gap:6px;margin-top:2px">
             <button class="minibtn" onclick="nuevoPaso('${p.id}',event)">＋ ${PT('Paso','Step','Шаг')}</button>
           </div></div>`;
