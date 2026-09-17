@@ -139,6 +139,8 @@ export async function GET(request) {
       pageToken = listRes.data.nextPageToken;
     } while (pageToken);
     const billsMap = new Map();      // ref → latest bill state
+    let refsUltimo = null;           // referencias del archivo más nuevo
+    let refsPenultimo = null;        // y las del anterior, para ver si viene completo
     const paymentEvents = [];        // payment deltas detected between file versions
     const snapshots = [];            // recovery-rate snapshot after each file
     const dataWarnings = [];         // data-quality issues detected per file
@@ -215,11 +217,13 @@ export async function GET(request) {
 
       let fileDataRows = 0;
       let fileEmptyDriverRows = 0;
+      const refsArchivo = new Set();   // qué boletas trae ESTE archivo
 
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const ref = iRef >= 0 ? String(row[iRef] || '') : String(i);
         if (!ref) continue;
+        refsArchivo.add(ref);
 
         const prev = billsMap.get(ref) || null;
 
@@ -311,6 +315,41 @@ export async function GET(request) {
         totalCharged: snapCharged,
         totalPaid: snapPaid,
       });
+
+      refsPenultimo = refsUltimo;
+      refsUltimo = { nombre: file.name, refs: refsArchivo };
+    }
+
+    /* Una boleta que desapareció del último export ya no existe: el sistema de
+       flota la borró o la reemplazó. Antes se quedaba congelada con su último
+       estado conocido —casi siempre "Pending"— y sumaba deuda que nadie debía.
+       Al detectarlo eran 27 boletas por $292.262 en 14 conductores; PPD RICARDO
+       SAZO aparecía debiendo $20.056 con todo pagado en el archivo.
+
+       El export es una foto completa: 3.669 filas desde enero, con las pagadas
+       incluidas. Así que lo que no está, no existe. Pero si alguna vez llega un
+       export filtrado o a medio generar, descartar todo lo que falte borraría
+       deuda real: por eso solo se poda cuando el archivo nuevo conserva al menos
+       el 90% de las referencias del anterior. Si no, no se toca nada y se avisa. */
+    let descartadas = 0;
+    if (refsUltimo && !todosLosArchivos) {
+      const anterior = refsPenultimo ? refsPenultimo.refs.size : 0;
+      const sobreviven = refsPenultimo
+        ? [...refsPenultimo.refs].filter((r) => refsUltimo.refs.has(r)).length
+        : 0;
+      if (!anterior || sobreviven / anterior >= 0.9) {
+        for (const ref of [...billsMap.keys()]) {
+          if (!refsUltimo.refs.has(ref)) { billsMap.delete(ref); descartadas++; }
+        }
+      } else {
+        dataWarnings.push({
+          file: refsUltimo.nombre,
+          date: null,
+          issue: 'export_incompleto',
+          refsAhora: refsUltimo.refs.size,
+          refsAnterior: anterior,
+        });
+      }
     }
 
     return NextResponse.json({
@@ -320,7 +359,7 @@ export async function GET(request) {
       dataWarnings,
       sources: ultimosDelDia.map((f) => f.name),
       // Para poder ver de un vistazo cuántas versiones se saltaron por día
-      archivos: { enCarpeta: tabulares.length, leidos: ultimosDelDia.length },
+      archivos: { enCarpeta: tabulares.length, leidos: ultimosDelDia.length, descartadas },
     }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });

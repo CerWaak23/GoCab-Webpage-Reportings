@@ -1189,6 +1189,11 @@ async function loadData(){
           cuerpo=' — no se pudo leer: sus columnas no calzan con ningún formato conocido. '
             +'<span style="color:#92400e">Los totales siguen mostrando el último archivo válido.</span>'
             +(w.columns?'<div style="color:#78350f;font-size:10px;margin-top:3px">Columnas: '+esc(w.columns)+'</div>':'');
+        } else if(w.issue==='export_incompleto'){
+          // No se descartó nada: es más seguro mostrar deuda de más que borrarla
+          cuerpo=' — llegó con '+w.refsAhora+' boletas contra '+w.refsAnterior+' del anterior. '
+            +'<span style="color:#92400e">Parece un export incompleto, así que no se descartó ninguna boleta vieja. '
+            +'Puede haber deuda que ya no existe hasta que llegue un export completo.</span>';
         } else {
           cuerpo=' — '+w.emptyDriverPct+'% de '+w.totalRows+' registros sin conductor. '
             +'<span style="color:#92400e">Reemplazá el archivo por uno con los campos completos.</span>';
