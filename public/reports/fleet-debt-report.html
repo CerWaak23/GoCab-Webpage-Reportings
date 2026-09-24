@@ -177,6 +177,8 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
   position:sticky;top:0;z-index:2}
 .taller-tbl td{padding:7px 10px;border:1px solid #1a2030;vertical-align:top;color:#d1d5db}
 .taller-tbl tr.sinfecha td{background:#160d02}
+.taller-tbl tr.atrasado td{background:#1a0808}
+.taller-tbl .atrasada{color:#f87171;font-weight:700;white-space:nowrap}
 .taller-tbl .pat{font-weight:700;color:#f9fafb;white-space:nowrap}
 .taller-tbl .obs{color:#9ca3af;font-size:11px;line-height:1.45;min-width:220px}
 .taller-tbl .nofecha{color:#fbbf24;font-weight:700;white-space:nowrap}
@@ -689,7 +691,7 @@ var T = {
       gest_vers_g:'Versiones anteriores · gestión',gest_vers_i:'Versiones anteriores · indicaciones',
       gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
       gest_err_archivo:'⚠ Falta el archivo tareas-comentarios.json en Drive',gest_err:'⚠ Error al guardar',
-      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',excl_cargos:'cargos excluidos del',excl_al:'al',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_policia:'Autos en Policía',taller_policia:'Policía',kpi_taller_sub:'con fecha de salida',kpi_modalidad:'Flota por Modalidad',kpi_modalidad_renta:'en renta',kpi_modalidad_renta_lbl:'Renta',kpi_modalidad_sin:'sin modalidad',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',taller_sale:'Sale',
+      gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',excl_cargos:'cargos excluidos del',excl_al:'al',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_policia:'Autos en Policía',taller_policia:'Policía',kpi_taller_sub:'con fecha de salida',kpi_modalidad:'Flota por Modalidad',kpi_modalidad_renta:'en renta',kpi_modalidad_renta_lbl:'Renta',kpi_modalidad_sin:'sin modalidad',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',taller_sale:'Sale',taller_atrasado1:'atrasado',taller_atrasados:'atrasados',taller_debio:'Debió salir el',taller_d_atraso:'días de atraso',taller_d_atraso1:'día de atraso',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
       no_results:'Sin resultados',insights:'Métricas Derivadas',
       avg_pending:'Deuda Promedio/Conductor',top_debtor:'Mayor Deudor',
@@ -703,7 +705,7 @@ var T = {
       period_weekly:'Semanal',period_daily:'Diario',
       peaje_pend_a:'peajes esperando el miércoles:',peaje_pend_b:'aparecen el',peaje_nota:'El peaje cuenta el miércoles que cierra su tramo jueves→miércoles, no el día que se cargó.',
       evol_title:'Evolución Semanal de Pagos',evol_sub:'Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado',
-      sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cubierto / cargado de su semana:',sem_a_deuda:'a deuda anterior',sem_sin_deuda:'sin deuda que cubrir',sem_tip_pago:'Pagó',sem_tip_semana:'esta semana',sem_tip_cubren:'cubren su semana',sem_tip_a:'a su deuda de la semana',sem_sin_cargos:'No se le cargó nada esa semana',
+      sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cubierto / cargado de su semana:',sem_a_deuda:'a deuda anterior',sem_sin_deuda:'sin deuda que cubrir',sem_tip_pago:'Pagó',sem_tip_semana:'esta semana',sem_tip_cubren:'cubren su semana',sem_tip_a:'a su deuda de la semana',sem_sin_cargos:'No se le cargó nada esa semana',sem_ya_pagado:'ya pagado antes de que cayera el cargo',sem_pago_despues:'cubierto con pagos posteriores',sem_debe:'Según sus boletas debe',
       orden_semaforo:'🚦 Rojo primero',orden_deuda:'Mayor deuda',
       evol_pending_col:'PENDIENTE ACTUAL',evol_total:'Total',
       fired_section_title:'Deuda Irrecuperable — Conductores Despedidos',
@@ -761,7 +763,7 @@ var T = {
       gest_vers_g:'Earlier versions · follow-up',gest_vers_i:'Earlier versions · instructions',
       gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
       gest_err_archivo:'⚠ Missing tareas-comentarios.json in Drive',gest_err:'⚠ Save error',
-      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',excl_cargos:'charges excluded from',excl_al:'to',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_policia:'Cars Impounded',taller_policia:'Police',kpi_taller_sub:'with an exit date',kpi_modalidad:'Fleet by Model',kpi_modalidad_renta:'on rent',kpi_modalidad_renta_lbl:'Rent',kpi_modalidad_sin:'unset',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',taller_sale:'Out on',
+      gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',excl_cargos:'charges excluded from',excl_al:'to',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_policia:'Cars Impounded',taller_policia:'Police',kpi_taller_sub:'with an exit date',kpi_modalidad:'Fleet by Model',kpi_modalidad_renta:'on rent',kpi_modalidad_renta_lbl:'Rent',kpi_modalidad_sin:'unset',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',taller_sale:'Out on',taller_atrasado1:'overdue',taller_atrasados:'overdue',taller_debio:'Was due out on',taller_d_atraso:'days overdue',taller_d_atraso1:'day overdue',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
       no_results:'No results',insights:'Derived Metrics',
       avg_pending:'Avg Debt/Driver',top_debtor:'Top Debtor',
@@ -775,7 +777,7 @@ var T = {
       period_weekly:'Weekly',period_daily:'Daily',
       peaje_pend_a:'tolls waiting for Wednesday:',peaje_pend_b:'they show up on',peaje_nota:'Tolls count on the Wednesday that closes their Thursday→Wednesday block, not on the day they were charged.',
       evol_title:'Weekly Payment Evolution',evol_sub:'Red +X = charges added · Green −X = payments logged · Bold = accumulated pending balance',
-      sem_col:'PAID THEIR WEEK',sem_tooltip:'Covered / charged for their week:',sem_a_deuda:'to earlier debt',sem_sin_deuda:'no earlier debt to cover',sem_tip_pago:'Paid',sem_tip_semana:'this week',sem_tip_cubren:'cover their own week',sem_tip_a:'to their debt from the week of',sem_sin_cargos:'Nothing was charged to them that week',
+      sem_col:'PAID THEIR WEEK',sem_tooltip:'Covered / charged for their week:',sem_a_deuda:'to earlier debt',sem_sin_deuda:'no earlier debt to cover',sem_tip_pago:'Paid',sem_tip_semana:'this week',sem_tip_cubren:'cover their own week',sem_tip_a:'to their debt from the week of',sem_sin_cargos:'Nothing was charged to them that week',sem_ya_pagado:'already paid before the charge landed',sem_pago_despues:'covered by later payments',sem_debe:'Their bills say they owe',
       orden_semaforo:'🚦 Red first',orden_deuda:'Largest debt',
       evol_pending_col:'CURRENT PENDING',evol_total:'Total',
       fired_section_title:'Irrecoverable Debt — Fired Drivers',
@@ -833,7 +835,7 @@ var T = {
       gest_vers_g:'Прежние версии · работа',gest_vers_i:'Прежние версии · указания',
       gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
       gest_err_archivo:'⚠ Нет файла tareas-comentarios.json на Drive',gest_err:'⚠ Ошибка сохранения',
-      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',excl_cargos:'начислений исключено за',excl_al:'—',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_policia:'Машины на штрафстоянке',taller_policia:'Полиция',kpi_taller_sub:'с датой выдачи',kpi_modalidad:'Парк по схеме',kpi_modalidad_renta:'в аренде',kpi_modalidad_renta_lbl:'Аренда',kpi_modalidad_sin:'без схемы',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',taller_sale:'Выдача',
+      gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',excl_cargos:'начислений исключено за',excl_al:'—',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_policia:'Машины на штрафстоянке',taller_policia:'Полиция',kpi_taller_sub:'с датой выдачи',kpi_modalidad:'Парк по схеме',kpi_modalidad_renta:'в аренде',kpi_modalidad_renta_lbl:'Аренда',kpi_modalidad_sin:'без схемы',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',taller_sale:'Выдача',taller_atrasado1:'просрочено',taller_atrasados:'просрочено',taller_debio:'Должен был выйти',taller_d_atraso:'дней просрочки',taller_d_atraso1:'день просрочки',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
       no_results:'Нет результатов',insights:'Производные метрики',
       avg_pending:'Ср. долг/водитель',top_debtor:'Крупнейший должник',
@@ -847,7 +849,7 @@ var T = {
       period_weekly:'Недельно',period_daily:'Дневно',
       peaje_pend_a:'пошлины ждут среды:',peaje_pend_b:'появятся',peaje_nota:'Пошлина учитывается в среду, закрывающую отрезок четверг→среда, а не в день начисления.',
       evol_title:'Еженедельная динамика платежей',evol_sub:'Красный +X = начисления · Зелёный −X = платежи · Жирный = накопленный долг',
-      sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Покрыто / начислено за его неделю:',sem_a_deuda:'на прежний долг',sem_sin_deuda:'нет долга для погашения',sem_tip_pago:'Оплатил',sem_tip_semana:'на этой неделе',sem_tip_cubren:'покрывают его неделю',sem_tip_a:'на его долг недели',sem_sin_cargos:'За ту неделю ему ничего не начислили',
+      sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Покрыто / начислено за его неделю:',sem_a_deuda:'на прежний долг',sem_sin_deuda:'нет долга для погашения',sem_tip_pago:'Оплатил',sem_tip_semana:'на этой неделе',sem_tip_cubren:'покрывают его неделю',sem_tip_a:'на его долг недели',sem_sin_cargos:'За ту неделю ему ничего не начислили',sem_ya_pagado:'оплачено ещё до появления начисления',sem_pago_despues:'покрыто более поздними платежами',sem_debe:'По его счетам он должен',
       orden_semaforo:'🚦 Сначала красные',orden_deuda:'Больший долг',
       evol_pending_col:'ТЕКУЩИЙ ДОЛГ',evol_total:'Итого',
       fired_section_title:'Безвозвратный долг — Уволенные водители',
@@ -897,7 +899,10 @@ function parseDate(s){
   // Try DD/MM/YYYY first — Chilean format used in bill createdAt.
   // MUST come before new Date(s) because "05/06/2026" is valid as MM/DD
   // and new Date() would misparse it as May 6 instead of June 5.
-  var p=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  // El punto también separa: la hoja del taller escribe "09.10.2026", y caer al
+  // new Date() de abajo lo leía como 10 de septiembre (MM.DD) en vez del 9 de
+  // octubre, mandando al pasado una fecha que todavía no llega.
+  var p=String(s).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
   if(p){var yr=p[3].length===2?'20'+p[3]:p[3];return new Date(yr+'-'+p[2].padStart(2,'0')+'-'+p[1].padStart(2,'0'));}
   // Fall back to ISO timestamps (payment events use file.modifiedTime ISO format)
   var d=new Date(s);if(!isNaN(d))return d;
@@ -1947,7 +1952,8 @@ function semaforoSemana(){
   /* La última semana que ya tiene su bloque de peaje, conductor por conductor,
      con la misma cascada que las tarjetas. */
   var finDeHoy=hoyChile().getTime();
-  var vis=semanasPorConductor().filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;});
+  var todas=semanasPorConductor();
+  var vis=todas.filter(function(s){return s.ini+4*MS_DIA<=finDeHoy;});
   if(!vis.length)return res;
 
   var ult=vis[vis.length-1];
@@ -1962,6 +1968,9 @@ function semaforoSemana(){
       alPasado:v.alPasado,                    // lo que pagó de más y bajó a su deuda anterior
       atras:v.atras,                          // a qué semanas fue, la más cercana primero
       sobra:v.sobra,                          // lo que pagó de más sin deuda que cubrir
+      calce:v.calce||0,                       // cubierto con plata pagada fuera de la semana
+      deDespues:v.deDespues||0,               // cubierto con pagos de semanas posteriores
+      deuda:Math.max(0,(todas.deudaReal||{})[drv]||0),
       // 99% como máximo si no está completa: redondear a 100 pintaría verde lo que no es
       pct:v.cargado>0?(completo?100:Math.min(99,Math.round(v.cubierto/v.cargado*100))):null,
       estado:v.cargado<=0?'gris':completo?'verde':v.cubierto>0.5?'amarillo':'rojo'
@@ -1994,6 +2003,19 @@ function lineaSobrepago(s){
   return '<div title="'+esc(tip)+'" style="font-size:9px;color:#34d399;margin-top:1px;white-space:nowrap;cursor:help">'
     +texto+'</div>';
 }
+/* Cuando parte de lo cubierto no salió de la plata de esa semana, se dice de
+   dónde salió. Si no, el porcentaje parece inventado al lado de una columna en
+   cero: el peaje del jueves y el viernes cae el miércoles siguiente y muchos lo
+   pagan el mismo día, antes de que el cargo exista. */
+function lineaCubiertoAparte(s){
+  if(!s)return '';
+  var antes=s.calce||0, despues=s.deDespues||0;
+  if(antes<=0.5&&despues<=0.5)return '';
+  var cual=antes>=despues?'sem_ya_pagado':'sem_pago_despues';
+  var tip=t('sem_debe')+' '+fmtAmt(s.deuda||0);
+  return '<div title="'+esc(tip)+'" style="font-size:9px;color:#93c5fd;margin-top:1px;'
+    +'white-space:normal;line-height:1.25;cursor:help">'+t(cual)+'</div>';
+}
 function celdaSemaforo(s){
   if(!s||s.estado==='gris'){
     return '<td style="text-align:center"><span style="color:#374151;font-size:11px" title="'
@@ -2006,7 +2028,8 @@ function celdaSemaforo(s){
     +';border-radius:6px;padding:3px 8px;font-weight:700;font-size:12px;display:inline-block;white-space:nowrap">'
     +'●&nbsp;'+s.pct+'%</span>'
     +'<div style="font-size:9px;color:#4b5563;margin-top:2px;white-space:nowrap">'
-    +fmtShort(s.cobrado)+' / '+fmtShort(s.cargado)+'</div>'+lineaSobrepago(s)+'</td>';
+    +fmtShort(s.cobrado)+' / '+fmtShort(s.cargado)+'</div>'
+    +lineaCubiertoAparte(s)+lineaSobrepago(s)+'</td>';
 }
 
 function renderEvolTable(){
@@ -2350,6 +2373,7 @@ function semanasPorConductor(){
       for(var i=pila.length-1;i>=0&&extra>0.5;i--){
         var x=Math.min(extra,pila[i].falta);
         pila[i].falta-=x;pila[i].v.cubierto+=x;
+        pila[i].v.deDespues=(pila[i].v.deDespues||0)+x;  // esa semana se cubrió después
         extra-=x;v.alPasado+=x;
         v.atras.push({ini:pila[i].ini,monto:x});
       }
@@ -2381,9 +2405,13 @@ function semanasPorConductor(){
     var extra=sinCubrir-Math.max(0,deudaReal[drv]||0);
     for(var i=0;i<pila.length&&extra>0.5;i++){
       var x=Math.min(extra,pila[i].falta);
-      pila[i].falta-=x;pila[i].v.cubierto+=x;extra-=x;
+      pila[i].falta-=x;pila[i].v.cubierto+=x;
+      pila[i].v.calce=(pila[i].v.calce||0)+x;   // pagado, pero fuera de esa semana
+      extra-=x;
     }
   });
+  // Viaja con las semanas para poder decir en pantalla cuánto debe de verdad
+  orden.deudaReal=deudaReal;
   return orden;
 }
 
@@ -2725,20 +2753,33 @@ function diasEnTaller(ingreso){
 function esPolicia(v){return /polic/i.test(v.estado||'');}
 function esTaller(v){return /en\s*taller/i.test(v.estado||'');}
 
-function tallerFueraDeServicio(){
+/* Cómo hay que leer la columna de egreso. Cuatro casos, y ninguno saca el auto
+   de la cuenta: el que manda es el estado que puso la operación en la hoja.
+     sin      · no hay nada comprometido
+     texto    · dice algo que no es una fecha ("por confirmar el 14-09")
+     atrasado · la fecha ya pasó y el auto sigue marcado adentro
+     fecha    · salida comprometida de hoy en adelante */
+function egresoInfo(v){
+  var txt=String(v.egreso||'').trim();
+  if(!txt)return {tipo:'sin'};
+  var d=parseDate(txt);
+  if(!d||isNaN(d))return {tipo:'texto',txt:txt};
   // parseDate() devuelve medianoche UTC, así que el "hoy" contra el que se compara
   // también tiene que serlo. Comparar contra la medianoche local dejaba fuera a los
   // autos que salen hoy mismo, que son justo los que hay que estar mirando.
   var n=new Date(),hoyUTC=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate());
+  var dias=Math.round((hoyUTC-d.getTime())/86400000);
+  return dias>0?{tipo:'atrasado',txt:txt,dias:dias}:{tipo:'fecha',txt:txt};
+}
+function tallerFueraDeServicio(){
   return TALLER.filter(function(v){
+    // El estado de la hoja es el único que decide si el auto está adentro. Antes
+    // se descartaba al que tenía la fecha de salida cumplida, suponiendo que
+    // había salido sin que nadie actualizara la columna; el resultado era que el
+    // reporte contaba menos autos que la hoja y nadie sabía cuál faltaba. Ahora
+    // ese auto se queda, marcado como atrasado, que es justo al que hay que ir a
+    // perseguirle la salida.
     if(!esTaller(v)&&!esPolicia(v))return false;
-    // Una fecha de egreso ya cumplida significa que el auto salió, aunque nadie
-    // haya actualizado la columna de estado. Hoy y las futuras se quedan: son
-    // autos que siguen adentro, con salida comprometida.
-    if(v.egreso){
-      var e=parseDate(v.egreso);
-      if(e&&!isNaN(e)&&e.getTime()<hoyUTC)return false;
-    }
     if(!_coordFilter)return true;
     var c=coordDePatente(v.patente);
     // Los autos sin asignar aparecen con cualquier coordinador seleccionado: un
@@ -2752,10 +2793,13 @@ function renderTaller(){
   var sec=document.getElementById('tallerSection'),tbl=document.getElementById('tallerTable');
   var fuera=tallerFueraDeServicio();
   var enTaller=fuera.filter(esTaller),enPolicia=fuera.filter(esPolicia);
-  var conFecha=enTaller.filter(function(v){return v.egreso;}).length;
+  var conFecha=enTaller.filter(function(v){return egresoInfo(v).tipo==='fecha';}).length;
+  var atrasados=enTaller.filter(function(v){return egresoInfo(v).tipo==='atrasado';}).length;
 
   setText('kpiTaller',String(enTaller.length));
-  setText('kpiTallerSub',conFecha+' '+t('kpi_taller_sub'));
+  // Lo atrasado se dice en la tarjeta: es lo único que hay que salir a empujar
+  setText('kpiTallerSub',conFecha+' '+t('kpi_taller_sub')
+    +(atrasados?' · '+atrasados+' '+t(atrasados===1?'taller_atrasado1':'taller_atrasados'):''));
   var card=document.getElementById('kpiTallerCard');
   if(card)card.style.display=TALLER.length?'':'none';
 
@@ -2763,7 +2807,7 @@ function renderTaller(){
   var cardPol=document.getElementById('kpiPoliciaCard');
   if(cardPol)cardPol.style.display=enPolicia.length?'':'none';
   setText('kpiPolicia',String(enPolicia.length));
-  setText('kpiPoliciaSub',enPolicia.filter(function(v){return v.egreso;}).length+' '+t('kpi_taller_sub'));
+  setText('kpiPoliciaSub',enPolicia.filter(function(v){return egresoInfo(v).tipo==='fecha';}).length+' '+t('kpi_taller_sub'));
 
   if(!sec||!tbl)return;
   if(!fuera.length){sec.style.display='none';return;}
@@ -2771,13 +2815,16 @@ function renderTaller(){
 
   // Primero los que no tienen fecha comprometida, y dentro de cada grupo el que
   // lleva más tiempo parado
+  var peso={sin:0,texto:0,atrasado:1,fecha:2};
   var orden=fuera.slice().sort(function(a,b){
-    var fa=a.egreso?1:0,fb=b.egreso?1:0;
+    var fa=peso[egresoInfo(a).tipo],fb=peso[egresoInfo(b).tipo];
     if(fa!==fb)return fa-fb;
     return (diasEnTaller(b.ingreso)||0)-(diasEnTaller(a.ingreso)||0);
   });
 
-  var sinFecha=fuera.filter(function(v){return !v.egreso;}).length;
+  // Un egreso que dice "por confirmar" no es una fecha comprometida: cuenta
+  // igual que no tener ninguna, porque hay que ir a pedirla lo mismo.
+  var sinFecha=fuera.filter(function(v){var e=egresoInfo(v).tipo;return e==='sin'||e==='texto';}).length;
   setText('tallerResumen',sinFecha
     ? sinFecha+' '+t('taller_sin_fecha')
     : t('taller_todos_con_fecha'));
@@ -2794,7 +2841,18 @@ function renderTaller(){
   orden.forEach(function(v){
     var dias=diasEnTaller(v.ingreso);
     var color=dias==null?'#6b7280':dias>30?'#f87171':dias>14?'#fbbf24':'#9ca3af';
-    html+='<tr class="'+(v.egreso?'':'sinfecha')+'">'
+    var eg=egresoInfo(v);
+    var celdaEgreso=eg.tipo==='fecha'
+      // "Sale el X" y no la fecha pelada: en verde y a secas se leía como que el
+      // auto ya había salido, cuando es un compromiso a futuro
+      ? '<td class="confecha">'+t('taller_sale')+' '+esc(eg.txt)+'</td>'
+      : eg.tipo==='atrasado'
+      ? '<td class="atrasada">⚠ '+t('taller_debio')+' '+esc(eg.txt)
+        +'<div style="font-weight:400;font-size:10px">'+eg.dias+' '+t(eg.dias===1?'taller_d_atraso1':'taller_d_atraso')+'</div></td>'
+      : eg.tipo==='texto'
+      ? '<td class="nofecha" style="white-space:normal">⚠ '+esc(eg.txt)+'</td>'
+      : '<td class="nofecha">⚠ '+t('taller_sin')+'</td>';
+    html+='<tr class="'+(eg.tipo==='fecha'?'':eg.tipo==='atrasado'?'atrasado':'sinfecha')+'">'
       +'<td class="pat">'+esc(v.patente)
         +(esPolicia(v)?'<div><span class="badge-pol">'+t('taller_policia')+'</span></div>':'')
         +(v.modelo?'<div style="font-weight:600;color:#9ca3af;font-size:10px">'+esc(v.modelo)+'</div>':'')
@@ -2804,9 +2862,7 @@ function renderTaller(){
       +'<td style="white-space:nowrap">'+esc(v.taller||'—')+'</td>'
       +'<td style="white-space:nowrap;color:#9ca3af">'+esc(v.ingreso||'—')+'</td>'
       +'<td class="dias" style="color:'+color+'">'+(dias==null?'—':dias+' '+t('taller_d'))+'</td>'
-      // "Sale el X" y no la fecha pelada: en verde y a secas se leía como que el
-      // auto ya había salido, cuando es un compromiso a futuro
-      +'<td class="'+(v.egreso?'confecha':'nofecha')+'">'+(v.egreso?t('taller_sale')+' '+esc(v.egreso):'⚠ '+t('taller_sin'))+'</td>'
+      +celdaEgreso
       +'<td class="obs">'+esc(v.observaciones||'—')+'</td>'
       +'</tr>';
   });
