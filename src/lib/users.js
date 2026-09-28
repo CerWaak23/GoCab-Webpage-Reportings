@@ -11,6 +11,7 @@ const USERS = [
   { name: 'Joy Varela',      email: 'joy.varela@gocab.io',      role: 'Coordinador de Flota'    },
   { name: 'Pablo González',  email: 'pablogonzalez@gocab.io',   role: 'Coordinador de Flota'    },
   { name: 'Paula Flores',    email: 'paula.flores@gocab.io',    role: 'Coordinadora de Flota'   },
+  { name: 'Javiera Silva',   email: 'javiera.silva@gocab.io',   role: 'Coordinadora de Flota'   },
   { name: 'Artem Tokarev',   email: 'artem.tokarev@gocab.io',   role: 'Gerente de Producto'     },
   { name: 'Andrés Cerda',    email: 'andres.cerda@gocab.io',    role: 'Gerente de Operaciones'  },
   { name: 'Felipe Catalan',  email: 'felipe@gocab.io',          role: 'Gerente de Pais'         },
