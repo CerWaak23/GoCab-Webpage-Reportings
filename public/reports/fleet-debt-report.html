@@ -1395,9 +1395,21 @@ function excluirCargos(){
    dentro del bloque, el mismo cargo se veria dos veces. */
 var PEAJES_PENDIENTES={n:0,monto:0,cierra:null};
 
+/* Cuándo se le cobra al conductor un peaje que el sistema emitió el día d.
+
+   El TAG se usa un día y la boleta sale al día siguiente. Ese uso pertenece a un
+   bloque lunes→domingo, y el bloque entero se cobra el miércoles siguiente al
+   domingo que lo cierra.
+
+   Antes esto mandaba la boleta al próximo miércoles sin más, y eso adelantaba una
+   semana entera a las emitidas martes y miércoles: el uso del lunes y el martes
+   se cobraba el miércoles de esa misma semana, cuando en realidad se cobra el de
+   la semana siguiente. Un conductor que partía un lunes aparecía con peajes
+   cargados en su primera semana antes de que existiera el cobro. */
 function miercolesDeCierre(d){
-  var x=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));
-  return new Date(x.getTime()+((3-x.getUTCDay()+7)%7)*MS_DIA); // 3 = miércoles
+  var uso=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())-MS_DIA;
+  var domingo=uso+((7-new Date(uso).getUTCDay())%7)*MS_DIA; // 0 = domingo
+  return new Date(domingo+3*MS_DIA);                        // miércoles de cobro
 }
 
 function consolidarPeajes(){
