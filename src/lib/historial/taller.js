@@ -66,6 +66,7 @@ export function validarIngreso(i) {
   if (!fechaValida(i?.ingreso)) e.push('ingreso');
   if (i?.km !== '' && i?.km != null && !(Number.isInteger(Number(i.km)) && Number(i.km) >= 0)) e.push('km');
   if (String(i?.descripcion || '').trim().length < 3) e.push('descripcion');
+  if (i?.salidaEstimada && !fechaValida(i.salidaEstimada)) e.push('salida_estimada');
   return e;
 }
 
@@ -75,6 +76,7 @@ export function validarActualizacion(a) {
   if (a?.estado && !ESTADOS_TALLER.includes(a.estado)) e.push('estado');
   if (a?.monto != null && a.monto !== '' && !(Number(a.monto) >= 0)) e.push('monto');
   if (a?.estado === 'presupuesto' && (a.monto == null || a.monto === '')) e.push('monto');
+  if (a?.salidaEstimada && !fechaValida(a.salidaEstimada)) e.push('salida_estimada');
   return e;
 }
 
@@ -102,4 +104,35 @@ export function gastoDeSalida(paso, salida) {
 export function reemplazosSinTaller(asignacionesReemplazo, patentesEnTaller) {
   const enTaller = new Set(patentesEnTaller);
   return (asignacionesReemplazo || []).filter((a) => a.reemplaza_patente && !enTaller.has(a.reemplaza_patente));
+}
+
+/**
+ * Resumen de los autos en taller para la cabecera de Talleres: cuántos hay,
+ * cuántos tienen fecha de salida estimada (y cuántos ya la pasaron), listos
+ * para retiro, a escalar, por motivo y días promedio.
+ */
+export function resumenTalleres(abiertos, hoy) {
+  const r = {
+    total: abiertos.length,
+    conFecha: 0,
+    atrasados: 0,
+    sinFecha: 0,
+    listos: 0,
+    supervisor: 0,
+    gerencia: 0,
+    porMotivo: {},
+    promedioDias: 0,
+  };
+  for (const p of abiertos) {
+    if (p.salidaEstimada) {
+      r.conFecha += 1;
+      if (p.salidaEstimada < hoy) r.atrasados += 1;
+    } else r.sinFecha += 1;
+    if (p.estado === 'listo_retiro') r.listos += 1;
+    if (p.escalar?.nivel === 'supervisor') r.supervisor += 1;
+    if (p.escalar?.nivel === 'gerencia') r.gerencia += 1;
+    r.porMotivo[p.motivo] = (r.porMotivo[p.motivo] || 0) + 1;
+  }
+  r.promedioDias = abiertos.length ? Math.round(abiertos.reduce((a, p) => a + p.dias, 0) / abiertos.length) : 0;
+  return r;
 }

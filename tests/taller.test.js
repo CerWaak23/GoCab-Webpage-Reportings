@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   sugerirTaller, sugerirPaga, escalamiento, diasEnTaller, validarIngreso, validarActualizacion,
-  validarSalida, gastoDeSalida, reemplazosSinTaller, marcaDelAuto,
+  validarSalida, gastoDeSalida, reemplazosSinTaller, marcaDelAuto, resumenTalleres,
 } from '@/lib/historial/taller';
 
 const CATALOGO = [
@@ -71,6 +71,8 @@ describe('validaciones', () => {
     expect(validarActualizacion({ texto: 'Envían presupuesto', estado: 'presupuesto' })).toEqual(['monto']);
     expect(validarActualizacion({ texto: 'Envían presupuesto', estado: 'presupuesto', monto: 285600 })).toEqual([]);
     expect(validarActualizacion({ texto: '' })).toEqual(['texto']);
+    expect(validarActualizacion({ texto: 'Sale el 15', salidaEstimada: 'mañana' })).toEqual(['salida_estimada']);
+    expect(validarActualizacion({ texto: 'Sale el 15', salidaEstimada: '2026-10-15' })).toEqual([]);
   });
   it('la salida no puede ser antes del ingreso', () => {
     expect(validarSalida({ salida: '2026-10-04' }, '2026-10-05T10:00')).toEqual(['salida_antes']);
@@ -87,5 +89,23 @@ describe('gasto y reemplazos', () => {
   it('reemplazo cuyo auto original no tiene ingreso a taller', () => {
     const r = reemplazosSinTaller([{ patente: 'AAAA11', reemplaza_patente: 'BBBB22' }, { patente: 'CCCC33', reemplaza_patente: 'DDDD44' }], ['DDDD44']);
     expect(r.map((x) => x.patente)).toEqual(['AAAA11']);
+  });
+});
+
+describe('resumen de la cabecera de Talleres', () => {
+  it('cuenta fechas de salida, atrasos, listos, escalamientos y motivos', () => {
+    const r = resumenTalleres([
+      { motivo: 'siniestro', dias: 45, salidaEstimada: '2026-10-10' },
+      { motivo: 'siniestro', dias: 20, salidaEstimada: '2026-10-02', escalar: { nivel: 'supervisor' } },
+      { motivo: 'garantia', dias: 48, salidaEstimada: null, estado: 'listo_retiro', escalar: { nivel: 'gerencia' } },
+      { motivo: 'falla', dias: 7 },
+    ], '2026-10-05');
+    expect(r).toEqual({
+      total: 4, conFecha: 2, atrasados: 1, sinFecha: 2, listos: 1, supervisor: 1, gerencia: 1,
+      porMotivo: { siniestro: 2, garantia: 1, falla: 1 }, promedioDias: 30,
+    });
+  });
+  it('sin autos en taller', () => {
+    expect(resumenTalleres([], '2026-10-05')).toMatchObject({ total: 0, promedioDias: 0 });
   });
 });

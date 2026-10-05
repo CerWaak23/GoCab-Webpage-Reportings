@@ -5,7 +5,7 @@ import { useLang } from '@/lib/i18n/useLang';
 import { supabaseNavegador } from '@/lib/supabase/browser';
 import { normalizarPatente } from '@/lib/patente';
 import { sha256Hex } from '@/lib/historial/imagen';
-import { MOTIVOS, PAGADORES, ESTADOS_TALLER, sugerirTaller, sugerirPaga } from '@/lib/historial/taller';
+import { MOTIVOS, PAGADORES, ESTADOS_TALLER, sugerirTaller, sugerirPaga, resumenTalleres } from '@/lib/historial/taller';
 import { fechaCorta, fechaHora } from './comun';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
@@ -53,6 +53,8 @@ export default function Talleres() {
           ＋ {t('tl_registrar_ingreso')}
         </button>
       </div>
+
+      <Resumen r={resumenTalleres(datos.abiertos, datos.hoy)} sinIngreso={datos.sinIngreso.length} t={t} />
 
       {abierto?.tipo === 'ingreso' && (
         <FormIngreso t={t} catalogo={datos.catalogo} inicial={abierto} onCancelar={() => setAbierto(null)} onListo={listo} />
@@ -105,6 +107,9 @@ export default function Talleres() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold">{t('tl_dias')(p.dias)}</p>
+                  <p className={`text-[11px] ${p.salidaEstimada && p.salidaEstimada < datos.hoy ? 'text-red-300' : p.salidaEstimada ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {p.salidaEstimada ? t('tl_sale_el')(fechaCorta(p.salidaEstimada)) : t('tl_sin_fecha_salida')}
+                  </p>
                   {p.estado && <p className="text-[11px] text-sky-300">{t(`tl_estado_${p.estado}`)}</p>}
                 </div>
               </div>
@@ -171,6 +176,46 @@ export default function Talleres() {
   );
 }
 
+function Resumen({ r, sinIngreso, t }) {
+  const tarjeta = 'rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3';
+  const cifra = 'text-2xl font-bold leading-none';
+  return (
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={tarjeta}>
+        <p className={`${cifra} text-amber-300`}>{r.total}</p>
+        <p className="mt-1 text-xs text-gray-400">{t('tl_r_en_taller')}</p>
+        <p className="text-[11px] text-gray-600">{t('tl_r_promedio')(r.promedioDias)}</p>
+      </div>
+      <div className={tarjeta}>
+        <p className={cifra}>{r.conFecha}</p>
+        <p className="mt-1 text-xs text-gray-400">{t('tl_r_con_fecha')}</p>
+        {r.atrasados > 0 && <p className="text-[11px] text-red-300">{t('tl_r_atrasados')(r.atrasados)}</p>}
+      </div>
+      <div className={tarjeta}>
+        <p className={`${cifra} ${r.sinFecha ? 'text-gray-300' : ''}`}>{r.sinFecha}</p>
+        <p className="mt-1 text-xs text-gray-400">{t('tl_r_sin_fecha')}</p>
+      </div>
+      <div className={tarjeta}>
+        <p className={`${cifra} text-emerald-300`}>{r.listos}</p>
+        <p className="mt-1 text-xs text-gray-400">{t('tl_r_listos')}</p>
+      </div>
+      <div className={tarjeta}>
+        <p className={`${cifra} ${r.supervisor + r.gerencia ? 'text-red-300' : ''}`}>{r.supervisor + r.gerencia}</p>
+        <p className="mt-1 text-xs text-gray-400">{t('tl_r_escalar')}</p>
+        <p className="text-[11px] text-gray-600">{t('tl_r_escalar_detalle')(r.supervisor, r.gerencia)}</p>
+      </div>
+      <div className={tarjeta}>
+        <ul className="space-y-0.5 text-xs">
+          {Object.entries(r.porMotivo).sort((a, b) => b[1] - a[1]).map(([m, n]) => (
+            <li key={m} className="flex justify-between gap-2"><span className="text-gray-400">{t(`tl_motivo_${m}`)}</span><b>{n}</b></li>
+          ))}
+          {sinIngreso > 0 && <li className="flex justify-between gap-2 text-orange-300"><span>{t('tl_r_sin_ingreso')}</span><b>{sinIngreso}</b></li>}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function Errores({ lista, t }) {
   if (!lista?.length) return null;
   return <p className="text-xs text-red-400">{lista.map((e) => t(`tl_error_${e}`)).join(' · ')}</p>;
@@ -178,7 +223,7 @@ function Errores({ lista, t }) {
 
 function FormIngreso({ t, catalogo, inicial, onCancelar, onListo }) {
   const [autos, setAutos] = useState(null);
-  const [f, setF] = useState({ patente: inicial.patente || '', motivo: 'mantencion', paga: 'gocab', tallerId: '', ingreso: ahoraLocal(), km: '', ot: '', descripcion: '' });
+  const [f, setF] = useState({ patente: inicial.patente || '', motivo: 'mantencion', paga: 'gocab', tallerId: '', ingreso: ahoraLocal(), km: '', ot: '', descripcion: '', salidaEstimada: '' });
   const [errores, setErrores] = useState([]);
   const [guardando, setGuardando] = useState(false);
 
@@ -237,6 +282,9 @@ function FormIngreso({ t, catalogo, inicial, onCancelar, onListo }) {
         <label className={etiqueta}>{t('tl_ot')}
           <input value={f.ot} onChange={(e) => setF({ ...f, ot: e.target.value })} className={campo} />
         </label>
+        <label className={etiqueta}>{t('tl_salida_estimada')}
+          <input type="date" value={f.salidaEstimada} onChange={(e) => setF({ ...f, salidaEstimada: e.target.value })} className={campo} />
+        </label>
       </div>
       <label className={etiqueta}>{t('tl_descripcion')}
         <textarea rows={2} value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} className={campo} />
@@ -251,10 +299,10 @@ function FormIngreso({ t, catalogo, inicial, onCancelar, onListo }) {
 }
 
 function FormActualizacion({ t, paso, onCancelar, onListo }) {
-  const [f, setF] = useState({ texto: '', estado: '', monto: '' });
+  const [f, setF] = useState({ texto: '', estado: '', monto: '', salidaEstimada: paso.salidaEstimada || '' });
   const [errores, setErrores] = useState([]);
   async function guardar() {
-    const r = await enviar({ accion: 'actualizacion', eventoId: paso.id, ...f, estado: f.estado || null });
+    const r = await enviar({ accion: 'actualizacion', eventoId: paso.id, ...f, estado: f.estado || null, salidaEstimada: f.salidaEstimada || null });
     if (r.ok) onListo();
     else setErrores(r.errores || [r.error]);
   }
@@ -268,6 +316,9 @@ function FormActualizacion({ t, paso, onCancelar, onListo }) {
         {f.estado === 'presupuesto' && (
           <input inputMode="numeric" placeholder={t('tl_monto')} value={f.monto} onChange={(e) => setF({ ...f, monto: e.target.value.replace(/\D/g, '') })} className={campo} />
         )}
+        <label className={etiqueta}>{t('tl_salida_estimada')}
+          <input type="date" value={f.salidaEstimada} onChange={(e) => setF({ ...f, salidaEstimada: e.target.value })} className={campo} />
+        </label>
       </div>
       <textarea rows={2} placeholder={t('tl_que_paso')} value={f.texto} onChange={(e) => setF({ ...f, texto: e.target.value })} className={campo} />
       <Errores lista={errores} t={t} />

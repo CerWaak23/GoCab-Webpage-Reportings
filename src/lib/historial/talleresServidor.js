@@ -28,6 +28,7 @@ const pasoDe = (e, hoy) => {
     descripcion: d.descripcion,
     ingreso: d.ingreso,
     salida: d.salida || null,
+    salidaEstimada: d.salidaEstimada || null,
     monto: d.monto ?? null,
     factura: d.factura || null,
     dias: diasEnTaller(d.ingreso, d.salida, hoy),
@@ -109,6 +110,7 @@ export async function registrarIngreso(usuario, datos) {
       km: datos.km === '' || datos.km == null ? null : Number(datos.km),
       descripcion: String(datos.descripcion).trim().slice(0, 1000),
       ingreso,
+      salidaEstimada: datos.salidaEstimada ? String(datos.salidaEstimada).slice(0, 10) : null,
     },
   }).select('id').single();
   if (error) {
@@ -123,11 +125,18 @@ export async function registrarActualizacion(usuario, datos) {
   const errores = validarActualizacion(datos);
   if (errores.length) return { error: 'datos', errores, status: 400 };
   const sb = supabaseServidor();
-  if (!(await eventoAbierto(sb, datos.eventoId))) return { error: 'cerrado', status: 409 };
+  const ev = await eventoAbierto(sb, datos.eventoId);
+  if (!ev) return { error: 'cerrado', status: 409 };
+  const estimada = datos.salidaEstimada ? String(datos.salidaEstimada).slice(0, 10) : null;
+  if (estimada && estimada !== ev.detalle.salidaEstimada) {
+    // La fecha vigente queda en el paso; el cambio queda escrito en la actualización.
+    const { error: e1 } = await sb.from('eventos').update({ detalle: { ...ev.detalle, salidaEstimada: estimada } }).eq('id', ev.id);
+    if (e1) throw new Error(e1.message);
+  }
   const { data, error } = await sb.from('taller_actualizaciones').insert({
     evento_id: datos.eventoId,
     autor_email: usuario.email,
-    texto: String(datos.texto).trim().slice(0, 1000),
+    texto: (String(datos.texto).trim() + (estimada && estimada !== ev.detalle.salidaEstimada ? ` (salida estimada: ${estimada.split('-').reverse().join('/')})` : '')).slice(0, 1100),
     estado: datos.estado || null,
     monto: datos.monto === '' || datos.monto == null ? null : Number(datos.monto),
   }).select('id, fecha, autor_email, texto, estado, monto').single();
