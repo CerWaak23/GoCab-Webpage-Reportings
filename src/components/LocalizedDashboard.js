@@ -73,6 +73,30 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
           </svg>
         </Link>
 
+        {puedeVerSeccion(role, 'registros') && (
+        <Link
+          href="/m"
+          className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-violet-500/40 hover:bg-gray-900/80 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t.rg_titulo}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t.rg_sub}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-gray-600 group-hover:text-violet-400 transition"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        )}
+
         {puedeVerSeccion(role, 'historial') && (
         <Link
           href="/historial"

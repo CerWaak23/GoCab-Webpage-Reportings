@@ -70,7 +70,7 @@ export default function Historial() {
             className="flex-1 min-w-0 rounded-lg bg-gray-900 border border-gray-800 px-3 py-2 text-sm placeholder:text-gray-600 focus:outline-none focus:border-gray-600"
           />
           <Link href="/m" className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">
-            {t('hv_movil')}
+            {t('rg_titulo')}
           </Link>
           <Link href="/historial/talleres" className="shrink-0 rounded-lg border border-amber-500/40 px-3 py-2 text-xs text-amber-200 hover:border-amber-400">
             {t('talleres_title')}

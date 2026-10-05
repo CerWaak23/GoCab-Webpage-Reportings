@@ -97,7 +97,7 @@ export default function Talleres() {
         {datos.abiertos.length === 0 && <p className="text-sm text-gray-500">{t('tl_ninguno')}</p>}
         <div className="grid gap-3 lg:grid-cols-2">
           {datos.abiertos.map((p) => (
-            <article key={p.id} className={`rounded-xl border p-4 ${p.escalar?.nivel === 'gerencia' ? 'border-red-500/50' : p.escalar ? 'border-amber-500/50' : 'border-gray-800'} bg-gray-900/50`}>
+            <article key={p.id} id={p.patente} className={`rounded-xl border p-4 ${p.escalar?.nivel === 'gerencia' ? 'border-red-500/50' : p.escalar ? 'border-amber-500/50' : 'border-gray-800'} bg-gray-900/50`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <Link href={`/historial?p=${p.patente}`} className="font-mono text-lg font-bold hover:underline">{p.patente}</Link>

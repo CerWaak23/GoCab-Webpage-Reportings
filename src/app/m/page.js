@@ -5,11 +5,11 @@ import MovilMarco from '@/components/historial/MovilMarco';
 import MovilInicio from '@/components/historial/MovilInicio';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Celular · GoBills' };
+export const metadata = { title: 'Registros · GoBills' };
 
+/** Registros: entrega, recepción y taller. El encargado de taller solo ve lo de taller. */
 export default async function Movil() {
   const session = await getAppSession();
   if (!session) redirect('/');
-  if (!puedeHacerActas(session.user)) redirect('/historial');
-  return <MovilMarco><MovilInicio /></MovilMarco>;
+  return <MovilMarco><MovilInicio puedeActas={puedeHacerActas(session.user)} /></MovilMarco>;
 }
