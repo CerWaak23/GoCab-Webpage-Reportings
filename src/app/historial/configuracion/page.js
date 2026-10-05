@@ -9,7 +9,7 @@ export default async function PaginaConfiguracion() {
   const session = await getAppSession();
   if (!session) redirect('/');
   return (
-    <SeccionNueva tituloClave="historial_title" color="emerald">
+    <SeccionNueva tituloClave="cf_titulo" color="emerald">
       <Configuracion />
     </SeccionNueva>
   );

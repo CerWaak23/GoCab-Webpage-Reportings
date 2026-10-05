@@ -57,6 +57,18 @@ describe('importar talleres desde Control Flota', () => {
     expect(p.detalle.descripcion).toMatch(/^En custodia/);
   });
 
+  it('egreso con el año mal tipeado en un auto que ya salió usa el año del ingreso', () => {
+    const p = pasoDesdeFila(['VSBH70', 'DISPONIBLE', '', '28/07/2026', '07/08/2028', 'FULLMEC', '', '', '', 'x', '', ''], 13, '2026-10-05');
+    expect(p.detalle.salida).toBe('2026-08-07T12:00:00-03:00');
+    expect(p.detalle).toMatchObject({ dias: 10, egresoHoja: '07/08/2028' });
+  });
+
+  it('ingreso y egreso con año futuro mal tipeado quedan en el año de la hoja', () => {
+    const p = pasoDesdeFila(['VSBH40', 'DISPONIBLE', '', '21/07/2027', '21/07/2027', 'FULLMEC', '', '', '', 'x', '', ''], 12, '2026-10-05');
+    expect(p.detalle.ingreso).toBe('2026-07-21T12:00:00-03:00');
+    expect(p.detalle.salida).toBe('2026-07-21T12:00:00-03:00');
+  });
+
   it('sin fecha de ingreso no se importa', () => {
     expect(pasoDesdeFila(['VYJL84', 'DISPONIBLE', '', '', '', 'FULLMEC'], 4, '2026-10-05')).toMatchObject({ error: 'ingreso' });
   });

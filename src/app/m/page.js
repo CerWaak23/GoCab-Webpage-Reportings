@@ -11,5 +11,5 @@ export const metadata = { title: 'Registros · GoBills' };
 export default async function Movil() {
   const session = await getAppSession();
   if (!session) redirect('/');
-  return <MovilMarco><MovilInicio puedeActas={puedeHacerActas(session.user)} /></MovilMarco>;
+  return <MovilMarco><MovilInicio puedeActas={puedeHacerActas(session.user)} puedeConfigurar={!!session.user.isManager} /></MovilMarco>;
 }

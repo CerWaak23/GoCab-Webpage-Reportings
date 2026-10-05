@@ -30,7 +30,7 @@ const ACCIONES = [
   { id: 'auto_nuevo', pronto: true },
 ];
 
-export default function MovilInicio({ puedeActas = true }) {
+export default function MovilInicio({ puedeActas = true, puedeConfigurar = false }) {
   const { t } = useLang();
   const [lista, setLista] = useState(null);
   const [borradores, setBorradores] = useState([]);
@@ -118,6 +118,12 @@ export default function MovilInicio({ puedeActas = true }) {
             : <button key={a.id} type="button" disabled={a.pronto} onClick={() => setAccion(a.id)} className={clase}>{contenido}</button>;
         })}
       </section>
+
+      {puedeConfigurar && (
+        <Link href="/historial/configuracion" className="block text-center text-sm font-semibold text-gray-500 underline">
+          {t('rg_configuracion')}
+        </Link>
+      )}
 
       {lista && (
         <section className="rounded-xl bg-white p-4 text-sm text-gray-600 shadow-sm">

@@ -56,7 +56,7 @@ export default function Configuracion() {
 
   return (
     <div className="space-y-8">
-      <Link href="/historial" className="text-xs text-gray-400 hover:text-white">← {t('hv_volver_lista')}</Link>
+      <Link href="/m" className="text-xs text-gray-400 hover:text-white">← {t('rg_titulo')}</Link>
       {!editable && <p className="text-sm text-amber-300">{t('cf_solo_gerencia')}</p>}
       {mensaje && <p className={`text-sm ${mensaje.error ? 'text-red-400' : 'text-emerald-400'}`}>{mensaje.texto}</p>}
 

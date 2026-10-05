@@ -79,7 +79,12 @@ export function pasoDesdeFila(fila, n, fechaAvances) {
   const [patenteTxt, estadoTxt, , ingresoTxt, egresoTxt, tallerTxt, avance, horaTxt, contacto, observaciones, conductorTxt, tipoTxt] =
     fila.map((c) => String(c ?? '').trim());
   const patente = normalizarPatente(patenteTxt);
-  const ingreso = fechaHoja(ingresoTxt);
+  let ingreso = fechaHoja(ingresoTxt);
+  // Ingreso con año futuro mal tipeado (p. ej. 21/07/2027): se usa el año de la hoja.
+  if (ingreso && ingreso > fechaAvances) {
+    const corregido = `${fechaAvances.slice(0, 4)}${ingreso.slice(4)}`;
+    ingreso = corregido <= fechaAvances ? corregido : ingreso;
+  }
   if (!patente) return { error: 'patente', n };
   if (!ingreso) return { error: 'ingreso', n, patente };
 
@@ -107,7 +112,14 @@ export function pasoDesdeFila(fila, n, fechaAvances) {
   if (abierto) {
     detalle.salidaEstimada = egreso || null;
   } else {
-    const salida = egreso && egreso >= ingreso ? egreso : ingreso;
+    // Año mal tipeado en la hoja (p. ej. 07/08/2028 en un auto que ya salió): se usa el año del ingreso.
+    let egresoOk = egreso;
+    if (egresoOk && egresoOk > fechaAvances) {
+      const corregido = `${ingreso.slice(0, 4)}${egresoOk.slice(4)}`;
+      egresoOk = corregido >= ingreso && corregido <= fechaAvances ? corregido : null;
+      detalle.egresoHoja = egresoTxt;
+    }
+    const salida = egresoOk && egresoOk >= ingreso ? egresoOk : ingreso;
     detalle.salida = mediodia(salida);
     detalle.dias = Math.round((Date.parse(salida) - Date.parse(ingreso)) / 86400000);
     detalle.monto = null;

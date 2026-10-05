@@ -144,27 +144,40 @@ function historia(asignaciones, eventos, archivos = []) {
   return items.sort((x, y) => String(y.fecha).localeCompare(String(x.fecha)));
 }
 
-/** Flota por períodos (R7): asignaciones y eventos que tocan el rango. */
+/**
+ * Flota por períodos (R7): quién tenía cada auto, sus pasos por taller y sus
+ * actas, en el rango pedido. Un paso por taller entra si se cruza con el
+ * rango aunque haya empezado antes. También devuelve desde cuándo hay datos
+ * de conductores (la primera carga de Fleet), para explicarlo en pantalla.
+ */
 export async function flotaEnElTiempo(desde, hasta) {
   const sb = supabaseServidor();
-  const [autos, asignaciones, eventos] = await Promise.all([
+  const [autos, asignaciones, actas, talleres, primera] = await Promise.all([
     sb.from('autos').select('patente, marca, modelo, estado_fleet').order('patente'),
     sb.from('asignaciones').select('patente, desde, hasta, reemplazo, conductores(nombre)')
       .lte('desde', hasta).or(`hasta.is.null,hasta.gte.${desde}`),
-    sb.from('eventos').select('patente, tipo, fecha, detalle').gte('fecha', desde).lte('fecha', `${hasta}T23:59:59`),
+    sb.from('eventos').select('patente, tipo, fecha').neq('tipo', 'taller')
+      .gte('fecha', desde).lte('fecha', `${hasta}T23:59:59`),
+    sb.from('eventos').select('patente, fecha, detalle').eq('tipo', 'taller').lte('fecha', `${hasta}T23:59:59`),
+    sb.from('asignaciones').select('desde').order('desde').limit(1),
   ]);
-  revisar(autos, asignaciones, eventos);
+  revisar(autos, asignaciones, actas, talleres, primera);
   const asigDe = agrupar(asignaciones.data, 'patente');
-  const evDe = agrupar(eventos.data, 'patente');
+  const actasDe = agrupar(actas.data, 'patente');
+  const tallerDe = agrupar(talleres.data.filter((e) => !e.detalle?.salida || e.detalle.salida.slice(0, 10) >= desde), 'patente');
   return {
     desde,
     hasta,
+    datosConductorDesde: primera.data[0]?.desde ?? null,
     autos: autos.data.map((a) => ({
       patente: a.patente,
       modelo: [a.marca, a.modelo].filter(Boolean).join(' '),
       estadoFleet: a.estado_fleet,
       periodos: (asigDe.get(a.patente) || []).map((p) => ({ desde: p.desde, hasta: p.hasta, conductor: p.conductores?.nombre ?? null, reemplazo: p.reemplazo })),
-      eventos: (evDe.get(a.patente) || []).map((e) => ({ tipo: e.tipo, fecha: e.fecha, salida: e.detalle?.salida ?? null })),
+      talleres: (tallerDe.get(a.patente) || []).map((e) => ({
+        desde: e.detalle.ingreso || e.fecha, hasta: e.detalle.salida || null, taller: e.detalle.taller, motivo: e.detalle.motivo,
+      })),
+      actas: (actasDe.get(a.patente) || []).map((e) => ({ tipo: e.tipo, fecha: e.fecha })),
     })),
   };
 }
