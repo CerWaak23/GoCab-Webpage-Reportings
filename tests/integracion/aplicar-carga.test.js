@@ -14,6 +14,9 @@ import { payloadPara } from '@/lib/carga/payload';
 
 const HOY = '2026-10-01';
 let sb;
+let antes;
+
+const contar = async (tabla) => (await sb.from(tabla).select('*', { count: 'exact', head: true })).count;
 
 function leerEnv() {
   const env = {};
@@ -33,31 +36,36 @@ async function simular(tipo, filas) {
   return JSON.parse(error.details);
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   const env = leerEnv();
   sb = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+  // La base ya tiene datos reales: se compara contra lo que había antes.
+  antes = { autos: await contar('autos'), conductores: await contar('conductores'), asignaciones: await contar('asignaciones') };
 });
 
+// Los datos de prueba están anonimizados (RUT, nombres y patentes inventados),
+// así que contra la base real son todos nuevos.
 describe('aplicar_carga (simulación, sin dejar datos)', () => {
-  it('drivers: crea los 95 conductores en una base vacía', async () => {
+  it('drivers: crea los 95 conductores de prueba', async () => {
     const r = await simular('drivers', drivers);
     expect(r.conductores_nuevos).toBe(95);
     expect(r.conductores_actualizados).toBe(0);
   });
 
-  it('vehicles: crea los autos y abre una asignación por auto con conductor, marcadas preexistentes', async () => {
+  it('vehicles: crea los autos y abre una asignación por auto con conductor', async () => {
     const r = await simular('vehicles', vehicles);
     expect(r.autos_nuevos).toBe(114);
     expect(r.asignaciones_abiertas).toBe(95);
     expect(r.asignaciones_cerradas).toBe(0);
-    expect(r.primera_carga).toBe(true);
+    // Solo la primera carga marca las asignaciones como preexistentes.
+    expect(r.primera_carga).toBe(antes.asignaciones === 0);
+    expect(r.reemplazos).toBe(0);
   });
 
   it('la simulación no dejó nada en la base', async () => {
-    const { count: autos } = await sb.from('autos').select('*', { count: 'exact', head: true });
-    const { count: conductores } = await sb.from('conductores').select('*', { count: 'exact', head: true });
-    expect(autos).toBe(0);
-    expect(conductores).toBe(0);
+    expect(await contar('autos')).toBe(antes.autos);
+    expect(await contar('conductores')).toBe(antes.conductores);
+    expect(await contar('asignaciones')).toBe(antes.asignaciones);
   });
 
   it('un tipo desconocido se rechaza sin escribir', async () => {
