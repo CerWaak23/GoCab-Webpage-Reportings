@@ -122,6 +122,14 @@ export default function MovilInicio({ puedeActas = true }) {
         ))}
       </section>
 
+      <Link href="/historial/talleres" className="flex items-center justify-between rounded-xl border-2 border-amber-300 bg-white p-4 shadow-sm">
+        <span>
+          <span className="block font-bold">{t('rg_ver_talleres')}</span>
+          <span className="text-sm text-gray-600">{t('rg_ver_talleres_ayuda')}</span>
+        </span>
+        <span className="text-xl text-gray-400">›</span>
+      </Link>
+
       {lista && (
         <section className="rounded-xl bg-white p-4 text-sm text-gray-600 shadow-sm">
           <p>{t('rg_resumen')(
