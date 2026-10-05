@@ -165,7 +165,6 @@ create table if not exists public.registro_accesos (
   en timestamptz not null default now()
 );
 alter table public.registro_accesos enable row level security;
-revoke update, delete on public.registro_accesos from anon, authenticated, service_role;
 
 create or replace function public.rechazar_cambios() returns trigger
 language plpgsql as $$
@@ -177,6 +176,19 @@ drop trigger if exists registro_accesos_inmutable on public.registro_accesos;
 create trigger registro_accesos_inmutable
   before update or delete on public.registro_accesos
   for each row execute function public.rechazar_cambios();
+
+-- ---------- permisos ----------
+-- El proyecto se crea sin "exponer tablas automáticamente": nadie tiene acceso
+-- por defecto. Solo el servidor de GoBills (service_role, clave secreta) puede
+-- leer y escribir; anon y authenticated (el navegador) no reciben nada.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
+grant execute on all functions in schema public to service_role;
+revoke all on all tables in schema public from anon, authenticated;
+
+-- El registro de accesos solo admite agregar filas.
+revoke update, delete on public.registro_accesos from anon, authenticated, service_role;
 
 -- ---------- almacenamiento privado ----------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types) values

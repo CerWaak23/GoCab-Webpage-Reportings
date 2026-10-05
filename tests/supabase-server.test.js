@@ -60,5 +60,16 @@ describe('migración base', () => {
     const sql = fs.readFileSync(new URL('../supabase/migrations/0001_base.sql', import.meta.url), 'utf8');
     expect(sql).toMatch(/revoke update, delete on public\.registro_accesos/i);
     expect(sql).toMatch(/before update or delete on public\.registro_accesos/i);
+    // el revoke debe ir después del grant general al servidor, o el grant lo anula
+    expect(sql.search(/revoke update, delete on public\.registro_accesos/i))
+      .toBeGreaterThan(sql.search(/grant select, insert, update, delete on all tables in schema public to service_role/i));
+  });
+
+  it('solo el servidor recibe permisos; el navegador no', async () => {
+    const fs = await import('node:fs');
+    const sql = fs.readFileSync(new URL('../supabase/migrations/0001_base.sql', import.meta.url), 'utf8');
+    expect(sql).toMatch(/grant select, insert, update, delete on all tables in schema public to service_role/i);
+    expect(sql).not.toMatch(/grant [^;]* to (anon|authenticated)/i);
+    expect(sql).toMatch(/revoke all on all tables in schema public from anon, authenticated/i);
   });
 });
