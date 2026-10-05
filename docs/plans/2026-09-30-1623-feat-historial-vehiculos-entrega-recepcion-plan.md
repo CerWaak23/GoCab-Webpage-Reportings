@@ -159,7 +159,7 @@ La flota creció de 10 a más de 100 autos en 2026, con 3 coordinadores, y la Le
 - R78. GoBills es el lugar donde quedan las fotos del siniestro que SCH pide guardar por si se solicitan en la liquidación: las que sube el conductor en la declaración y las que agregue el coordinador, en la ficha del auto y en el caso.
 - R79. Desde el portal, el conductor descarga una copia del padrón o CAV del auto que tiene asignado (solo de ese auto), para adjuntarla en la denuncia. Queda registrado en el registro de accesos.
 - R80. Cada caso queda "Pendiente de denuncia en SCH" hasta que el conductor o el coordinador anota el N° de denuncia. La póliza da 10 días desde el evento: a los 7 días sin N° de denuncia, el caso se marca para el coordinador. Todo daño se denuncia, aunque sea menor, y cada evento por separado.
-- R81. El portal muestra siempre un botón "¿Necesitas grúa o asistencia? Llama a la asistencia de SURA" con el teléfono configurable por un administrador. La grúa y la asistencia en ruta no pasan por GoBills.
+- R81. El portal muestra siempre un botón "¿Necesitas grúa o asistencia? Llama a la asistencia de SURA" con el teléfono configurable por un administrador (hoy 600 411 1000, en `configuracion.telefono_asistencia_sura`). La grúa y la asistencia en ruta no pasan por GoBills.
 
 **Carga de datos (sección aparte de GoBills)**
 
@@ -307,7 +307,6 @@ El desglose que sigue es el entendimiento actual, no una hoja de ruta comprometi
 
 ### Outstanding Questions
 
-- Teléfono de la asistencia SURA para el botón del portal (R81).
 - Preguntar a SCH si aceptan recibir la denuncia por correo o por otra vía desde GoBills (hoy solo formulario web, R77).
 - Cuál de los tres talleres de evaluación de SURA se elige (decisión de la empresa; afecta U9/U10).
 
