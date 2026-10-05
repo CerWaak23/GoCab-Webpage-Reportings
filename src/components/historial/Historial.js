@@ -72,6 +72,9 @@ export default function Historial() {
           <Link href="/m" className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">
             {t('hv_movil')}
           </Link>
+          <Link href="/historial/talleres" className="shrink-0 rounded-lg border border-amber-500/40 px-3 py-2 text-xs text-amber-200 hover:border-amber-400">
+            {t('talleres_title')}
+          </Link>
           <Link href="/historial/tiempo" className="hidden lg:inline-flex shrink-0 rounded-lg border border-gray-800 px-3 py-2 text-xs text-gray-300 hover:border-gray-600">
             {t('hv_tiempo')}
           </Link>

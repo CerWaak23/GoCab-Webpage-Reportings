@@ -7,6 +7,7 @@ const esTaller = (rol) => /taller/i.test(rol || '');
 
 const REGLAS = {
   historial: () => true,
+  talleres: () => true,
   carga: (rol) => !esTaller(rol),
 };
 

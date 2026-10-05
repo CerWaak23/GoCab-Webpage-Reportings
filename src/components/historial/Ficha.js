@@ -85,6 +85,11 @@ function Resumen({ ficha, t }) {
   const { auto, conductor, vigente, alertas, revision } = ficha;
   return (
     <div className="space-y-5">
+      {ficha.estado === 'sin_ingreso_taller' && (
+        <a href={`/historial/talleres?ingreso=${auto.patente}`} className="block rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-2 text-xs text-orange-200">
+          {t('tl_ficha_sin_ingreso')} →
+        </a>
+      )}
       {alertas.length > 0 && (
         <ul className="space-y-1">
           {alertas.map((a, i) => <li key={i} className="text-xs text-amber-300">⚠ {textoAlerta(a, t)}</li>)}
@@ -174,6 +179,22 @@ function Historia({ items, puedeNotas, t }) {
             {it.detalle?.origen === 'portal' && ` · ${t('hv_desde_portal')}`}
             {it.detalle?.sinFirma && ` · ${t('hv_sin_firma')}`}
           </p>
+          {it.tipo === 'taller' && it.detalle && (
+            <div className="mt-1 text-[11px] text-gray-400">
+              <p>{it.detalle.taller} · {t(`tl_motivo_${it.detalle.motivo}`)} · {t('tl_paga')}: {t(`tl_paga_${it.detalle.paga}`)}{it.detalle.ot ? ` · ${it.detalle.ot}` : ''}</p>
+              <p className="text-gray-500">{it.detalle.descripcion}</p>
+              {(it.actualizaciones || []).map((a) => (
+                <p key={a.id} className="pl-2 border-l border-gray-800 mt-0.5">
+                  <span className="text-gray-500">{fechaHora(a.fecha)} · </span>
+                  {a.estado ? <span className="text-sky-300">{t(`tl_estado_${a.estado}`)} · </span> : null}{a.texto}
+                </p>
+              ))}
+              <p className={it.detalle.salida ? 'text-emerald-400' : 'text-amber-300'}>
+                {it.detalle.salida ? t('tl_salio')(fechaHora(it.detalle.salida), it.detalle.dias) : t('tl_sigue_en_taller')}
+                {it.detalle.monto != null ? ` · ${it.detalle.monto.toLocaleString('es-CL')} CLP` : ''}
+              </p>
+            </div>
+          )}
           {[...(it.notas || []), ...(notas[it.eventoId] || [])].map((n) => (
             <p key={n.id} className="mt-1 rounded bg-gray-800/60 px-2 py-1 text-[11px] text-gray-300">
               📝 {n.texto} <span className="text-gray-500">· {n.autor_email} · {fechaHora(n.creado)}</span>

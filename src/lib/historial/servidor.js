@@ -85,7 +85,7 @@ export async function fichaVehiculo(patenteCruda, usuario, hoy) {
     sb.from('autos').select('*').eq('patente', patente).maybeSingle(),
     sb.from('asignaciones').select(`id, desde, hasta, origen, reemplazo, reemplaza_patente, conductor_id, conductores(${camposConductor})`)
       .eq('patente', patente).order('desde', { ascending: false }),
-    sb.from('eventos').select('id, tipo, fecha, conductor_id, usuario_email, firmado, detalle, pdf_ruta, conductores(nombre), notas(id, texto, autor_email, creado)')
+    sb.from('eventos').select('id, tipo, fecha, conductor_id, usuario_email, firmado, detalle, pdf_ruta, conductores(nombre), notas(id, texto, autor_email, creado), taller_actualizaciones(id, fecha, autor_email, texto, estado, monto)')
       .eq('patente', patente).order('fecha', { ascending: false }),
     sb.from('archivos').select('id, clase, toma, tomada_en, recibida_en, vence, metadatos, evento_id, conductor_id').eq('patente', patente),
     sb.from('pendientes').select('id, texto, estado, monto, creado, evento_id, conductores(nombre)').eq('patente', patente).order('creado', { ascending: false }),
@@ -137,6 +137,7 @@ function historia(asignaciones, eventos, archivos = []) {
       id: e.id, eventoId: e.id, tipo: e.tipo, fecha: e.fecha, conductor: e.conductores?.nombre ?? null, usuario: e.usuario_email,
       firmado: e.firmado, detalle: e.detalle, actaId: actaDe.get(e.id) || null,
       notas: [...(e.notas || [])].sort((a, b) => String(a.creado).localeCompare(String(b.creado))),
+      actualizaciones: [...(e.taller_actualizaciones || [])].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))),
     });
   }
   // A igual fecha, el evento de GoBills (con hora) va antes que el cambio de Fleet.
