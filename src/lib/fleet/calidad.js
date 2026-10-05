@@ -55,8 +55,10 @@ export function revisarCalidad(tipo, filas, base = {}) {
     marcar('patente_invalida', ps.filter((p) => p && !PATENTE_CHILE.test(p)).length);
     marcar('patente_repetida', repetidos(ps).size);
     const ids = lista.map((r) => identificar({ nombre: r['Driver'], patente: r['Plate Number'] }));
-    // Con la base se compara la persona identificada (dos homónimos con un
-    // auto cada uno no son error); sin base, solo el nombre.
+    // Al entrar a taller Fleet le quita el conductor al auto, así que un
+    // conductor con dos autos en el archivo tiene un reemplazo sin que el otro
+    // esté en taller. Con la base se compara la persona identificada (dos
+    // homónimos con un auto cada uno no cuentan); sin base, solo el nombre.
     marcar('conductor_repetido', indice.length
       ? repetidos(ids).size
       : repetidos(lista.map((r) => normalizarNombre(r['Driver']))).size);

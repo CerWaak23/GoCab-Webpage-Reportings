@@ -5,7 +5,8 @@
 --   conductores (pueden ser dos: el suyo y uno de reemplazo). Con eso los
 --   autos se asignan por patente y no solo por nombre (había dos conductores
 --   distintos con el mismo nombre).
--- * asignaciones.reemplazo: el conductor ya tenía otro auto vigente.
+-- * asignaciones.reemplazo / reemplaza_patente: auto de reemplazo y el auto
+--   que reemplaza (el que está en taller).
 -- * autos.modalidad: renta o drive to own, cuando Fleet la exporte.
 -- * aplicar_carga: un solo aplicador a la vez, no aplica dos veces la misma
 --   carga, corrige el RUT del mismo conductor en vez de duplicarlo y trata un
@@ -21,7 +22,8 @@ alter table public.conductores
   add column if not exists patentes_fleet text[] not null default '{}';
 
 alter table public.asignaciones
-  add column if not exists reemplazo boolean not null default false;
+  add column if not exists reemplazo boolean not null default false,
+  add column if not exists reemplaza_patente text references public.autos (patente);
 
 alter table public.autos
   add column if not exists modalidad text check (modalidad in ('renta', 'drive_to_own'));
@@ -200,15 +202,29 @@ begin
       end if;
     end loop;
 
-    -- Auto de reemplazo: el conductor sigue con otro auto que tenía desde
-    -- antes de esta carga. Se calcula al final, cuando ya se cerraron los autos
-    -- devueltos, para que un cambio de auto no cuente como reemplazo. Igual es
-    -- una entrega y pide su acta como cualquier otra.
-    update asignaciones a set reemplazo = true
-      where a.carga_id = p_carga_id and a.hasta is null
-        and exists (select 1 from asignaciones o
-                    where o.conductor_id = a.conductor_id and o.hasta is null and o.id <> a.id
-                      and o.carga_id is distinct from p_carga_id);
+    -- Auto de reemplazo. Se calcula al final, cuando ya se cerraron los autos
+    -- devueltos, para que un simple cambio de auto no cuente como reemplazo:
+    --  1. lo normal: el auto anterior del conductor se cerró hoy y Fleet lo
+    --     tiene en mantención (al entrar a taller Fleet le quita el conductor);
+    --  2. Fleet le dejó los dos autos: el anterior sigue vigente (y no era a su
+    --     vez un reemplazo, para que la vuelta del taller no cuente al revés).
+    -- Igual es una entrega y pide su acta como cualquier otra.
+    update asignaciones a set reemplazo = true, reemplaza_patente = x.patente
+    from (
+      select n.id, coalesce(
+        (select o.patente from asignaciones o join autos au on au.patente = o.patente
+          where o.conductor_id = n.conductor_id and o.id <> n.id and o.hasta = p_hoy
+            and au.estado_fleet = 'maintenance'
+          order by o.creado desc limit 1),
+        (select o.patente from asignaciones o
+          where o.conductor_id = n.conductor_id and o.id <> n.id and o.hasta is null
+            and not o.reemplazo and o.carga_id is distinct from p_carga_id
+          order by o.desde limit 1)
+      ) as patente
+      from asignaciones n
+      where n.carga_id = p_carga_id and n.hasta is null and n.origen = 'fleet'
+    ) x
+    where a.id = x.id and x.patente is not null;
     get diagnostics v_n = row_count;
     r := jsonb_set(r, '{reemplazos}', to_jsonb(v_n));
   end if;
