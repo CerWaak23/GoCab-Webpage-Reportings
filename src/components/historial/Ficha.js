@@ -61,7 +61,7 @@ export default function Ficha({ patente, onVolver, t }) {
       <div className="p-4">
         {pestana === 'resumen' && <Resumen ficha={ficha} t={t} />}
         {pestana === 'historia' && <Historia items={ficha.historia} t={t} />}
-        {pestana === 'fotos' && <Fotos archivos={ficha.archivos.filter((a) => a.clase === 'foto')} t={t} />}
+        {pestana === 'fotos' && <Fotos patente={auto.patente} hay={cuenta.fotos > 0} t={t} />}
         {pestana === 'documentos' && <Documentos archivos={ficha.archivos.filter((a) => a.clase !== 'foto')} hoy={ficha.hoy} t={t} />}
         {pestana === 'pendientes' && <Pendientes lista={ficha.pendientes} t={t} />}
         {pestana === 'gastos' && <Vacio texto={t('hv_gastos_pronto')} />}
@@ -154,6 +154,9 @@ function Historia({ items, t }) {
             {it.reemplazo && ` · ${t('alerta_reemplazo')(it.reemplazaPatente)}`}
             {it.usuario && ` · ${it.usuario}`}
             {it.firmado && ` · ${t('hv_firmado')}`}
+            {Number.isFinite(it.detalle?.km) && ` · ${it.detalle.km.toLocaleString('es-CL')} km`}
+            {it.detalle?.luces && ` · ${t('hv_luces')}`}
+            {it.detalle?.origen === 'portal' && ` · ${t('hv_desde_portal')}`}
           </p>
         </li>
       ))}
@@ -161,25 +164,38 @@ function Historia({ items, t }) {
   );
 }
 
-function Fotos({ archivos, t }) {
-  if (archivos.length === 0) return <Vacio texto={t('hv_fotos_vacio')} />;
+function Fotos({ patente, hay, t }) {
+  const [fotos, setFotos] = useState(null);
+  useEffect(() => {
+    if (!hay) return;
+    fetch(`/api/historial/fotos?patente=${encodeURIComponent(patente)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((j) => setFotos(j.fotos))
+      .catch(() => setFotos([]));
+  }, [patente, hay]);
+
+  if (!hay) return <Vacio texto={t('hv_fotos_vacio')} />;
+  if (!fotos) return <Vacio texto={t('hv_cargando')} />;
+  // Por toma, de la más nueva a la más antigua: así se compara el auto en el tiempo (R5, R38).
   const porToma = new Map();
-  for (const a of archivos) {
-    const k = a.toma || 'libre';
+  for (const f of fotos) {
+    const k = f.toma || 'libre';
     if (!porToma.has(k)) porToma.set(k, []);
-    porToma.get(k).push(a);
+    porToma.get(k).push(f);
   }
   return (
-    <div className="space-y-4">
-      {[...porToma].map(([toma, fotos]) => (
+    <div className="space-y-5">
+      {[...porToma].map(([toma, lista]) => (
         <section key={toma}>
-          <h3 className="text-xs text-gray-400 mb-1.5">{t(`toma_${toma}`)} · {fotos.length}</h3>
-          <div className="flex flex-wrap gap-2">
-            {fotos.sort((a, b) => String(b.tomada_en || b.recibida_en).localeCompare(String(a.tomada_en || a.recibida_en))).map((f) => (
-              <button key={f.id} type="button" onClick={() => abrirArchivo(f.id)}
-                className="rounded-lg border border-gray-800 px-2.5 py-1.5 text-[11px] text-gray-300 hover:border-gray-600">
-                {fechaHora(f.tomada_en || f.recibida_en)}
-              </button>
+          <h3 className="text-xs text-gray-400 mb-2">{t(`toma_${toma}`)} · {lista.length}</h3>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {lista.map((f) => (
+              <a key={f.id} href={f.url || '#'} target="_blank" rel="noopener noreferrer" className="shrink-0 w-40">
+                <div className="aspect-[4/3] overflow-hidden rounded-lg bg-gray-800">
+                  {f.url && <img src={f.url} alt="" loading="lazy" className="h-full w-full object-cover" />}
+                </div>
+                <p className="mt-1 text-[11px] text-gray-500">{fechaHora(f.tomadaEn)}{f.evento ? ` · ${t(`ev_${f.evento}`)}` : ''}</p>
+              </a>
             ))}
           </div>
         </section>

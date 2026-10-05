@@ -3,14 +3,14 @@ import ConductorLogin from '@/components/ConductorLogin';
 import { getSesionConductor } from '@/lib/sesion-conductor';
 
 export const metadata = {
-  title: 'Mis TAG · GoCab',
-  description: 'Revisa el detalle de tus TAG',
+  title: 'Portal de conductores · GoCab',
+  description: 'Tus TAG y las fotos de tu auto',
 };
 
 export default async function IngresoConductores() {
   // Si ya entró antes en este teléfono, que no tenga que escribir todo de nuevo.
   const sesion = await getSesionConductor();
-  if (sesion) redirect('/conductores/mis-tags');
+  if (sesion) redirect('/conductores/inicio');
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -19,9 +19,9 @@ export default async function IngresoConductores() {
       </div>
 
       <div className="mx-auto max-w-md px-4 py-10">
-        <h1 className="text-3xl font-extrabold text-gray-900">Revisa tus TAG</h1>
+        <h1 className="text-3xl font-extrabold text-gray-900">Portal de conductores</h1>
         <p className="mb-8 mt-2 text-lg leading-snug text-gray-600">
-          Mira cuánto has gastado en autopistas y el detalle de cada pasada.
+          Revisa tus TAG y sube las fotos de tu auto.
         </p>
 
         <div className="rounded-2xl bg-white p-6 shadow-sm">

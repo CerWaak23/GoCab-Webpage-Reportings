@@ -16,18 +16,22 @@ export const AUD_CONDUCTOR = 'driver';
 // Pedirle patente y RUT cada semana sería la forma más rápida de que deje de usarlo.
 export const SEGUNDOS_CONDUCTOR = 30 * 24 * 60 * 60;
 
-export function crearTokenConductor({ patente, nombre }) {
-  return firmarToken({ patente, nombre }, AUD_CONDUCTOR, SEGUNDOS_CONDUCTOR);
+/**
+ * conductorId viene cuando el conductor se validó contra la base (Fleet); sin
+ * él (validado contra la planilla antigua) solo puede ver sus TAG.
+ */
+export function crearTokenConductor({ patente, nombre, conductorId = null }) {
+  return firmarToken({ patente, nombre, conductorId }, AUD_CONDUCTOR, SEGUNDOS_CONDUCTOR);
 }
 
 export function verificarTokenConductor(token) {
   return verificarToken(token, AUD_CONDUCTOR);
 }
 
-/** Para Server Components y Route Handlers. Devuelve { patente, nombre } o null. */
+/** Para Server Components y Route Handlers. Devuelve { patente, nombre, conductorId } o null. */
 export async function getSesionConductor() {
   const token = cookies().get(COOKIE_CONDUCTOR)?.value;
   const payload = await verificarTokenConductor(token);
   if (!payload) return null;
-  return { patente: payload.patente, nombre: payload.nombre };
+  return { patente: payload.patente, nombre: payload.nombre, conductorId: payload.conductorId ?? null };
 }

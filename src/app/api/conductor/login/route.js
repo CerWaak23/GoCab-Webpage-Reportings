@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { buscarConductor, nombreDePila } from '@/lib/flota';
+import { buscarEnBase } from '@/lib/portal/acceso';
 import { crearTokenConductor, COOKIE_CONDUCTOR, SEGUNDOS_CONDUCTOR } from '@/lib/sesion-conductor';
 
 // Un solo mensaje para todos los fallos: si distinguiera "patente no existe" de
@@ -54,7 +55,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Escribe tu patente y tu RUT.' }, { status: 400 });
     }
 
-    const conductor = await buscarConductor(patente, rut);
+    // Primero la base (exports de Fleet). La planilla de Control Flota queda de
+    // respaldo mientras se migra, para que Mis TAG no se corte.
+    let conductor = await buscarEnBase(patente, rut).catch((err) => {
+      console.error('[conductor/login] base', err.message);
+      return null;
+    });
+    if (!conductor) conductor = await buscarConductor(patente, rut);
     if (!conductor) {
       registrarFallo(ip);
       return NextResponse.json({ error: ERROR }, { status: 401 });
@@ -66,6 +73,7 @@ export async function POST(request) {
     const token = await crearTokenConductor({
       patente: conductor.patente,
       nombre: nombreDePila(conductor.nombre),
+      conductorId: conductor.conductorId ?? null,
     });
 
     const response = NextResponse.json({ ok: true });

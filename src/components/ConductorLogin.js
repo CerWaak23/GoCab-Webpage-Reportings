@@ -25,7 +25,7 @@ export default function ConductorLogin() {
         body: JSON.stringify({ patente, rut }),
       });
       if (res.ok) {
-        router.push('/conductores/mis-tags');
+        router.push('/conductores/inicio');
         return;
       }
       const data = await res.json().catch(() => ({}));
@@ -95,7 +95,7 @@ export default function ConductorLogin() {
         className="min-h-[56px] w-full rounded-xl bg-marca-azul px-4 py-4 text-lg font-bold
           text-white transition hover:bg-marca-azul-oscuro disabled:opacity-50"
       >
-        {cargando ? 'Entrando…' : 'Ver mis TAG'}
+        {cargando ? 'Entrando…' : 'Entrar'}
       </button>
     </form>
   );

@@ -202,9 +202,12 @@ export default function MisTags({ inicial }) {
       <div className="border-b border-gray-200 bg-white px-4 py-3">
         <div className="mx-auto flex max-w-[720px] items-center justify-between gap-3">
           <img src="/gocab-full.svg" alt="GoCab" className="h-[30px] w-auto" />
-          <button onClick={salir} className="text-sm font-bold text-gray-500 underline">
-            Salir
-          </button>
+          <div className="flex items-center gap-4">
+            <a href="/conductores/inicio" className="text-sm font-bold text-gray-500 underline">Inicio</a>
+            <button onClick={salir} className="text-sm font-bold text-gray-500 underline">
+              Salir
+            </button>
+          </div>
         </div>
       </div>
 
