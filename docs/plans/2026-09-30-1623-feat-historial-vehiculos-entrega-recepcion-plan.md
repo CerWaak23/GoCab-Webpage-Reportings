@@ -155,6 +155,11 @@ La flota creció de 10 a más de 100 autos en 2026, con 3 coordinadores, y la Le
 - R48. Cada declaración crea un caso con número, aparece en la historia del auto y en la vista "Siniestros y robos". Ahí el coordinador fija la gravedad (leve bajo 10 UF, grave con la compañía, pérdida total, robo) y el estado, y ve los pasos del protocolo de GoBills para esa gravedad.
 - R49. El caso muestra la lista de antecedentes que pide la compañía, separando lo que ya llegó (fotos, relato, constancia, permiso, SOAP, factura) de lo que falta (escrito del parte, revisión técnica, certificado de multas), con su avance.
 - R50. En un siniestro grave, el coordinador carga el deducible en UF al conductor; queda como pendiente por cobrar en la ficha. Un auto con un caso abierto que no circula se muestra como "Siniestro · no circula".
+- R77. La denuncia ante la aseguradora la hace el conductor en el formulario del corredor (SCH Seguros, que la ingresa ante SURA). Tras registrar el siniestro en GoBills, el portal muestra un último paso "Ahora haz la denuncia en SCH Seguros" con el enlace al formulario y la lista de lo que pide adjuntar: carnet, licencia de conducir y padrón o CAV. No hay integración automática con SCH. (Acordado 2026-10-05 tras el comunicado de SCH.)
+- R78. GoBills es el lugar donde quedan las fotos del siniestro que SCH pide guardar por si se solicitan en la liquidación: las que sube el conductor en la declaración y las que agregue el coordinador, en la ficha del auto y en el caso.
+- R79. Desde el portal, el conductor descarga una copia del padrón o CAV del auto que tiene asignado (solo de ese auto), para adjuntarla en la denuncia. Queda registrado en el registro de accesos.
+- R80. Cada caso queda "Pendiente de denuncia en SCH" hasta que el conductor o el coordinador anota el N° de denuncia. La póliza da 10 días desde el evento: a los 7 días sin N° de denuncia, el caso se marca para el coordinador. Todo daño se denuncia, aunque sea menor, y cada evento por separado.
+- R81. El portal muestra siempre un botón "¿Necesitas grúa o asistencia? Llama a la asistencia de SURA" con el teléfono configurable por un administrador. La grúa y la asistencia en ruta no pasan por GoBills.
 
 **Carga de datos (sección aparte de GoBills)**
 
@@ -301,6 +306,10 @@ El desglose que sigue es el entendimiento actual, no una hoja de ruta comprometi
 - Contratos de tratamiento de datos (DPA) con Supabase y Vercel, y el inventario de tratamientos, los gestiona la empresa.
 
 ### Outstanding Questions
+
+- Teléfono de la asistencia SURA para el botón del portal (R81).
+- Preguntar a SCH si aceptan recibir la denuncia por correo o por otra vía desde GoBills (hoy solo formulario web, R77).
+- Cuál de los tres talleres de evaluación de SURA se elige (decisión de la empresa; afecta U9/U10).
 
 **Deferred to Planning**
 
@@ -667,7 +676,7 @@ vitest.config.mjs
 ### U10. Siniestros y robos (gestión)
 
 - **Goal:** los casos se gestionan con gravedad, estado, protocolo y antecedentes.
-- **Requirements:** R47-R50, R62 (datos del otro conductor); KTD12.
+- **Requirements:** R47-R50, R62 (datos del otro conductor), R78, R80; KTD12.
 - **Dependencies:** U7, U9.
 - **Files:** `src/app/historial/siniestros/page.js`, `src/components/historial/Siniestros.js`, `src/components/historial/SiniestroForm.js`, `src/app/api/historial/siniestros/route.js`, `src/lib/historial/siniestro.js`, `supabase/migrations/0006_siniestros.sql`, `tests/siniestro.test.js`.
 - **Approach:**
@@ -676,7 +685,10 @@ vitest.config.mjs
   3. Antecedentes calculados desde el caso y los documentos del auto.
   4. Deducible crea un pendiente "por cobrar"; "Enviar a taller" abre el ingreso de U9 con el caso.
   5. Textos de "qué hacer" por gravedad editables por un administrador.
+  6. Denuncia en SCH (R77, R80): campos N° de denuncia y fecha de denuncia en el caso; estado "Pendiente de denuncia en SCH" y marca a los 7 días del evento sin N°. Aviso diario en el cron de U15.
+  7. Taller de evaluación de SURA: cuando la empresa elija uno de los tres talleres que propuso SCH, queda en U9 como taller por defecto de los siniestros con SURA.
 - **Test scenarios:**
+  - Un caso de hace 7 días sin N° de denuncia queda marcado; con N° anotado, deja de estarlo.
   - Robo exige constancia; choque sin otro vehículo ni lesionados no la exige.
   - Robo no pide fotos del daño.
   - Antecedentes: SOAP marcado listo si el auto tiene SOAP vigente; "no aplica" para grúa si no se usó.
@@ -776,7 +788,7 @@ vitest.config.mjs
 ### U15. Portal del conductor ampliado
 
 - **Goal:** el conductor hace levantamiento y revisión, declara siniestros y descarga sus actas.
-- **Requirements:** R14 (Mis actas), R28, R35-R38, R44-R46, R61, R74-R76; KTD3.
+- **Requirements:** R14 (Mis actas), R28, R35-R38, R44-R46, R61, R74-R81; KTD3.
 - **Dependencies:** U6, U10, U13, U14.
 - **Files:** `src/app/conductores/inicio/page.js`, `src/app/conductores/fotos/page.js`, `src/app/conductores/siniestro/page.js`, `src/app/conductores/actas/page.js`, `src/components/ConductorLogin.js`, `src/app/api/conductor/actas/route.js`, `src/app/api/conductor/fotos/route.js`, `src/app/api/conductor/siniestro/route.js`, `src/app/api/cron/revisiones/route.js`, `vercel.json` (cron diario de revisiones con `CRON_SECRET`), `tests/portal.test.js`.
 - **Approach:**
@@ -785,6 +797,8 @@ vitest.config.mjs
   3. Declaración con `SiniestroForm` en modo conductor, aviso de privacidad y firma.
   4. Mis actas por ID del conductor, con URLs firmadas solo de sus eventos; subidas del portal con su propia ruta firmada, limitada al auto vigente del conductor.
   4b. Guardado automático de los formularios de varios pasos (R74).
+  4c. Al cerrar la declaración, paso final con el enlace al formulario de SCH Seguros, la lista de adjuntos (carnet, licencia, padrón/CAV) y la descarga del padrón/CAV de su auto (R77, R79); campo opcional para que el conductor anote su N° de denuncia (R80).
+  4d. Botón permanente de asistencia SURA con el teléfono de Configuración (R81).
   5. Cron diario que marca revisiones vencidas para la oficina.
 - **Test scenarios:**
   - Un conductor no puede pedir el PDF de un acta de otro conductor (403).
@@ -793,6 +807,8 @@ vitest.config.mjs
   - La declaración de robo sin constancia no se puede enviar.
   - Un conductor que devolvió el auto ayer descarga su acta de recepción; no puede subir fotos de ese auto ni ver actas del conductor siguiente (403).
   - Cerrar el navegador a mitad de una declaración y volver retoma en el mismo paso con las fotos ya tomadas.
+  - Un conductor descarga el padrón de su auto; pedir el de otro auto da 403.
+  - Al terminar la declaración se muestra el enlace a SCH; anotar el N° de denuncia quita el caso de "Pendiente de denuncia".
 - **Verification:** un conductor real hace su levantamiento y descarga su acta desde su teléfono.
 
 ### U16. Protección de datos y respaldos
