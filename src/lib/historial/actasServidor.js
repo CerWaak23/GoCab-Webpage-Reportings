@@ -11,6 +11,7 @@ import {
   itemsChecklist, pendientesDeRecepcion,
 } from './actas';
 import { generarPdfActa } from './pdf';
+import { CLAUSULA_RECEPCION_VERSION } from '@/lib/portal/aviso';
 
 const DIAS_RECEPCION = 30;
 const restarDias = (f, d) => new Date(Date.parse(f) - d * 86400000).toISOString().slice(0, 10);
@@ -172,7 +173,9 @@ export async function registrarActa(usuario, acta, red) {
   const pideCedula = acta.tipo === 'entrega' && !conductor.cedula_registrada;
 
   const errores = validarActa({ ...acta, conductor: { id: conductor.id }, pideCedula }, items);
+  if (acta.tipo === 'entrega' && acta.clausula !== CLAUSULA_RECEPCION_VERSION) errores.push('clausula_version');
   if (errores.length) return { error: 'datos', errores, status: 400 };
+  const conFirma = !acta.sinFirma;
 
   // Cada archivo tiene que estar en Storage, en la ruta que le corresponde.
   const archivos = [];
@@ -183,7 +186,7 @@ export async function registrarActa(usuario, acta, red) {
   }
   (acta.libres || []).slice(0, 20).forEach((f, i) => archivos.push({ clase: 'foto', parte: `libre-${i + 1}`, toma: 'libre', f, metadatos: { comentario: String(f.comentario || '').slice(0, 300) } }));
   if (pideCedula) for (const lado of LADOS_CEDULA) archivos.push({ clase: 'cedula', parte: lado, toma: null, f: acta.cedula[lado], metadatos: { lado } });
-  archivos.push({ clase: 'firma', parte: 'firma', toma: null, f: acta.firma, metadatos: { firmadaEn: acta.firma.firmadaEn || null } });
+  if (conFirma) archivos.push({ clase: 'firma', parte: 'firma', toma: null, f: acta.firma, metadatos: { firmadaEn: acta.firma.firmadaEn || null } });
 
   // El mes de la ruta es el de la subida: puede cambiar si se envía al día siguiente.
   const sinMes = (r) => String(r || '').replace(/\/\d{4}-\d{2}\//, '/');
@@ -206,7 +209,14 @@ export async function registrarActa(usuario, acta, red) {
     comentario: String(acta.comentario || '').slice(0, 1000),
     provisional: !acta.conductor?.id,
     iniciado: acta.iniciado || null,
-    firma: { firmadaEn: acta.firma.firmadaEn || null, ip: red.ip, navegador: String(red.navegador || '').slice(0, 200) },
+    firma: conFirma ? { firmadaEn: acta.firma.firmadaEn || null, ip: red.ip, navegador: String(red.navegador || '').slice(0, 200) } : null,
+    // Recepción sin el conductor (lo dejó botado): vale la cláusula que aceptó en la entrega.
+    sinFirma: conFirma ? undefined : {
+      motivo: String(acta.sinFirma.motivo).trim().slice(0, 500),
+      testigo: String(acta.sinFirma.testigo || '').trim().slice(0, 120) || undefined,
+      ip: red.ip,
+    },
+    clausula: acta.tipo === 'entrega' ? CLAUSULA_RECEPCION_VERSION : undefined,
   };
 
   const { data: evento, error } = await sb.from('eventos').insert({
@@ -263,7 +273,7 @@ export async function registrarActa(usuario, acta, red) {
 export async function adjuntarPdf(eventoId) {
   const sb = supabaseServidor();
   const { data: ev } = await sb.from('eventos')
-    .select('id, patente, tipo, fecha, usuario_email, firmado, checklist_version, version_aviso, detalle, pdf_ruta, conductores(nombre, rut), autos(marca, modelo, anio, color)')
+    .select('id, patente, tipo, fecha, usuario_email, firmado, conductor_id, checklist_version, version_aviso, detalle, pdf_ruta, conductores(nombre, rut), autos(marca, modelo, anio, color)')
     .eq('id', eventoId).single();
   if (!ev?.firmado) throw new Error('El acta no está firmada');
   if (ev.pdf_ruta) return true;
@@ -279,7 +289,15 @@ export async function adjuntarPdf(eventoId) {
   const firma = firmaArchivo ? await bajar(firmaArchivo) : null;
   const checklist = await checklistVigente(sb, ev.checklist_version);
 
-  const pdf = await generarPdfActa({ evento: ev, fotos, firma, checklist });
+  // Sin firma: la entrega de ese conductor, con la cláusula que aceptó.
+  let entregaPrevia = null;
+  if (ev.detalle?.sinFirma) {
+    const { data } = await sb.from('eventos').select('fecha, detalle').eq('patente', ev.patente).eq('tipo', 'entrega')
+      .eq('conductor_id', ev.conductor_id).lt('fecha', ev.fecha).order('fecha', { ascending: false }).limit(1);
+    entregaPrevia = data?.[0] ? { fecha: data[0].fecha, clausula: data[0].detalle?.clausula || null } : null;
+  }
+
+  const pdf = await generarPdfActa({ evento: ev, fotos, firma, checklist, entregaPrevia });
   const hash = createHash('sha256').update(pdf).digest('hex');
   const ruta = `${ev.patente}/${ev.detalle.uid}.pdf`;
   const { error: e1 } = await sb.storage.from('actas').upload(ruta, pdf, { contentType: 'application/pdf', upsert: true });

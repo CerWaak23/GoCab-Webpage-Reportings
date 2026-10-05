@@ -7,7 +7,7 @@ import { leerBorrador, guardarBorrador, borrarBorrador } from '@/lib/historial/b
 import {
   TOMAS_OBLIGATORIAS, TOMAS_OPCIONALES, LADOS_CEDULA, ESTADOS_CHECK, itemsChecklist, validarActa, resumenActa,
 } from '@/lib/historial/actas';
-import { AVISO_TEXTO, AVISO_VERSION } from '@/lib/portal/aviso';
+import { AVISO_TEXTO, AVISO_VERSION, CLAUSULA_RECEPCION, CLAUSULA_RECEPCION_VERSION } from '@/lib/portal/aviso';
 import CamaraGuiada from './CamaraGuiada';
 import Firma from './Firma';
 
@@ -191,7 +191,9 @@ export default function Protocolo({ tipo, patente }) {
           fotos: Object.fromEntries(Object.entries(listo.fotos).map(([k, f]) => [k, sinBlob(f)])),
           libres: listo.libres.map((f) => ({ ...sinBlob(f), comentario: f.comentario })),
           checklist: listo.checklist, km: Number(listo.km), luces: listo.luces, comentario: listo.comentario,
-          firma: { ruta: listo.firma.ruta, sha256: listo.firma.sha256, firmadaEn: listo.firma.firmadaEn },
+          firma: listo.sinFirma ? null : { ruta: listo.firma.ruta, sha256: listo.firma.sha256, firmadaEn: listo.firma.firmadaEn },
+          sinFirma: listo.sinFirma || undefined,
+          clausula: tipo === 'entrega' ? CLAUSULA_RECEPCION_VERSION : undefined,
           aviso: AVISO_VERSION,
         }),
       });
@@ -278,15 +280,23 @@ export default function Protocolo({ tipo, patente }) {
 
       {b.paso === 'resumen' && (
         <PasoResumen tipo={tipo} b={b} items={items} btn={btn} t={t}
-          onFirmar={() => guardar({ paso: 'firma' })} onVolver={() => guardar({ paso: 'lecturas' })} />
+          onFirmar={() => guardar({ paso: 'firma', sinFirma: null })} onVolver={() => guardar({ paso: 'lecturas' })}
+          onSinFirma={() => guardar({ paso: 'sin_firma' })} />
+      )}
+
+      {b.paso === 'sin_firma' && (
+        <PasoSinFirma b={b} t={t} btn={btn}
+          onConfirmar={(sinFirma) => guardar({ sinFirma, firma: null, paso: 'cerrar' })}
+          onVolver={() => guardar({ paso: 'resumen' })} />
       )}
 
       {b.paso === 'cerrar' && (
         <div className="space-y-4">
-          <p className="text-lg font-bold">{t('pr_firmada')}</p>
+          <p className="text-lg font-bold">{b.sinFirma ? t('pr_cerrar_sin_firma') : t('pr_firmada')}</p>
           {aviso && <p className="rounded-xl border-2 border-amber-300 bg-amber-50 p-3 font-semibold text-amber-800">{aviso}</p>}
           <button type="button" disabled={enviando} onClick={cerrar} className={`${btn} bg-emerald-600 text-white`}>{enviando ? t('pr_enviando') : t('pr_cerrar')}</button>
-          <button type="button" disabled={enviando} onClick={() => guardar({ paso: 'firma', firma: null })} className="w-full py-2 text-sm font-semibold text-gray-500 underline">{t('pr_firmar_de_nuevo')}</button>
+          <button type="button" disabled={enviando} onClick={() => guardar(b.sinFirma ? { paso: 'resumen', sinFirma: null } : { paso: 'firma', firma: null })}
+            className="w-full py-2 text-sm font-semibold text-gray-500 underline">{t(b.sinFirma ? 'pr_volver' : 'pr_firmar_de_nuevo')}</button>
         </div>
       )}
 
@@ -429,7 +439,7 @@ function PasoFotos({ tipo, b, datos, t, btn, guardar, onSeguir, onVolver }) {
   );
 }
 
-const COLOR_ESTADO = { ok: 'bg-emerald-600 text-white', falta: 'bg-amber-500 text-white', danado: 'bg-red-600 text-white' };
+const COLOR_ESTADO = { ok: 'bg-emerald-600 text-white', falta: 'bg-amber-500 text-white', danado: 'bg-red-600 text-white', no_aplica: 'bg-gray-500 text-white' };
 
 function PasoChecklist({ b, t, btn, guardar, items, onSeguir, onVolver }) {
   const marcar = (item, estado) => guardar((x) => ({ ...x, checklist: { ...x.checklist, [item]: { ...x.checklist[item], estado } } }));
@@ -450,15 +460,15 @@ function PasoChecklist({ b, t, btn, guardar, items, onSeguir, onVolver }) {
             return (
               <div key={item} className="rounded-xl border border-gray-200 bg-white p-3">
                 <p className="mb-2 font-semibold">{item}</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   {ESTADOS_CHECK.map((e) => (
                     <button key={e} type="button" onClick={() => marcar(item, e)}
-                      className={`rounded-lg py-2 text-sm font-bold ${r.estado === e ? COLOR_ESTADO[e] : 'bg-gray-100 text-gray-700'}`}>
+                      className={`rounded-lg px-1 py-2 text-xs font-bold leading-tight ${r.estado === e ? COLOR_ESTADO[e] : 'bg-gray-100 text-gray-700'}`}>
                       {t(`pr_check_${e}`)}
                     </button>
                   ))}
                 </div>
-                {r.estado && r.estado !== 'ok' && (
+                {r.estado && !['ok', 'no_aplica'].includes(r.estado) && (
                   <input value={r.comentario || ''} onChange={(e) => comentar(item, e.target.value.slice(0, 200))} placeholder={t('pr_check_comentario')}
                     className="mt-2 w-full rounded-lg border border-gray-300 px-2 py-1 text-sm" />
                 )}
@@ -484,7 +494,7 @@ const NOMBRE_TOMA_ES = {
 };
 
 /** Resumen que lee el conductor antes de firmar (R73). En español: es para el conductor. */
-function PasoResumen({ tipo, b, items, btn, t, onFirmar, onVolver }) {
+function PasoResumen({ tipo, b, items, btn, t, onFirmar, onVolver, onSinFirma }) {
   const r = resumenActa(b, items);
   const nombre = b.conductor?.nombre || b.conductor?.provisional?.nombre;
   return (
@@ -494,7 +504,7 @@ function PasoResumen({ tipo, b, items, btn, t, onFirmar, onVolver }) {
         <p className="text-gray-700">{nombre}</p>
         <p className="mt-2 text-2xl font-extrabold">{r.km.toLocaleString('es-CL')} km</p>
         {r.luces && <p className="font-semibold text-amber-700">Con luces de advertencia encendidas</p>}
-        <p className="mt-2 text-sm">Checklist: <b>{r.checklist.ok}</b> OK · <b>{r.checklist.falta}</b> falta · <b>{r.checklist.danado}</b> dañado</p>
+        <p className="mt-2 text-sm">Checklist: <b>{r.checklist.ok}</b> OK · <b>{r.checklist.falta}</b> falta · <b>{r.checklist.danado}</b> dañado{r.checklist.no_aplica ? <> · <b>{r.checklist.no_aplica}</b> no aplica</> : null}</p>
         {r.faltantes.length > 0 && <p className="text-sm text-amber-700">Falta: {r.faltantes.join(', ')}</p>}
         {r.danados.length > 0 && <p className="text-sm text-amber-700">Dañado: {r.danados.join(', ')}</p>}
         {r.danos.length > 0 && (
@@ -510,7 +520,40 @@ function PasoResumen({ tipo, b, items, btn, t, onFirmar, onVolver }) {
         <p className="mb-1 font-bold text-gray-800">Cómo usamos tus datos</p>
         {AVISO_TEXTO.map((p) => <p key={p} className="mb-1">{p}</p>)}
       </div>
+      {tipo === 'entrega' && (
+        <div className="rounded-xl border-2 border-gray-300 bg-white p-4 text-sm leading-relaxed">
+          <p className="mb-1 font-bold">Al firmar, también aceptas:</p>
+          <p>{CLAUSULA_RECEPCION}</p>
+        </div>
+      )}
       <button type="button" onClick={onFirmar} className={`${btn} bg-emerald-600 text-white`}>{t('pr_pasar_firma')}</button>
+      {tipo === 'recepcion' && (
+        <button type="button" onClick={onSinFirma} className={`${btn} border-2 border-gray-300`}>{t('pr_sin_firma_btn')}</button>
+      )}
+      <button type="button" onClick={onVolver} className="w-full py-2 text-sm font-semibold text-gray-500 underline">{t('pr_volver')}</button>
+    </div>
+  );
+}
+
+/** Recepción sin el conductor: lo dejó botado o no quiso firmar. Motivo obligatorio. */
+function PasoSinFirma({ b, t, btn, onConfirmar, onVolver }) {
+  const [motivo, setMotivo] = useState(b.sinFirma?.motivo || '');
+  const [testigo, setTestigo] = useState(b.sinFirma?.testigo || '');
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-bold">{t('pr_sin_firma_titulo')}</h2>
+      <p className="text-sm text-gray-600">{t('pr_sin_firma_ayuda')}</p>
+      <div>
+        <label htmlFor="motivo-sf" className="mb-1 block font-bold">{t('pr_sin_firma_motivo')}</label>
+        <textarea id="motivo-sf" rows={3} value={motivo} onChange={(e) => setMotivo(e.target.value.slice(0, 500))}
+          placeholder={t('pr_sin_firma_ejemplo')} className="w-full rounded-xl border-2 border-gray-300 p-3" />
+      </div>
+      <div>
+        <label htmlFor="testigo-sf" className="mb-1 block font-bold">{t('pr_sin_firma_testigo')}</label>
+        <input id="testigo-sf" value={testigo} onChange={(e) => setTestigo(e.target.value.slice(0, 120))} className="w-full rounded-xl border-2 border-gray-300 px-4 py-3" />
+      </div>
+      <button type="button" disabled={motivo.trim().length < 5} onClick={() => onConfirmar({ motivo: motivo.trim(), testigo: testigo.trim() })}
+        className={`${btn} bg-gray-900 text-white`}>{t('pr_sin_firma_confirmar')}</button>
       <button type="button" onClick={onVolver} className="w-full py-2 text-sm font-semibold text-gray-500 underline">{t('pr_volver')}</button>
     </div>
   );

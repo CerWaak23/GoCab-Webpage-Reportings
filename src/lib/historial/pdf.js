@@ -2,6 +2,7 @@ import 'server-only';
 import { createElement as h } from 'react';
 import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer } from '@react-pdf/renderer';
 import { itemsChecklist, resumenActa, TOMAS_PROTOCOLO } from './actas';
+import { CLAUSULA_RECEPCION } from '@/lib/portal/aviso';
 
 /**
  * PDF del acta (R14, KTD8): datos, lecturas, checklist, daños, fotos y firma.
@@ -14,7 +15,7 @@ const NOMBRE_TOMA = {
   llanta_del_der: 'Llanta delantera der.', llanta_tra_izq: 'Llanta trasera izq.', llanta_tra_der: 'Llanta trasera der.',
   interior_delantero: 'Interior delantero', interior_trasero: 'Interior trasero', maleta: 'Maleta', libre: 'Foto libre',
 };
-const ESTADO = { ok: 'OK', falta: 'Falta', danado: 'Dañado' };
+const ESTADO = { ok: 'OK', falta: 'Falta', danado: 'Dañado', no_aplica: 'No aplica' };
 
 const s = StyleSheet.create({
   pagina: { padding: 32, fontSize: 9, fontFamily: 'Helvetica', color: '#111' },
@@ -33,7 +34,7 @@ const s = StyleSheet.create({
 
 const fila = (etiqueta, valor) => h(View, { style: s.fila }, h(Text, { style: s.etiqueta }, etiqueta), h(Text, null, valor ?? '—'));
 
-export async function generarPdfActa({ evento, fotos, firma, checklist }) {
+export async function generarPdfActa({ evento, fotos, firma, checklist, entregaPrevia = null }) {
   const d = evento.detalle || {};
   const items = itemsChecklist(checklist);
   const acta = { tipo: evento.tipo, km: d.km, luces: d.luces, checklist: d.checklist, fotos: {} };
@@ -60,20 +61,30 @@ export async function generarPdfActa({ evento, fotos, firma, checklist }) {
       fila('Luces de advertencia', d.luces ? 'Sí, encendidas' : 'No'),
       d.comentario ? fila('Comentario', d.comentario) : null,
 
-      h(Text, { style: s.seccion }, `Checklist (versión ${evento.checklist_version}) · OK ${r.checklist.ok} · Falta ${r.checklist.falta} · Dañado ${r.checklist.danado}`),
+      h(Text, { style: s.seccion }, `Checklist (versión ${evento.checklist_version}) · OK ${r.checklist.ok} · Falta ${r.checklist.falta} · Dañado ${r.checklist.danado} · No aplica ${r.checklist.no_aplica}`),
       h(View, { style: s.grilla },
         ...items.map((i) => h(View, { key: i, style: s.item },
           h(Text, null, i),
-          h(Text, { style: d.checklist?.[i]?.estado === 'ok' ? null : s.aviso }, ESTADO[d.checklist?.[i]?.estado] || '—')))),
+          h(Text, { style: ['ok', 'no_aplica'].includes(d.checklist?.[i]?.estado) ? null : s.aviso }, ESTADO[d.checklist?.[i]?.estado] || '—')))),
 
       (r.danos.length || r.sinFoto.length) ? h(Text, { style: s.seccion }, 'Daños y observaciones') : null,
       ...r.danos.map((x, i) => h(Text, { key: `d${i}`, style: s.aviso }, `• ${NOMBRE_TOMA[x.toma] || x.toma}: ${x.texto}`)),
       ...r.sinFoto.map((x, i) => h(Text, { key: `s${i}` }, `• ${NOMBRE_TOMA[x.toma] || x.toma}: no se pudo tomar (${x.motivo})`)),
 
       h(Text, { style: s.seccion }, 'Firma del conductor'),
-      firma ? h(Image, { src: { data: firma, format: 'png' }, style: { width: 180, height: 70, objectFit: 'contain' } }) : h(Text, null, '—'),
-      h(Text, { style: { color: '#555', marginTop: 4 } },
-        `Firmado en el teléfono del coordinador. Aviso de privacidad aceptado: ${evento.version_aviso || '—'}.`),
+      d.sinFirma
+        ? h(View, null,
+          h(Text, { style: s.aviso }, `Recepción sin firma del conductor. Motivo: ${d.sinFirma.motivo}${d.sinFirma.testigo ? `. Testigo: ${d.sinFirma.testigo}` : ''}.`),
+          h(Text, { style: { marginTop: 4 } }, entregaPrevia?.clausula
+            ? `Se aplica la cláusula que el conductor aceptó al firmar la entrega del ${new Date(entregaPrevia.fecha).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' })} (${entregaPrevia.clausula}): «${CLAUSULA_RECEPCION}»`
+            : 'No hay una entrega firmada de este conductor con la cláusula de recepción sin firma.'))
+        : h(View, null,
+          firma ? h(Image, { src: { data: firma, format: 'png' }, style: { width: 180, height: 70, objectFit: 'contain' } }) : h(Text, null, '—'),
+          h(Text, { style: { color: '#555', marginTop: 4 } },
+            `Firmado en el teléfono del coordinador. Aviso de privacidad aceptado: ${evento.version_aviso || '—'}.`),
+          evento.tipo === 'entrega' && d.clausula
+            ? h(Text, { style: { marginTop: 6 } }, `Al firmar, el conductor aceptó (${d.clausula}): «${CLAUSULA_RECEPCION}»`)
+            : null),
 
       h(Text, { style: s.pie, fixed: true, render: ({ pageNumber, totalPages }) => `GoCab Chile · ${titulo} ${evento.patente} · Página ${pageNumber} de ${totalPages}` })),
 

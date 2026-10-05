@@ -16,6 +16,7 @@ const acta = (cambios = {}) => ({
   checklist: Object.fromEntries(ITEMS.map((i) => [i, { estado: 'ok' }])),
   km: 18420,
   firma: { sha256: SHA },
+  clausula: 'v1',
   ...cambios,
 });
 
@@ -86,6 +87,29 @@ describe('validar el acta', () => {
   });
 
   it('km obligatorio', () => expect(validarActa(acta({ km: '' }), ITEMS)).toEqual(['km']));
+
+  it('"No aplica" es una respuesta válida de la checklist', () => {
+    const a = acta();
+    a.checklist['Extintor'] = { estado: 'no_aplica' };
+    expect(validarActa(a, ITEMS)).toEqual([]);
+    expect(resumenActa(a, ITEMS).checklist).toMatchObject({ ok: 2, no_aplica: 1 });
+  });
+
+  it('la entrega exige que el conductor acepte la cláusula de recepción sin firma', () => {
+    expect(validarActa(acta({ clausula: undefined }), ITEMS)).toEqual(['clausula']);
+  });
+
+  it('recepción sin firma: vale con motivo; la entrega nunca va sin firma', () => {
+    const rec = (sinFirma) => acta({ tipo: 'recepcion', firma: null, clausula: undefined, sinFirma });
+    expect(validarActa(rec({ motivo: 'Dejó el auto en la base y no contesta' }), ITEMS)).toEqual([]);
+    expect(validarActa(rec({ motivo: '' }), ITEMS)).toEqual(['sin_firma_motivo']);
+    expect(validarActa(acta({ firma: null, sinFirma: { motivo: 'No está presente' } }), ITEMS)).toEqual(['sin_firma_entrega']);
+  });
+
+  it('la recepción sin firma deja un pendiente con el motivo', () => {
+    const p = pendientesDeRecepcion(acta({ tipo: 'recepcion', firma: null, sinFirma: { motivo: 'Auto abandonado en la base' } }), ITEMS);
+    expect(p[0].texto).toBe('Recepción sin firma del conductor: Auto abandonado en la base');
+  });
 });
 
 describe('resumen y pendientes', () => {
@@ -101,7 +125,7 @@ describe('resumen y pendientes', () => {
 
   it('R73: el resumen cuenta OK/Falta/Dañado, daños y tomas sin foto', () => {
     const r = resumenActa(recepcion(), ITEMS);
-    expect(r.checklist).toEqual({ ok: 1, falta: 1, danado: 1 });
+    expect(r.checklist).toEqual({ ok: 1, falta: 1, danado: 1, no_aplica: 0 });
     expect(r.danos).toHaveLength(2);
     expect(r.sinFoto).toEqual([{ toma: 'maleta', motivo: 'Cerradura trabada' }]);
     expect(r).toMatchObject({ km: 18420, luces: true });

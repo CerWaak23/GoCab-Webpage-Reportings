@@ -18,7 +18,7 @@ export const TOMAS_OPCIONALES = [
 export const TOMAS_PROTOCOLO = [...TOMAS_OBLIGATORIAS, ...TOMAS_OPCIONALES];
 
 export const LADOS_CEDULA = ['cedula_frente', 'cedula_reverso'];
-export const ESTADOS_CHECK = ['ok', 'falta', 'danado'];
+export const ESTADOS_CHECK = ['ok', 'falta', 'danado', 'no_aplica'];
 export const TIPOS_ACTA = ['entrega', 'recepcion'];
 
 /** Elementos de una versión de checklist: [{ grupo, items: [...] }] → lista plana. */
@@ -49,7 +49,9 @@ export function referenciasPorToma(fotosDelEvento, tomas = TOMAS_PROTOCOLO) {
  *   tipo, conductor: { id } | { provisional: { nombre, rut, telefono } },
  *   pideCedula, cedula: { cedula_frente, cedula_reverso },
  *   fotos: { [toma]: { sha256, ruta? } | { noSePudo, motivo } },
- *   checklist: { [item]: { estado, comentario? } }, km, firma: { sha256 } }
+ *   checklist: { [item]: { estado, comentario? } }, km, firma: { sha256 },
+ *   sinFirma: { motivo }  (solo recepción: el conductor no está o no firma),
+ *   clausula  (solo entrega: versión de la cláusula aceptada) }
  * @param items elementos de la checklist vigente al abrir el acta
  * @param { conFirma } false para revisar antes de la pantalla de firma
  * @returns lista de errores (vacía si está bien)
@@ -79,7 +81,15 @@ export function validarActa(acta, items, { conFirma = true } = {}) {
   }
   const km = acta?.km === '' || acta?.km == null ? NaN : Number(acta.km);
   if (!Number.isInteger(km) || km < 0 || km > KM_MAXIMO) e.push('km');
-  if (conFirma && !/^[0-9a-f]{64}$/.test(acta?.firma?.sha256 || '')) e.push('firma');
+  if (conFirma) {
+    if (acta?.sinFirma) {
+      // R25 tiene una excepción: el conductor que deja el auto botado no firma;
+      // vale la cláusula que aceptó en la entrega. La entrega siempre se firma.
+      if (acta.tipo !== 'recepcion') e.push('sin_firma_entrega');
+      else if (String(acta.sinFirma.motivo || '').trim().length < MOTIVO_MINIMO) e.push('sin_firma_motivo');
+    } else if (!/^[0-9a-f]{64}$/.test(acta?.firma?.sha256 || '')) e.push('firma');
+  }
+  if (acta?.tipo === 'entrega' && conFirma && !acta?.clausula) e.push('clausula');
   return e;
 }
 
@@ -88,7 +98,7 @@ export function validarActa(acta, items, { conFirma = true } = {}) {
  * km, luces, cuántos elementos OK/Falta/Dañado, daños marcados y tomas sin foto.
  */
 export function resumenActa(acta, items) {
-  const cuenta = { ok: 0, falta: 0, danado: 0 };
+  const cuenta = { ok: 0, falta: 0, danado: 0, no_aplica: 0 };
   for (const item of items) {
     const est = acta?.checklist?.[item]?.estado;
     if (cuenta[est] != null) cuenta[est] += 1;
@@ -116,6 +126,7 @@ export function pendientesDeRecepcion(acta, items) {
   if (acta?.tipo !== 'recepcion') return [];
   const r = resumenActa(acta, items);
   return [
+    ...(acta.sinFirma ? [{ texto: `Recepción sin firma del conductor: ${String(acta.sinFirma.motivo).trim()}` }] : []),
     ...r.danos.map((d) => ({ texto: `Daño nuevo (${d.toma}): ${d.texto}` })),
     ...r.faltantes.map((i) => ({ texto: `Falta: ${i}` })),
     ...r.danados.map((i) => ({ texto: `Dañado: ${i}` })),
