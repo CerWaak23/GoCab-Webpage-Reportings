@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integracion": "vitest run --config vitest.integracion.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
