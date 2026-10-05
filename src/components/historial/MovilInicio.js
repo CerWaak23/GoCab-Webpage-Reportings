@@ -31,8 +31,11 @@ const ACCIONES = [
   },
   {
     id: 'taller_avance', color: 'bg-amber-700',
-    sugeridos: (f) => f.estado === 'en_taller',
-    destino: (p) => `/historial/talleres#${p}`,
+    // También los que Fleet tiene en mantención sin ingreso: al tocarlos se
+    // registra primero el ingreso (no hay avance sin ingreso).
+    sugeridos: (f) => ['en_taller', 'sin_ingreso_taller'].includes(f.estado),
+    destino: (p, f) => (f?.estado === 'sin_ingreso_taller' ? `/historial/talleres?ingreso=${p}` : `/historial/talleres#${p}`),
+    orden: (a, b) => (a.estado === 'en_taller' ? 0 : 1) - (b.estado === 'en_taller' ? 0 : 1),
   },
   { id: 'siniestro', pronto: true },
   { id: 'auto_nuevo', pronto: true },
@@ -58,7 +61,8 @@ export default function MovilInicio({ puedeActas = true }) {
       const qn = normalizarNombre(q);
       return lista.filter((f) => f.patente.includes(qp) || normalizarNombre(f.conductor).includes(qn)).slice(0, 30);
     }
-    return lista.filter(elegida.sugeridos).slice(0, 50);
+    const sugeridos = lista.filter(elegida.sugeridos);
+    return (elegida.orden ? sugeridos.sort(elegida.orden) : sugeridos).slice(0, 50);
   }, [lista, elegida, q]);
 
   const visibles = ACCIONES.filter((a) => puedeActas || !a.actas);
@@ -76,12 +80,15 @@ export default function MovilInicio({ puedeActas = true }) {
         <ul className="space-y-2">
           {autos.map((f) => (
             <li key={f.patente}>
-              <Link href={elegida.destino(f.patente)} className="block rounded-xl bg-white p-3 shadow-sm active:scale-[0.99]">
+              <Link href={elegida.destino(f.patente, f)} className="block rounded-xl bg-white p-3 shadow-sm active:scale-[0.99]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-lg font-bold">{f.patente}</span>
                   <ChipEstado estado={f.estado} t={t} />
                 </div>
                 <p className="text-sm text-gray-600">{f.conductor || [f.marca, f.modelo].filter(Boolean).join(' ')}</p>
+                {elegida.id === 'taller_avance' && f.estado === 'sin_ingreso_taller' && (
+                  <p className="mt-1 text-xs font-semibold text-orange-700">{t('rg_primero_ingreso')}</p>
+                )}
               </Link>
             </li>
           ))}
