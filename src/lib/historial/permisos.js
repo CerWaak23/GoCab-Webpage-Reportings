@@ -18,3 +18,6 @@ export const registraAcceso = (clase) => CLASES_SENSIBLES.includes(clase);
 
 /** El taller ve el nombre del conductor, no su RUT ni su teléfono. */
 export const veContactoConductor = (usuario) => !!usuario && !esTaller(usuario.role);
+
+/** Entregas y recepciones: coordinadores y gerencia; el taller no. */
+export const puedeHacerActas = (usuario) => !!usuario && !esTaller(usuario.role);

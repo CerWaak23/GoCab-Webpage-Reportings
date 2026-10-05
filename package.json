@@ -11,6 +11,7 @@
     "test:integracion": "vitest run --config vitest.integracion.mjs"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "googleapis": "^144.0.0",

@@ -33,3 +33,28 @@ async function operar(modo, fn) {
 export const leerBorrador = (clave) => operar('readonly', (s) => s.get(clave)).catch(() => null);
 export const guardarBorrador = (clave, valor) => operar('readwrite', (s) => s.put(valor, clave));
 export const borrarBorrador = (clave) => operar('readwrite', (s) => s.delete(clave)).catch(() => {});
+
+/** Borradores cuya clave empieza con un prefijo (p. ej. 'acta:'), con su clave. */
+export async function listarBorradores(prefijo) {
+  try {
+    const db = await abrir();
+    try {
+      return await new Promise((ok, mal) => {
+        const tx = db.transaction(ALMACEN, 'readonly');
+        const req = tx.objectStore(ALMACEN).openCursor();
+        const out = [];
+        req.onsuccess = () => {
+          const c = req.result;
+          if (!c) return ok(out);
+          if (String(c.key).startsWith(prefijo)) out.push({ clave: c.key, valor: c.value });
+          c.continue();
+        };
+        req.onerror = () => mal(req.error);
+      });
+    } finally {
+      db.close();
+    }
+  } catch (_) {
+    return [];
+  }
+}

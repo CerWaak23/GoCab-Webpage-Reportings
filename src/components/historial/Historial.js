@@ -69,6 +69,9 @@ export default function Historial() {
             placeholder={t('hv_buscar')}
             className="flex-1 min-w-0 rounded-lg bg-gray-900 border border-gray-800 px-3 py-2 text-sm placeholder:text-gray-600 focus:outline-none focus:border-gray-600"
           />
+          <Link href="/m" className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">
+            {t('hv_movil')}
+          </Link>
           <Link href="/historial/tiempo" className="hidden lg:inline-flex shrink-0 rounded-lg border border-gray-800 px-3 py-2 text-xs text-gray-300 hover:border-gray-600">
             {t('hv_tiempo')}
           </Link>

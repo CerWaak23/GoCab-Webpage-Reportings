@@ -52,12 +52,74 @@ function Tablero() {
   );
 }
 
+function Esquina({ espejo, trasera }) {
+  return (
+    <g {...trazo} transform={espejo ? 'translate(400 0) scale(-1 1)' : undefined}>
+      <path d={trasera
+        ? 'M60 220 L70 150 Q80 120 120 112 L250 104 Q300 104 330 130 L360 175 L360 225 Z'
+        : 'M40 225 L40 175 L70 130 Q100 104 150 104 L280 112 Q320 120 330 150 L340 220 Z'} />
+      <circle cx={trasera ? 300 : 100} cy="228" r="32" />
+    </g>
+  );
+}
+
+function Llanta() {
+  return (
+    <g {...trazo}>
+      <circle cx="200" cy="150" r="105" />
+      <circle cx="200" cy="150" r="62" />
+      <circle cx="200" cy="150" r="14" />
+    </g>
+  );
+}
+
+function Interior({ trasero }) {
+  return (
+    <g {...trazo}>
+      <rect x="70" y="70" width="110" height="170" rx="24" />
+      <rect x="220" y="70" width="110" height="170" rx="24" />
+      {!trasero && <circle cx="125" cy="40" r="26" />}
+    </g>
+  );
+}
+
+function Maleta() {
+  return (
+    <g {...trazo}>
+      <path d="M60 110 L340 110 L320 250 L80 250 Z" />
+      <path d="M90 60 L310 60 L340 110 L60 110 Z" />
+    </g>
+  );
+}
+
+function Cedula() {
+  return (
+    <g {...trazo}>
+      <rect x="40" y="55" width="320" height="200" rx="14" />
+      <rect x="62" y="90" width="80" height="100" rx="6" />
+    </g>
+  );
+}
+
 const DIBUJO = {
   frente: <Frente />,
   trasera: <Trasera />,
   lateral_izquierdo: <Lateral />,
   lateral_derecho: <Lateral espejo />,
   tablero: <Tablero />,
+  esquina_del_izq: <Esquina />,
+  esquina_del_der: <Esquina espejo />,
+  esquina_tra_izq: <Esquina trasera espejo />,
+  esquina_tra_der: <Esquina trasera />,
+  llanta_del_izq: <Llanta />,
+  llanta_del_der: <Llanta />,
+  llanta_tra_izq: <Llanta />,
+  llanta_tra_der: <Llanta />,
+  interior_delantero: <Interior />,
+  interior_trasero: <Interior trasero />,
+  maleta: <Maleta />,
+  cedula_frente: <Cedula />,
+  cedula_reverso: <Cedula />,
 };
 
 export default function Silueta({ toma }) {
