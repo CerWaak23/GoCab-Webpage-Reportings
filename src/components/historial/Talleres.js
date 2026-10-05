@@ -48,7 +48,7 @@ export default function Talleres() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href="/historial" className="text-xs text-gray-400 hover:text-white">← {t('historial_title')}</Link>
+        <Link href="/m" className="text-xs text-gray-400 hover:text-white">← {t('rg_titulo')}</Link>
         <button type="button" onClick={() => setAbierto({ tipo: 'ingreso', patente: '' })} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-950">
           ＋ {t('tl_registrar_ingreso')}
         </button>

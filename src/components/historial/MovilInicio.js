@@ -24,19 +24,8 @@ const ACCIONES = [
     sugeridos: (f) => !!f.conductor,
     destino: (p) => `/m/protocolo?tipo=recepcion&patente=${p}`,
   },
-  {
-    id: 'taller_ingreso', color: 'bg-amber-500',
-    sugeridos: (f) => f.estado === 'sin_ingreso_taller',
-    destino: (p) => `/historial/talleres?ingreso=${p}`,
-  },
-  {
-    id: 'taller_avance', color: 'bg-amber-700',
-    // También los que Fleet tiene en mantención sin ingreso: al tocarlos se
-    // registra primero el ingreso (no hay avance sin ingreso).
-    sugeridos: (f) => ['en_taller', 'sin_ingreso_taller'].includes(f.estado),
-    destino: (p, f) => (f?.estado === 'sin_ingreso_taller' ? `/historial/talleres?ingreso=${p}` : `/historial/talleres#${p}`),
-    orden: (a, b) => (a.estado === 'en_taller' ? 0 : 1) - (b.estado === 'en_taller' ? 0 : 1),
-  },
+  // Talleres ya reúne ingreso, avances y salida: se abre directo, sin elegir auto aquí.
+  { id: 'taller', color: 'bg-amber-600', href: '/historial/talleres' },
   { id: 'siniestro', pronto: true },
   { id: 'auto_nuevo', pronto: true },
 ];
@@ -61,8 +50,7 @@ export default function MovilInicio({ puedeActas = true }) {
       const qn = normalizarNombre(q);
       return lista.filter((f) => f.patente.includes(qp) || normalizarNombre(f.conductor).includes(qn)).slice(0, 30);
     }
-    const sugeridos = lista.filter(elegida.sugeridos);
-    return (elegida.orden ? sugeridos.sort(elegida.orden) : sugeridos).slice(0, 50);
+    return lista.filter(elegida.sugeridos).slice(0, 50);
   }, [lista, elegida, q]);
 
   const visibles = ACCIONES.filter((a) => puedeActas || !a.actas);
@@ -80,15 +68,12 @@ export default function MovilInicio({ puedeActas = true }) {
         <ul className="space-y-2">
           {autos.map((f) => (
             <li key={f.patente}>
-              <Link href={elegida.destino(f.patente, f)} className="block rounded-xl bg-white p-3 shadow-sm active:scale-[0.99]">
+              <Link href={elegida.destino(f.patente)} className="block rounded-xl bg-white p-3 shadow-sm active:scale-[0.99]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-lg font-bold">{f.patente}</span>
                   <ChipEstado estado={f.estado} t={t} />
                 </div>
                 <p className="text-sm text-gray-600">{f.conductor || [f.marca, f.modelo].filter(Boolean).join(' ')}</p>
-                {elegida.id === 'taller_avance' && f.estado === 'sin_ingreso_taller' && (
-                  <p className="mt-1 text-xs font-semibold text-orange-700">{t('rg_primero_ingreso')}</p>
-                )}
               </Link>
             </li>
           ))}
@@ -120,22 +105,19 @@ export default function MovilInicio({ puedeActas = true }) {
       )}
 
       <section className="grid grid-cols-2 gap-3">
-        {visibles.map((a) => (
-          <button key={a.id} type="button" disabled={a.pronto} onClick={() => setAccion(a.id)}
-            className={`min-h-[96px] rounded-2xl p-4 text-left text-white shadow-sm transition active:scale-[0.98] disabled:bg-gray-300 disabled:text-gray-500 ${a.color || ''}`}>
-            <p className="text-lg font-extrabold leading-tight">{t(`rg_${a.id}`)}</p>
-            <p className="mt-1 text-xs opacity-80">{a.pronto ? t('rg_pronto') : t(`rg_${a.id}_ayuda`)}</p>
-          </button>
-        ))}
+        {visibles.map((a) => {
+          const clase = `min-h-[96px] rounded-2xl p-4 text-left text-white shadow-sm transition active:scale-[0.98] disabled:bg-gray-300 disabled:text-gray-500 ${a.color || ''}`;
+          const contenido = (
+            <>
+              <p className="text-lg font-extrabold leading-tight">{t(`rg_${a.id}`)}</p>
+              <p className="mt-1 text-xs opacity-80">{a.pronto ? t('rg_pronto') : t(`rg_${a.id}_ayuda`)}</p>
+            </>
+          );
+          return a.href
+            ? <Link key={a.id} href={a.href} className={`block ${clase}`}>{contenido}</Link>
+            : <button key={a.id} type="button" disabled={a.pronto} onClick={() => setAccion(a.id)} className={clase}>{contenido}</button>;
+        })}
       </section>
-
-      <Link href="/historial/talleres" className="flex items-center justify-between rounded-xl border-2 border-amber-300 bg-white p-4 shadow-sm">
-        <span>
-          <span className="block font-bold">{t('rg_ver_talleres')}</span>
-          <span className="text-sm text-gray-600">{t('rg_ver_talleres_ayuda')}</span>
-        </span>
-        <span className="text-xl text-gray-400">›</span>
-      </Link>
 
       {lista && (
         <section className="rounded-xl bg-white p-4 text-sm text-gray-600 shadow-sm">
