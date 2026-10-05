@@ -9,7 +9,7 @@ import { useLang } from '@/lib/i18n/useLang';
  * Mismo breadcrumb que src/app/reports/tareas/page.js, pero con textos
  * traducidos porque estas secciones son React y no un iframe.
  */
-export default function SeccionNueva({ tituloClave, color = 'emerald', children }) {
+export default function SeccionNueva({ tituloClave, color = 'emerald', ancho = false, children }) {
   const { t } = useLang();
   const fondo = color === 'sky' ? 'bg-sky-500/20' : 'bg-emerald-500/20';
   const punto = color === 'sky' ? 'bg-sky-400' : 'bg-emerald-400';
@@ -39,7 +39,7 @@ export default function SeccionNueva({ tituloClave, color = 'emerald', children 
           </div>
         </div>
       </header>
-      <main className="flex-1 px-4 sm:px-6 py-8 max-w-5xl w-full mx-auto">
+      <main className={`flex-1 px-4 sm:px-6 py-6 w-full mx-auto ${ancho ? 'max-w-7xl' : 'max-w-5xl'}`}>
         {children ?? <p className="text-gray-400 text-sm">{t('en_construccion')}</p>}
       </main>
     </div>

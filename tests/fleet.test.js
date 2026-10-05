@@ -7,7 +7,7 @@ import { detectarTipo } from '@/lib/fleet/detectar';
 import { analizarExport } from '@/lib/fleet';
 import { leerVehiculos, diferenciasVehiculos } from '@/lib/fleet/vehiculos';
 import { leerConductores } from '@/lib/fleet/conductores';
-import { normalizarNombre } from '@/lib/fleet/nombres';
+import { normalizarNombre, limpiarNombre } from '@/lib/fleet/nombres';
 
 const HOY = '2026-10-01';
 
@@ -148,6 +148,10 @@ describe('bills y fines', () => {
 });
 
 describe('nombres', () => {
+  it('quita también el prefijo PDD (PPD mal tipeado en Fleet)', () => {
+    expect(normalizarNombre('PDD Jose Videla')).toBe('JOSE VIDELA');
+    expect(limpiarNombre('PDD Jose Videla')).toBe('Jose Videla');
+  });
   it('compara sin tildes, espacios dobles ni prefijo PPD', () => {
     expect(normalizarNombre('PPD  José  Muñoz ')).toBe('JOSE MUNOZ');
     expect(normalizarNombre('ana díaz')).toBe(normalizarNombre('ANA DIAZ'));

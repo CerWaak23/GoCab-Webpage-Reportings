@@ -255,7 +255,7 @@ function Diferencias({ lista, t }) {
     <ul className="max-h-72 overflow-y-auto divide-y divide-gray-800 rounded-lg border border-gray-800 text-xs">
       {lista.map((d) => (
         <li key={`${d.tipo}-${d.patente}`} className="px-3 py-1.5 flex flex-wrap gap-x-3 justify-between">
-          <span><span className="font-mono text-gray-200">{d.patente}</span> · <span className="text-gray-400">{t(nombre[d.tipo])}</span>
+          <span><a href={`/historial?p=${d.patente}`} className="font-mono text-gray-200 hover:text-sky-300 hover:underline">{d.patente}</a> · <span className="text-gray-400">{t(nombre[d.tipo])}</span>
             {d.tipo === 'cambio_conductor' && <span className="text-gray-500"> · {d.antes || '—'} → {d.ahora || '—'}</span>}
           </span>
           {d.faltaActa && <span className="text-amber-400">{t(`carga_falta_${d.faltaActa}`)}</span>}
