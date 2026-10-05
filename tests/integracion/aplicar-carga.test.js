@@ -27,7 +27,7 @@ function leerEnv() {
 async function simular(tipo, filas) {
   const datos = payloadPara(analizarExport(filas, {}, HOY));
   const { error } = await sb.rpc('aplicar_carga', {
-    p_tipo: tipo, p_datos: datos, p_carga_id: '00000000-0000-0000-0000-000000000000', p_hoy: HOY, p_simular: true,
+    p_tipo: tipo, p_datos: datos, p_carga_id: null, p_hoy: HOY, p_simular: true,
   });
   expect(error?.message, JSON.stringify(error)).toBe('SIMULACION');
   return JSON.parse(error.details);
