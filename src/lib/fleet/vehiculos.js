@@ -3,6 +3,21 @@ import { normalizarNombre, limpiarNombre } from './nombres';
 
 const texto = (v) => String(v ?? '').trim();
 
+/**
+ * Columna de modalidad (renta o drive to own). Fleet todavía no la exporta;
+ * se acepta cualquiera de estos encabezados cuando la agregue.
+ */
+export const COLUMNAS_MODALIDAD = ['Contract Type', 'Rental Type', 'Ownership Type', 'Vehicle Type', 'Type', 'Tipo', 'Modalidad'];
+
+export function leerModalidad(fila) {
+  const col = COLUMNAS_MODALIDAD.find((c) => texto(fila?.[c]));
+  if (!col) return null;
+  const v = texto(fila[col]).toLowerCase();
+  if (/drive|own|dto|propiedad/.test(v)) return 'drive_to_own';
+  if (/rent|renta|arriendo|lease/.test(v)) return 'renta';
+  return null;
+}
+
 /** Filas del export "vehicles" de Fleet → autos normalizados. */
 export function leerVehiculos(filas) {
   return (filas || [])
@@ -17,6 +32,7 @@ export function leerVehiculos(filas) {
       conductor: limpiarNombre(r['Driver']),
       grupo: texto(r['Manager Group']) || null,
       creado: texto(r['Created At']).slice(0, 10) || null,
+      modalidad: leerModalidad(r),
     }))
     .filter((a) => a.patente);
 }
@@ -29,6 +45,8 @@ export function resumenVehiculos(autos) {
     porEstado,
     sinConductor: autos.filter((a) => !a.conductor).length,
     sinVin: autos.filter((a) => !a.vin).length,
+    renta: autos.filter((a) => a.modalidad === 'renta').length,
+    driveToOwn: autos.filter((a) => a.modalidad === 'drive_to_own').length,
   };
 }
 

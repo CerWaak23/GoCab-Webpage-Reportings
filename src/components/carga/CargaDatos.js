@@ -58,10 +58,17 @@ export default function CargaDatos() {
   async function aplicar() {
     const ids = archivos.filter((a) => a.paso === 'revisado').map((a) => a.id);
     if (ids.length === 0) return;
+    const confirmados = archivos.filter((a) => a.paso === 'revisado' && a.confirmado).map((a) => a.id);
     setAplicando(true);
-    const r = await pedir('/api/carga/aplicar', { ids });
+    const r = await pedir('/api/carga/aplicar', { ids, confirmados });
     for (const res of r.resultados || []) {
-      setArchivos((xs) => xs.map((x) => (x.id === res.id ? { ...x, paso: res.ok ? 'aplicado' : 'fallo', drive: res.drive } : x)));
+      setArchivos((xs) => xs.map((x) => {
+        if (x.id !== res.id) return x;
+        if (res.ok) return { ...x, paso: 'aplicado', drive: res.drive, resultado: res.resultado };
+        // Avisos nuevos (p. ej. otra persona aplicó un archivo más reciente): se piden de nuevo.
+        if (res.motivo === 'confirmar') return { ...x, avisos: res.avisos, confirmado: false };
+        return { ...x, paso: 'fallo', motivo: res.motivo };
+      }));
     }
     setAplicando(false);
     cargarEstado();
@@ -105,7 +112,9 @@ export default function CargaDatos() {
 
       {archivos.length > 0 && (
         <section className="space-y-3">
-          {archivos.map((a) => <TarjetaArchivo key={a.clave} a={a} t={t} />)}
+          {archivos.map((a) => (
+            <TarjetaArchivo key={a.clave} a={a} t={t} onConfirmar={(v) => actualizar(a.clave, { confirmado: v })} />
+          ))}
           {porAplicar > 0 && (
             estado?.puedeAplicar
               ? <button type="button" disabled={aplicando} onClick={aplicar}
@@ -141,14 +150,14 @@ export default function CargaDatos() {
   );
 }
 
-function TarjetaArchivo({ a, t }) {
+function TarjetaArchivo({ a, t, onConfirmar }) {
   const etiqueta = {
     subiendo: <span className="text-gray-400">{t('carga_subiendo')}</span>,
     leyendo: <span className="text-gray-400">{t('carga_leyendo')}</span>,
     error: <span className="text-red-400">{t(a.error)}</span>,
     revisado: <span className="text-sky-300">{t(`tipo_${a.tipo}`)} · {a.filas} {t('carga_filas')}</span>,
     aplicado: <span className="text-emerald-400">✓ {t('carga_aplicada')}</span>,
-    fallo: <span className="text-red-400">{t('carga_fallo')}</span>,
+    fallo: <span className="text-red-400">{t(a.motivo === 'ya_aplicada' ? 'carga_ya_aplicada' : 'carga_fallo')}</span>,
   }[a.paso];
 
   return (
@@ -157,7 +166,18 @@ function TarjetaArchivo({ a, t }) {
         <p className="text-sm font-medium truncate max-w-full">{a.nombre}</p>
         <p className="text-xs">{etiqueta}</p>
       </div>
+      {a.avisos?.length > 0 && a.paso === 'revisado' && (
+        <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs space-y-1">
+          {a.avisos.map((k) => <p key={k} className="text-amber-300">⚠ {t(`aviso_${k}`)}</p>)}
+          <label className="flex items-center gap-2 pt-1 text-gray-200">
+            <input type="checkbox" checked={!!a.confirmado} onChange={(e) => onConfirmar(e.target.checked)} />
+            {t('carga_aplicar_igual')}
+          </label>
+        </div>
+      )}
       {a.resumen && <Resumen r={a.resumen} t={t} />}
+      {a.resumen?.calidad && <Calidad c={a.resumen.calidad} t={t} />}
+      {a.resultado && <Resultado r={a.resultado} t={t} />}
       {a.drive && <p className="text-[11px] text-gray-500 mt-2">{t(a.drive.copiado ? 'carga_drive_ok' : 'carga_drive_sin_carpeta')}</p>}
       {a.tipo === 'vehicles' && a.paso !== 'aplicado' && (
         <div className="mt-3">
@@ -171,7 +191,9 @@ function TarjetaArchivo({ a, t }) {
 
 function Resumen({ r, t }) {
   const valor = (k, v) => (k === 'saldo' ? CLP.format(v) : typeof v === 'number' ? v.toLocaleString('es-CL') : null);
-  const items = Object.entries(r).map(([k, v]) => [k, valor(k, v)]).filter(([, v]) => v !== null);
+  const items = Object.entries(r)
+    .map(([k, v]) => [k, Array.isArray(v) ? v.length.toLocaleString('es-CL') : valor(k, v)])
+    .filter(([, v]) => v !== null);
   return (
     <dl className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
       {items.map(([k, v]) => (
@@ -181,6 +203,48 @@ function Resumen({ r, t }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+function Calidad({ c, t }) {
+  const problemas = Object.entries(c.problemas || {});
+  const cruce = c.cruce ? Object.entries(c.cruce).filter(([, n]) => n > 0) : [];
+  if (problemas.length === 0 && cruce.length === 0) return null;
+  return (
+    <div className="mt-3 grid sm:grid-cols-2 gap-3 text-xs">
+      {problemas.length > 0 && (
+        <div>
+          <p className="text-gray-500 mb-1">{t('carga_problemas')}</p>
+          <ul className="space-y-0.5">
+            {problemas.map(([k, n]) => <li key={k} className="text-amber-300">{t(`calidad_${k}`)}: <b>{n}</b></li>)}
+          </ul>
+        </div>
+      )}
+      {cruce.length > 0 && (
+        <div>
+          <p className="text-gray-500 mb-1">{t('carga_cruce')}</p>
+          <ul className="space-y-0.5">
+            {cruce.map(([k, n]) => <li key={k} className={k === 'sin' || k === 'ambiguo' ? 'text-amber-300' : 'text-gray-300'}>{t(`cruce_${k}`)}: <b>{n.toLocaleString('es-CL')}</b></li>)}
+          </ul>
+          {c.noEncontrados?.length > 0 && (
+            <details className="mt-1 text-gray-400">
+              <summary className="cursor-pointer">{t('carga_ver_no_encontrados')} ({c.totalNoEncontrados})</summary>
+              <p className="mt-1 leading-relaxed">{c.noEncontrados.join(' · ')}</p>
+            </details>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Resultado({ r, t }) {
+  const items = Object.entries(r).filter(([, v]) => typeof v === 'number' && v > 0);
+  if (items.length === 0) return null;
+  return (
+    <p className="mt-3 text-xs text-emerald-300">
+      {items.map(([k, v]) => `${t(`res_${k}`)}: ${v}`).join(' · ')}
+    </p>
   );
 }
 

@@ -23,6 +23,21 @@ describe('payload para la base', () => {
     expect(p.filter((c) => c.rut).every((c) => /^\d{1,2}\.\d{3}\.\d{3}-[\dK]$/.test(c.rut))).toBe(true);
   });
 
+  it('vehicles: lleva el conductor ya identificado y la modalidad cuando Fleet la exporte', () => {
+    const conModalidad = vehicles.map((v, i) => ({ ...v, 'Contract Type': i % 2 ? 'Drive to own' : 'Rent' }));
+    const p = payloadPara(analizarExport(conModalidad, { autos: [] }, HOY), (a) => `id-${a.patente}`);
+    const a = p.find((x) => x.conductor);
+    expect(a.conductorId).toBe(`id-${a.patente}`);
+    expect(p.filter((x) => !x.conductor).every((x) => x.conductorId === null)).toBe(true);
+    expect(new Set(p.map((x) => x.modalidad))).toEqual(new Set(['renta', 'drive_to_own']));
+    expect(payloadPara(analizarExport(vehicles, { autos: [] }, HOY)).every((x) => x.modalidad === null)).toBe(true);
+  });
+
+  it('drivers: lleva las patentes que Fleet le asigna', () => {
+    const p = payloadPara(analizarExport(drivers, { conductores: [] }, HOY));
+    expect(p.filter((c) => c.patentes.length).length).toBeGreaterThan(0);
+  });
+
   it('bills y fines no escriben filas en la base', () => {
     expect(payloadPara({ tipo: 'bills' })).toEqual([]);
     expect(payloadPara({ tipo: 'fines' })).toEqual([]);

@@ -1,5 +1,5 @@
 import { formatearRut, rutValido } from '@/lib/rut';
-import { normalizarPatente } from '@/lib/patente';
+import { leerPatentes } from '@/lib/patente';
 import { normalizarNombre, limpiarNombre } from './nombres';
 
 const texto = (v) => String(v ?? '').trim();
@@ -22,13 +22,14 @@ export function leerConductores(filas) {
         venceCedula: fecha(r['ID Expiry Date']),
         activacion: fecha(r['Activation Date']),
         baja: fecha(r['Fire Date']),
-        patente: normalizarPatente(r['Vehicles']) || null,
+        patentes: leerPatentes(r['Vehicles']),
         grupo: texto(r['Manager Groups']) || null,
       };
     });
   return { conductores, invalidos: conductores.filter((c) => !c.rutValido).map((c) => c.nombre) };
 }
 
+const repetidos = (xs) => [...new Set(xs.filter((x, i) => xs.indexOf(x) !== i))];
 const dias = (desde, hasta) => Math.round((Date.parse(hasta) - Date.parse(desde)) / 86400000);
 
 /** base.conductores: [{ nombre }] */
@@ -40,6 +41,8 @@ export function resumenConductores(leidos, base, hoy) {
     bajas: conductores.filter((c) => c.baja).length,
     nuevos: conductores.filter((c) => !conocidos.has(c.clave)).length,
     rutInvalidos: invalidos,
+    rutRepetidos: repetidos(conductores.filter((c) => c.rut).map((c) => c.rut)).length,
+    homonimos: repetidos(conductores.map((c) => c.clave)).length,
     cedulasPorVencer: conductores.filter((c) => c.venceCedula && dias(hoy, c.venceCedula) <= 60).length,
   };
 }

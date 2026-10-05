@@ -5,13 +5,16 @@ import { NextResponse } from 'next/server';
 import { getAppSession } from '@/lib/session';
 import { permisoCarga } from '@/lib/carga/permisos';
 import { hoyEnChile } from '@/lib/carga/payload';
+import { avisosCarga, numeroExport } from '@/lib/carga/avisos';
 import { analizarExport } from '@/lib/fleet';
+import { revisarCalidad } from '@/lib/fleet/calidad';
 import { supabaseServidor } from '@/lib/supabase/server';
-import { leerArchivo, estadoBase } from '@/lib/carga/servidor';
+import { leerArchivo, estadoBase, cargasPrevias } from '@/lib/carga/servidor';
 
 /**
- * Lee un export ya subido, lo reconoce y calcula qué cambiaría. No escribe
- * en autos ni conductores: solo registra la carga como pendiente de aplicar.
+ * Lee un export ya subido, lo reconoce, revisa su calidad y calcula qué
+ * cambiaría. No escribe en autos ni conductores: solo registra la carga como
+ * pendiente de aplicar, con sus avisos.
  */
 export async function POST(request) {
   const session = await getAppSession();
@@ -24,24 +27,39 @@ export async function POST(request) {
   }
 
   try {
-    const filas = await leerArchivo(ruta);
-    const analisis = analizarExport(filas, await estadoBase(), hoyEnChile());
+    const { filas, sha256 } = await leerArchivo(ruta);
+    const base = await estadoBase();
+    const analisis = analizarExport(filas, base, hoyEnChile());
     if (!analisis.tipo) return NextResponse.json({ nombre, error: analisis.error });
+
+    const calidad = revisarCalidad(analisis.tipo, filas, {
+      conductores: base.conductores,
+      patentes: base.autos.map((a) => a.patente),
+    });
+    const numero = numeroExport(nombre);
+    const avisos = avisosCarga(
+      { tipo: analisis.tipo, filas: filas.length, numero, sha256, graves: calidad.graves },
+      await cargasPrevias(analisis.tipo),
+    );
+    const resumen = { ...analisis.resumen, calidad };
 
     const { data, error } = await supabaseServidor().from('cargas').insert({
       tipo: analisis.tipo,
       archivo: String(nombre || 'archivo').slice(0, 200),
       ruta_storage: ruta,
       filas: filas.length,
-      resumen: analisis.resumen,
+      resumen,
       diferencias: analisis.diferencias ?? [],
       usuario_email: session.user.email,
+      sha256,
+      numero_export: numero,
+      avisos,
     }).select('id').single();
     if (error) throw new Error(error.message);
 
     return NextResponse.json({
       id: data.id, nombre, tipo: analisis.tipo, filas: filas.length,
-      resumen: analisis.resumen, diferencias: analisis.diferencias ?? [],
+      resumen, avisos, diferencias: analisis.diferencias ?? [],
     });
   } catch (err) {
     console.error('carga/revisar', err.message);
