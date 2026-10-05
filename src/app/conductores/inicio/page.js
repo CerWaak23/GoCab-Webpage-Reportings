@@ -42,6 +42,13 @@ export default async function InicioConductor() {
           </div>
         )}
 
+        {sesion.conductorId && (
+          <Link href="/conductores/actas" className={tarjeta}>
+            <p className="text-xl font-extrabold text-gray-900">Mis actas</p>
+            <p className="mt-1 text-base text-gray-600">Tus entregas, devoluciones y fotos del auto, para descargar.</p>
+          </Link>
+        )}
+
         <Link href="/conductores/mis-tags" className={tarjeta}>
           <p className="text-xl font-extrabold text-gray-900">Mis TAG</p>
           <p className="mt-1 text-base text-gray-600">Cuánto has gastado en autopistas y el detalle de cada pasada.</p>

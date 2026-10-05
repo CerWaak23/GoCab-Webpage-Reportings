@@ -2,7 +2,7 @@ import 'server-only';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { normalizarPatente } from '@/lib/patente';
 import { estadoAuto, contarEstados } from './estado';
-import { veContactoConductor } from './permisos';
+import { veContactoConductor, puedeHacerActas } from './permisos';
 
 // Un pendiente (daño, falta de elemento) sigue abierto hasta que se cobra o se descarta.
 const PENDIENTE_CERRADO = ['Cobrado', 'Descartado', 'Cerrado'];
@@ -85,7 +85,7 @@ export async function fichaVehiculo(patenteCruda, usuario, hoy) {
     sb.from('autos').select('*').eq('patente', patente).maybeSingle(),
     sb.from('asignaciones').select(`id, desde, hasta, origen, reemplazo, reemplaza_patente, conductor_id, conductores(${camposConductor})`)
       .eq('patente', patente).order('desde', { ascending: false }),
-    sb.from('eventos').select('id, tipo, fecha, conductor_id, usuario_email, firmado, detalle, pdf_ruta, conductores(nombre)')
+    sb.from('eventos').select('id, tipo, fecha, conductor_id, usuario_email, firmado, detalle, pdf_ruta, conductores(nombre), notas(id, texto, autor_email, creado)')
       .eq('patente', patente).order('fecha', { ascending: false }),
     sb.from('archivos').select('id, clase, toma, tomada_en, recibida_en, vence, metadatos, evento_id, conductor_id').eq('patente', patente),
     sb.from('pendientes').select('id, texto, estado, monto, creado, evento_id, conductores(nombre)').eq('patente', patente).order('creado', { ascending: false }),
@@ -112,10 +112,11 @@ export async function fichaVehiculo(patenteCruda, usuario, hoy) {
     conductor: vigente?.conductores ?? null,
     vigente: vigente && { desde: vigente.desde, origen: vigente.origen, reemplazo: vigente.reemplazo, reemplazaPatente: vigente.reemplaza_patente },
     ...estado,
-    historia: historia(asignaciones.data, eventos.data),
+    historia: historia(asignaciones.data, eventos.data, archivos.data),
     archivos: archivos.data,
     pendientes: pendientes.data.map((p) => ({ ...p, abierto: !PENDIENTE_CERRADO.includes(p.estado) })),
     contacto,
+    puedeNotas: puedeHacerActas(usuario),
   };
 }
 
@@ -123,7 +124,8 @@ export async function fichaVehiculo(patenteCruda, usuario, hoy) {
  * Historia del auto (R4): eventos de GoBills más los cambios de conductor que
  * informa Fleet, en orden cronológico inverso.
  */
-function historia(asignaciones, eventos) {
+function historia(asignaciones, eventos, archivos = []) {
+  const actaDe = new Map(archivos.filter((a) => a.clase === 'acta').map((a) => [a.evento_id, a.id]));
   const items = [];
   for (const a of asignaciones) {
     const nombre = a.conductores?.nombre ?? null;
@@ -131,7 +133,11 @@ function historia(asignaciones, eventos) {
     if (a.hasta) items.push({ id: `a-${a.id}-h`, tipo: 'fleet_quita', fecha: a.hasta, conductor: nombre });
   }
   for (const e of eventos) {
-    items.push({ id: e.id, tipo: e.tipo, fecha: e.fecha, conductor: e.conductores?.nombre ?? null, usuario: e.usuario_email, firmado: e.firmado, detalle: e.detalle, pdf: !!e.pdf_ruta });
+    items.push({
+      id: e.id, eventoId: e.id, tipo: e.tipo, fecha: e.fecha, conductor: e.conductores?.nombre ?? null, usuario: e.usuario_email,
+      firmado: e.firmado, detalle: e.detalle, actaId: actaDe.get(e.id) || null,
+      notas: [...(e.notas || [])].sort((a, b) => String(a.creado).localeCompare(String(b.creado))),
+    });
   }
   // A igual fecha, el evento de GoBills (con hora) va antes que el cambio de Fleet.
   return items.sort((x, y) => String(y.fecha).localeCompare(String(x.fecha)));

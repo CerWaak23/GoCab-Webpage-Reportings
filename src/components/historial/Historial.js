@@ -75,6 +75,9 @@ export default function Historial() {
           <Link href="/historial/tiempo" className="hidden lg:inline-flex shrink-0 rounded-lg border border-gray-800 px-3 py-2 text-xs text-gray-300 hover:border-gray-600">
             {t('hv_tiempo')}
           </Link>
+          <Link href="/historial/configuracion" title={t('cf_titulo')} className="hidden lg:inline-flex shrink-0 rounded-lg border border-gray-800 px-3 py-2 text-xs text-gray-300 hover:border-gray-600">
+            ⚙
+          </Link>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-3">

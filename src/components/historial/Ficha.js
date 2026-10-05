@@ -60,7 +60,7 @@ export default function Ficha({ patente, onVolver, t }) {
 
       <div className="p-4">
         {pestana === 'resumen' && <Resumen ficha={ficha} t={t} />}
-        {pestana === 'historia' && <Historia items={ficha.historia} t={t} />}
+        {pestana === 'historia' && <Historia items={ficha.historia} puedeNotas={ficha.puedeNotas} t={t} />}
         {pestana === 'fotos' && <Fotos patente={auto.patente} hay={cuenta.fotos > 0} t={t} />}
         {pestana === 'documentos' && <Documentos archivos={ficha.archivos.filter((a) => a.clase !== 'foto')} hoy={ficha.hoy} t={t} />}
         {pestana === 'pendientes' && <Pendientes lista={ficha.pendientes} t={t} />}
@@ -135,8 +135,23 @@ const PUNTO = {
   recepcion: 'bg-teal-400', levantamiento: 'bg-yellow-400', revision: 'bg-lime-400', siniestro: 'bg-red-400', taller: 'bg-amber-400',
 };
 
-function Historia({ items, t }) {
+function Historia({ items, puedeNotas, t }) {
+  const [notas, setNotas] = useState({});
+  const [escribiendo, setEscribiendo] = useState(null);
+  const [texto, setTexto] = useState('');
   if (items.length === 0) return <Vacio texto={t('hv_historia_vacia')} />;
+
+  async function guardarNota(eventoId) {
+    const r = await fetch('/api/historial/notas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventoId, texto }),
+    });
+    if (!r.ok) return;
+    const nota = await r.json();
+    setNotas((x) => ({ ...x, [eventoId]: [...(x[eventoId] || []), nota] }));
+    setEscribiendo(null);
+    setTexto('');
+  }
+
   return (
     <ol className="relative border-l border-gray-800 ml-1.5 space-y-4">
       {items.map((it) => (
@@ -157,7 +172,29 @@ function Historia({ items, t }) {
             {Number.isFinite(it.detalle?.km) && ` · ${it.detalle.km.toLocaleString('es-CL')} km`}
             {it.detalle?.luces && ` · ${t('hv_luces')}`}
             {it.detalle?.origen === 'portal' && ` · ${t('hv_desde_portal')}`}
+            {it.detalle?.sinFirma && ` · ${t('hv_sin_firma')}`}
           </p>
+          {[...(it.notas || []), ...(notas[it.eventoId] || [])].map((n) => (
+            <p key={n.id} className="mt-1 rounded bg-gray-800/60 px-2 py-1 text-[11px] text-gray-300">
+              📝 {n.texto} <span className="text-gray-500">· {n.autor_email} · {fechaHora(n.creado)}</span>
+            </p>
+          ))}
+          {it.eventoId && (
+            <div className="mt-1 flex gap-3 text-[11px]">
+              {it.actaId && <button type="button" onClick={() => abrirArchivo(it.actaId)} className="text-sky-400 hover:underline">{t('hv_ver_pdf')}</button>}
+              {puedeNotas && escribiendo !== it.eventoId && (
+                <button type="button" onClick={() => { setEscribiendo(it.eventoId); setTexto(''); }} className="text-gray-400 hover:underline">{t('hv_agregar_nota')}</button>
+              )}
+            </div>
+          )}
+          {escribiendo === it.eventoId && (
+            <div className="mt-2 flex gap-2">
+              <input value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 1000))} placeholder={t('hv_nota_ejemplo')}
+                className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-xs" />
+              <button type="button" disabled={texto.trim().length < 3} onClick={() => guardarNota(it.eventoId)}
+                className="rounded-lg bg-emerald-600 px-3 text-xs font-semibold disabled:opacity-40">{t('hv_guardar')}</button>
+            </div>
+          )}
         </li>
       ))}
     </ol>
