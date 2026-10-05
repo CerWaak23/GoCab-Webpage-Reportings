@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { LANGS } from './LangSwitcher';
+import { puedeVerSeccion } from '@/lib/i18n/secciones';
 
 export default function LocalizedDashboard({ firstName, role, isManager }) {
   const [lang, setLang] = useState('es');
@@ -71,6 +72,54 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
+
+        {puedeVerSeccion(role, 'historial') && (
+        <Link
+          href="/historial"
+          className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-emerald-500/40 hover:bg-gray-900/80 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M8 7h8m-8 4h8m-8 4h5M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t.historial_title}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t.historial_sub}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-gray-600 group-hover:text-emerald-400 transition"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        )}
+
+        {puedeVerSeccion(role, 'carga') && (
+        <Link
+          href="/carga"
+          className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-sky-500/40 hover:bg-gray-900/80 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/15 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12l-4 4m4-4l4 4" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t.carga_title}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t.carga_sub}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-gray-600 group-hover:text-sky-400 transition"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        )}
       </div>
     </main>
   );

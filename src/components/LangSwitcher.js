@@ -1,44 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-export const LANGS = {
-  es: {
-    greeting: (name) => `Hola, ${name} 👋`,
-    reports_label: 'Reportes disponibles',
-    bills_title: 'Reporte de Bills',
-    bills_sub: 'Cobros por conductor y vehículo · Pendientes y completados',
-    financial_title: 'Reporte Financiero',
-    financial_sub: 'Consolidado SumUp · Transacciones y balance de cuentas',
-    tareas_title: 'Tareas Operacionales',
-    tareas_sub: 'Mapa de tareas por proceso y persona · Editable en equipo',
-    managers_badge: 'Gerentes',
-    no_access: 'No tienes acceso a este reporte.',
-  },
-  en: {
-    greeting: (name) => `Hello, ${name} 👋`,
-    reports_label: 'Available reports',
-    bills_title: 'Bills Report',
-    bills_sub: 'Driver & vehicle charges · Pending and completed',
-    financial_title: 'Financial Report',
-    financial_sub: 'SumUp summary · Transactions and account balance',
-    tareas_title: 'Operational Tasks',
-    tareas_sub: 'Task map by process and person · Team-editable',
-    managers_badge: 'Managers',
-    no_access: 'You do not have access to this report.',
-  },
-  ru: {
-    greeting: (name) => `Привет, ${name} 👋`,
-    reports_label: 'Доступные отчёты',
-    bills_title: 'Отчёт по счетам',
-    bills_sub: 'Начисления по водителям и ТС · Ожидающие и завершённые',
-    financial_title: 'Финансовый отчёт',
-    financial_sub: 'Сводка SumUp · Транзакции и баланс счетов',
-    tareas_title: 'Операционные задачи',
-    tareas_sub: 'Карта задач по процессам и людям · Совместное редактирование',
-    managers_badge: 'Менеджеры',
-    no_access: 'У вас нет доступа к этому отчёту.',
-  },
-};
+// Los textos viven en src/lib/i18n/dict.js; se reexportan para no romper imports existentes.
+export { LANGS } from '@/lib/i18n/dict';
 
 export default function LangSwitcher({ iframeSelector }) {
   const [lang, setLang] = useState('es');
