@@ -46,6 +46,8 @@ export function payloadPara(analisis, conductorDe = () => null) {
       baja: c.baja,
       grupo: c.grupo,
       patentes: c.patentes,
+      garantia: c.garantia,
+      modalidad: c.modalidad,
     }));
   }
   return [];

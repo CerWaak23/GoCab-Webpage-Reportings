@@ -3,6 +3,21 @@ import { leerPatentes } from '@/lib/patente';
 import { normalizarNombre, limpiarNombre } from './nombres';
 
 const texto = (v) => String(v ?? '').trim();
+/**
+ * "Bail paid" (garantía pagada) del export de conductores: con monto es renta,
+ * en 0 es drive to own. Sin la columna (exports antiguos) no se sabe.
+ */
+export function leerGarantia(fila) {
+  if (!fila || !('Bail paid' in fila)) return { garantia: null, modalidad: null };
+  let crudo = texto(fila['Bail paid']).replace(/[$\s]/g, '');
+  if (/^\d{1,3}(\.\d{3})+$/.test(crudo)) crudo = crudo.replace(/\./g, '');
+  crudo = crudo.replace(',', '.');
+  if (!crudo) return { garantia: null, modalidad: null };
+  const monto = Number(crudo);
+  if (!Number.isFinite(monto)) return { garantia: null, modalidad: null };
+  return { garantia: Math.round(monto), modalidad: monto > 0 ? 'renta' : 'drive_to_own' };
+}
+
 const fecha = (v) => (/^\d{4}-\d{2}-\d{2}/.test(texto(v)) ? texto(v).slice(0, 10) : null);
 
 /** Filas del export "drivers" de Fleet → conductores normalizados. */
@@ -24,6 +39,7 @@ export function leerConductores(filas) {
         baja: fecha(r['Fire Date']),
         patentes: leerPatentes(r['Vehicles']),
         grupo: texto(r['Manager Groups']) || null,
+        ...leerGarantia(r),
       };
     });
   return { conductores, invalidos: conductores.filter((c) => !c.rutValido).map((c) => c.nombre) };
@@ -43,6 +59,8 @@ export function resumenConductores(leidos, base, hoy) {
     rutInvalidos: invalidos,
     rutRepetidos: repetidos(conductores.filter((c) => c.rut).map((c) => c.rut)).length,
     homonimos: repetidos(conductores.map((c) => c.clave)).length,
+    renta: conductores.filter((c) => c.modalidad === 'renta').length,
+    driveToOwn: conductores.filter((c) => c.modalidad === 'drive_to_own').length,
     cedulasPorVencer: conductores.filter((c) => c.venceCedula && dias(hoy, c.venceCedula) <= 60).length,
   };
 }

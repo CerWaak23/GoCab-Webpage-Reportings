@@ -124,6 +124,26 @@ describe('drivers', () => {
     const r = analizarExport(drivers.slice(0, 3), { conductores: [{ nombre: drivers[0].Name }] }, HOY);
     expect(r.resumen.nuevos).toBe(2);
   });
+
+  it('Bail paid con monto es renta y en 0 es drive to own', () => {
+    const filas = [
+      { ...drivers[0], 'Bail paid': '142507' },
+      { ...drivers[1], 'Bail paid': '0' },
+      { ...drivers[2], 'Bail paid': '$50.000' },
+      { ...drivers[3], 'Bail paid': '' },
+    ];
+    const cs = leerConductores(filas).conductores;
+    expect(cs.map((c) => c.modalidad)).toEqual(['renta', 'drive_to_own', 'renta', null]);
+    expect(cs.map((c) => c.garantia)).toEqual([142507, 0, 50000, null]);
+    const r = analizarExport(filas, { conductores: [] }, HOY).resumen;
+    expect([r.renta, r.driveToOwn]).toEqual([2, 1]);
+  });
+
+  it('sin la columna Bail paid la modalidad queda sin dato', () => {
+    const [c] = leerConductores([drivers[0]]).conductores;
+    expect(c.modalidad).toBe(null);
+    expect(c.garantia).toBe(null);
+  });
 });
 
 describe('bills y fines', () => {
