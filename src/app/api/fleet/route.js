@@ -64,6 +64,19 @@ export async function GET(request) {
       tipo: iTipo >= 0 ? String(r[iTipo] || '').trim() : '',
     }));
 
+    // Un auto sin conductor (en taller, esperando entrega) sigue en la hoja con su
+    // patente y su encargado, solo que sin nombre. `drivers` lo descarta porque es
+    // la lista de conductores; `vehiculos` lo mantiene, que es lo que permite saber
+    // de qué coordinador es un auto aunque nadie lo esté manejando.
+    const vehiculos = rows.slice(1)
+      .filter((r) => String(r[1] || '').trim())
+      .map((r) => ({
+        patente: String(r[1] || '').trim().toUpperCase().replace(/[-\s]/g, ''),
+        conductor: String(r[0] || '').trim().toUpperCase(),
+        coordinador: iCoord >= 0 ? String(r[iCoord] || '').trim() : '',
+        tipo: iTipo >= 0 ? String(r[iTipo] || '').trim() : '',
+      }));
+
     // ── Vehículos en taller ───────────────────────────────────────────────────
     // Hoja aparte de la misma planilla. Si falla o no existe, el resto del
     // endpoint sigue sirviendo: la flota no depende de esto.
@@ -118,7 +131,7 @@ export async function GET(request) {
     }
 
     const noCache = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
-    return NextResponse.json({ drivers, taller, _fetchedAt: new Date().toISOString() }, { headers: noCache });
+    return NextResponse.json({ drivers, vehiculos, taller, _fetchedAt: new Date().toISOString() }, { headers: noCache });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
