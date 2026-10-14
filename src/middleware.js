@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { COOKIE_NAME, verifySessionToken } from '@/lib/session-core';
 import { COOKIE_CONDUCTOR, verificarTokenConductor } from '@/lib/sesion-conductor';
+import { rutaPausada } from '@/lib/pausado';
 
 /**
  * Rutas del equipo interno que responden sin sesión:
@@ -26,6 +27,12 @@ function empieza(pathname, rutas) {
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+
+  // Secciones en pausa (src/lib/pausado.js): no se abren ni por URL directa.
+  if (rutaPausada(pathname)) {
+    if (pathname.startsWith('/api')) return NextResponse.json({ error: 'No disponible' }, { status: 404 });
+    return NextResponse.redirect(new URL(pathname.startsWith('/conductores') ? '/conductores/inicio' : '/dashboard', request.url));
+  }
 
   // ── Portal de conductores ──────────────────────────────────────────────────
   if (empieza(pathname, CONDUCTOR_API_PUBLICA)) return NextResponse.next();
@@ -72,5 +79,7 @@ export const config = {
     '/reports/:path*',
     '/api/:path*',
     '/conductores/:path+',
+    '/historial/:path*',
+    '/m/:path*',
   ],
 };

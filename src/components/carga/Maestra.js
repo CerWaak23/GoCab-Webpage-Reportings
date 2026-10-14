@@ -156,7 +156,7 @@ function Celda({ f, campo, t, dif, puedeEditar, encargados, editando, onEditar, 
   if (campo === 'patente') {
     return (
       <>
-        <a href={`/historial?p=${f.patente}`} className="font-mono text-gray-200 hover:text-sky-300 hover:underline">{f.patente}</a>
+        <span className="font-mono text-gray-200">{f.patente}</span>
         {dif?.falta && <p className="text-[10px] text-violet-300">{t('ma_no_en_hoja')}</p>}
       </>
     );

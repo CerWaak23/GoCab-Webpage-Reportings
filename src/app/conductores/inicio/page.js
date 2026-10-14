@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSesionConductor } from '@/lib/sesion-conductor';
 import { estadoFotos } from '@/lib/portal/fotos';
 import Salir from '@/components/portal/Salir';
+import { rutaPausada } from '@/lib/pausado';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Inicio · GoCab' };
@@ -13,7 +14,8 @@ export default async function InicioConductor() {
   if (!sesion) redirect('/conductores');
 
   // Con sesión de la planilla antigua (sin ficha en la base) solo hay TAG.
-  const fotos = sesion.conductorId ? await estadoFotos(sesion).catch(() => null) : null;
+  const conActas = sesion.conductorId && !rutaPausada('/conductores/actas');
+  const fotos = sesion.conductorId && !rutaPausada('/conductores/fotos') ? await estadoFotos(sesion).catch(() => null) : null;
   const tarjeta = 'block rounded-2xl bg-white p-6 shadow-sm transition active:scale-[0.99]';
 
   return (
@@ -42,7 +44,7 @@ export default async function InicioConductor() {
           </div>
         )}
 
-        {sesion.conductorId && (
+        {conActas && (
           <Link href="/conductores/actas" className={tarjeta}>
             <p className="text-xl font-extrabold text-gray-900">Mis actas</p>
             <p className="mt-1 text-base text-gray-600">Tus entregas, devoluciones y fotos del auto, para descargar.</p>

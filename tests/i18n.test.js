@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LANGS, IDIOMAS, traducir } from '@/lib/i18n/dict';
+import { rutaPausada } from '@/lib/pausado';
 import { puedeVerSeccion } from '@/lib/i18n/secciones';
 
 describe('diccionario es/en/ru', () => {
@@ -44,16 +45,31 @@ describe('diccionario es/en/ru', () => {
 });
 
 describe('qué secciones ve cada rol', () => {
-  it('el encargado de taller no ve Carga de datos pero sí el Historial', () => {
+  it('el encargado de taller no ve Carga de datos', () => {
     expect(puedeVerSeccion('Encargado de taller', 'carga')).toBe(false);
-    expect(puedeVerSeccion('Encargado de taller', 'historial')).toBe(true);
   });
 
-  it('gerencia y coordinadores ven ambas', () => {
+  it('gerencia y coordinadores ven Carga de datos', () => {
     for (const rol of ['Gerente de Operaciones', 'Coordinador de Flota']) {
       expect(puedeVerSeccion(rol, 'carga')).toBe(true);
-      expect(puedeVerSeccion(rol, 'historial')).toBe(true);
     }
+  });
+
+  it('las secciones en pausa no se muestran a nadie', () => {
+    for (const seccion of ['historial', 'talleres', 'registros']) {
+      expect(puedeVerSeccion('Gerente de Operaciones', seccion)).toBe(false);
+    }
+  });
+
+  it('las rutas en pausa se bloquean, también las de API y portal', () => {
+    expect(rutaPausada('/historial')).toBe(true);
+    expect(rutaPausada('/historial/talleres')).toBe(true);
+    expect(rutaPausada('/m/protocolo')).toBe(true);
+    expect(rutaPausada('/api/historial/vehiculos')).toBe(true);
+    expect(rutaPausada('/conductores/fotos')).toBe(true);
+    expect(rutaPausada('/carga')).toBe(false);
+    expect(rutaPausada('/mapa')).toBe(false);
+    expect(rutaPausada('/conductores/mis-tags')).toBe(false);
   });
 
   it('una sección desconocida no se muestra', () => {
