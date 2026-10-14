@@ -27,6 +27,7 @@ export default function CargaDatos() {
   const [archivos, setArchivos] = useState([]);
   const [aplicando, setAplicando] = useState(false);
   const [arrastrando, setArrastrando] = useState(false);
+  const [hoja, setHoja] = useState(null);
   const input = useRef(null);
 
   const cargarEstado = useCallback(() => pedir('/api/carga/estado').then(setEstado), []);
@@ -61,6 +62,7 @@ export default function CargaDatos() {
     const confirmados = archivos.filter((a) => a.paso === 'revisado' && a.confirmado).map((a) => a.id);
     setAplicando(true);
     const r = await pedir('/api/carga/aplicar', { ids, confirmados });
+    setHoja(r.hoja ?? null);
     for (const res of r.resultados || []) {
       setArchivos((xs) => xs.map((x) => {
         if (x.id !== res.id) return x;
@@ -122,6 +124,11 @@ export default function CargaDatos() {
                   {aplicando ? t('carga_aplicando') : `${t('carga_aplicar')} (${porAplicar})`}
                 </button>
               : <p className="text-xs text-gray-500">{t('carga_solo_gerencia')}</p>
+          )}
+          {hoja && (
+            <p className={`text-xs ${hoja.error ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {t(hoja.error ? 'carga_hoja_error' : 'carga_hoja_ok')} · <a href="/carga?vista=maestra" className="underline">{t('carga_pestana_maestra')}</a>
+            </p>
           )}
         </section>
       )}

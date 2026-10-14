@@ -9,7 +9,8 @@ export function ordenarParaAplicar(cargas) {
 
 /**
  * Filas que recibe la función aplicar_carga de la base (migraciones 0002 y 0003).
- * Solo vehicles y drivers escriben en tablas; bills y fines solo se registran.
+ * vehicles y drivers escriben conductores, autos y asignaciones; bills y
+ * fines, una fila por referencia (migración 0008).
  *
  * @param conductorDe  (auto) → id del conductor ya identificado en la base, o
  *                     null para que la base lo busque por nombre.
@@ -47,8 +48,13 @@ export function payloadPara(analisis, conductorDe = () => null) {
       grupo: c.grupo,
       patentes: c.patentes,
       garantia: c.garantia,
+      nombreFleet: c.nombreFleet,
+      creado: c.creado,
       modalidad: c.modalidad,
     }));
+  }
+  if (analisis.tipo === 'bills' || analisis.tipo === 'fines') {
+    return analisis.datos.map((f) => ({ ...f, conductorId: conductorDe(f) }));
   }
   return [];
 }

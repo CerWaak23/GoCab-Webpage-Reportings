@@ -11,13 +11,15 @@ import { crearIndice, buscarConductor } from '@/lib/fleet/identidad';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { leerArchivo, cargasPrevias, conductoresBase } from '@/lib/carga/servidor';
 import { copiarADrive } from '@/lib/carga/drive';
+import { sincronizarHoja } from '@/lib/maestra/servidor';
 
 /**
  * Aplica cargas ya revisadas. Cada una entra completa o no entra
- * (función aplicar_carga, migraciones 0002 y 0003). Si una carga tiene
+ * (función aplicar_carga, migraciones 0002, 0003, 0007 y 0008). Si una carga tiene
  * avisos —recalculados ahora, porque otra persona pudo aplicar un archivo
  * más nuevo mientras tanto— solo se aplica si se confirmó.
- * Bills y multas además se copian a Drive para el reporte de deudas actual.
+ * Bills y multas además se copian a Drive para el reporte de deudas actual, y
+ * con conductores o autos la maestra se vuelve a escribir en Control Flota.
  */
 export async function POST(request) {
   const session = await getAppSession();
@@ -56,6 +58,16 @@ export async function POST(request) {
         const indice = crearIndice(await conductoresBase());
         conductorDe = (a) => buscarConductor({ nombre: a.conductor, patente: a.patente }, indice)?.id ?? null;
       }
+      if (c.tipo === 'bills' || c.tipo === 'fines') {
+        // Miles de filas con los mismos pocos conductores: se busca una vez cada uno.
+        const indice = crearIndice(await conductoresBase());
+        const memo = new Map();
+        conductorDe = (f) => {
+          const k = `${f.conductor}|${f.patente}|${f.telefono ?? ''}`;
+          if (!memo.has(k)) memo.set(k, buscarConductor({ nombre: f.conductor, patente: f.patente, telefono: f.telefono }, indice)?.id ?? null);
+          return memo.get(k);
+        };
+      }
       const datos = payloadPara(analizarExport(filas, {}, hoy), conductorDe);
       const { data: r, error: e } = await sb.rpc('aplicar_carga', {
         p_tipo: c.tipo, p_datos: datos, p_carga_id: c.id, p_hoy: hoy,
@@ -71,5 +83,10 @@ export async function POST(request) {
       resultados.push({ ...base, ok: false, motivo: 'error' });
     }
   }
-  return NextResponse.json({ resultados });
+  // Con conductores o autos nuevos, la maestra cambia: se copia a la hoja.
+  let hoja = null;
+  if (resultados.some((r) => r.ok && (r.tipo === 'drivers' || r.tipo === 'vehicles'))) {
+    try { hoja = await sincronizarHoja(); } catch (err) { console.error('carga/aplicar hoja', err.message); hoja = { error: true }; }
+  }
+  return NextResponse.json({ resultados, hoja });
 }

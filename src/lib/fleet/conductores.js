@@ -28,6 +28,8 @@ export function leerConductores(filas) {
       const valido = rutValido(r['ID Number']);
       return {
         nombre: limpiarNombre(r['Name']),
+        nombreFleet: texto(r['Name']).replace(/\s+/g, ' ') || null,
+        creado: fecha(r['Created At']),
         clave: normalizarNombre(r['Name']),
         rut: valido ? formatearRut(r['ID Number']) : null,
         rutCrudo: texto(r['ID Number']) || null,

@@ -38,9 +38,9 @@ describe('payload para la base', () => {
     expect(p.filter((c) => c.patentes.length).length).toBeGreaterThan(0);
   });
 
-  it('bills y fines no escriben filas en la base', () => {
-    expect(payloadPara({ tipo: 'bills' })).toEqual([]);
-    expect(payloadPara({ tipo: 'fines' })).toEqual([]);
+  it('bills y fines escriben una fila por referencia', () => {
+    expect(payloadPara({ tipo: 'bills', datos: [{ referencia: 'B1' }] })).toEqual([{ referencia: 'B1', conductorId: null }]);
+    expect(payloadPara({ tipo: 'fines', datos: [] })).toEqual([]);
   });
 
   it('aplica conductores antes que autos, y luego bills y multas', () => {
