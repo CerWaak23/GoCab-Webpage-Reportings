@@ -41,6 +41,11 @@ describe('maestra de Control Flota', () => {
     expect(fila(m, 'DDDD44').tipo.valor).toBe('TOTAL LOSS');
   });
 
+  it('un total loss va sin conductor y con TOTAL LOSS en Rut, Created At y Tipo', () => {
+    const m = construirMaestra({ ...base, vigentes: [...vigentes, { patente: 'DDDD44', conductor_id: 'c1' }] });
+    expect(filasHoja(m).find((r) => r[1] === 'DDDD44')).toEqual(['', 'DDDD44', 'TOTAL LOSS', 'TOTAL LOSS', '', 'TOTAL LOSS']);
+  });
+
   it('un auto en taller queda sin nombre pero con el RUT de su último conductor', () => {
     const f = fila(construirMaestra(base), 'CCCC33');
     expect(f.nombre.valor).toBe(null);

@@ -20,6 +20,7 @@ export const EXCLUIDOS = ['FAKECAR'];
 export const CAMPOS_AUTO = ['encargado', 'tipo'];
 export const CAMPOS_CONDUCTOR = ['nombre', 'rut'];
 export const TIPOS = ['DTO', 'Renta'];
+export const PERDIDA_TOTAL = 'TOTAL LOSS';
 
 const tipoDeModalidad = (m) => (m === 'drive_to_own' ? 'DTO' : m === 'renta' ? 'Renta' : null);
 
@@ -68,7 +69,17 @@ export function construirMaestra({ autos, conductores, vigentes, anteriores = []
       // Un auto sin conductor queda con el RUT del último que lo tuvo, como en la hoja.
       const cRut = c ?? porId.get(ultimo.get(a.patente)) ?? null;
       const ed = (k) => eds.get(k) ?? null;
-      const perdido = a.estado_fleet === 'total_loss';
+      const encargado = campo(a.grupo ? (encargados[a.grupo] ?? a.grupo) : null, ed(`auto:${a.patente}:encargado`));
+
+      // Pérdida total: como en la hoja, sin conductor y "TOTAL LOSS" en Rut,
+      // Created At y Tipo. Solo el encargado se puede corregir.
+      if (a.estado_fleet === 'total_loss') {
+        const fijo = { valor: PERDIDA_TOTAL, fleet: PERDIDA_TOTAL, editado: false };
+        return {
+          patente: a.patente, conductorId: null, conductorRutId: null, estadoFleet: a.estado_fleet,
+          nombre: campo(null, null), rut: fijo, creado: PERDIDA_TOTAL, encargado, tipo: fijo,
+        };
+      }
 
       return {
         patente: a.patente,
@@ -78,10 +89,8 @@ export function construirMaestra({ autos, conductores, vigentes, anteriores = []
         nombre: c ? campo(c.nombre_fleet || c.nombre, ed(`conductor:${c.id}:nombre`)) : campo(null, null),
         rut: cRut ? campo(cRut.rut || cRut.rut_crudo, ed(`conductor:${cRut.id}:rut`)) : campo(null, null),
         creado: c?.activacion || c?.creado_fleet || null,
-        encargado: campo(a.grupo ? (encargados[a.grupo] ?? a.grupo) : null, ed(`auto:${a.patente}:encargado`)),
-        tipo: perdido
-          ? { valor: 'TOTAL LOSS', fleet: 'TOTAL LOSS', editado: false }
-          : campo(tipoDeModalidad(c?.modalidad ?? a.modalidad), ed(`auto:${a.patente}:tipo`)),
+        encargado,
+        tipo: campo(tipoDeModalidad(c?.modalidad ?? a.modalidad), ed(`auto:${a.patente}:tipo`)),
       };
     })
     .sort((x, y) => (!x.nombre.valor - !y.nombre.valor) || String(x.nombre.valor ?? x.patente).localeCompare(String(y.nombre.valor ?? y.patente), 'es'));
@@ -131,7 +140,7 @@ export function edicionesDesdeHoja(maestra, hoja) {
     const enc = String(h.Encargado ?? '').trim();
     if (enc && !igual(enc, f.encargado.valor)) out.push({ patente: f.patente, campo: 'encargado', valor: enc });
     const tipo = validarEdicion('tipo', h.Tipo);
-    if (tipo.valor && f.tipo.valor !== 'TOTAL LOSS' && !igual(tipo.valor, f.tipo.valor)) out.push({ patente: f.patente, campo: 'tipo', valor: tipo.valor });
+    if (tipo.valor && f.tipo.valor !== PERDIDA_TOTAL && !igual(tipo.valor, f.tipo.valor)) out.push({ patente: f.patente, campo: 'tipo', valor: tipo.valor });
     const rut = String(h.Rut ?? '').trim();
     if (f.conductorRutId && rut && rutValido(rut) && !mismoRut(rut, f.rut.valor)) {
       out.push({ conductor_id: f.conductorRutId, campo: 'rut', valor: formatearRut(rut) });
