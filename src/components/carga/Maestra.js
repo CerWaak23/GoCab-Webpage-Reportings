@@ -30,24 +30,28 @@ export default function Maestra() {
   const [buscar, setBuscar] = useState('');
   const [encargado, setEncargado] = useState('');
   const [soloCorregidos, setSoloCorregidos] = useState(false);
+  const [soloDistintos, setSoloDistintos] = useState(false);
   const [editando, setEditando] = useState(null); // { patente, campo, valor }
   const [error, setError] = useState(null);
   const [copiando, setCopiando] = useState(false);
 
-  const cargar = useCallback(() => pedir('/api/maestra').then(setDatos), []);
+  const cargar = useCallback(() => pedir('/api/maestra?comparar=1').then(setDatos), []);
   useEffect(() => { cargar(); }, [cargar]);
 
   const filas = datos?.filas || [];
+  // null cuando la maestra ya escribe en la pestaña original: no hay con qué comparar.
+  const difs = datos?.diferencias && !datos.diferencias.error ? datos.diferencias : null;
   const encargados = useMemo(() => [...new Set(filas.map((f) => f.encargado.valor).filter(Boolean))].sort(), [filas]);
   const visibles = useMemo(() => {
     const q = buscar.trim().toLowerCase();
     return filas.filter((f) => {
       if (encargado && f.encargado.valor !== encargado) return false;
       if (soloCorregidos && !EDITABLES.some((c) => f[c].editado)) return false;
+      if (soloDistintos && !difs?.[f.patente]) return false;
       if (!q) return true;
       return [f.nombre.valor, f.patente, f.rut.valor].some((v) => String(v ?? '').toLowerCase().includes(q));
     });
-  }, [filas, buscar, encargado, soloCorregidos]);
+  }, [filas, buscar, encargado, soloCorregidos, soloDistintos, difs]);
 
   async function guardar(valor) {
     const f = filas.find((x) => x.patente === editando.patente);
@@ -114,6 +118,13 @@ export default function Maestra() {
           <input type="checkbox" checked={soloCorregidos} onChange={(e) => setSoloCorregidos(e.target.checked)} />
           {t('ma_solo_corregidos')}
         </label>
+        {difs && (
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            <input type="checkbox" checked={soloDistintos} onChange={(e) => setSoloDistintos(e.target.checked)} />
+            {t('ma_solo_distintos')(Object.keys(difs).length)}
+          </label>
+        )}
+        {datos.diferencias?.error && <p className="w-full text-xs text-amber-400">{t('ma_error_comparar')}</p>}
       </section>
 
       <div className="overflow-x-auto rounded-xl border border-gray-800">
@@ -126,7 +137,7 @@ export default function Maestra() {
               <tr key={f.patente} className="hover:bg-gray-900/60">
                 {COLUMNAS.map((c) => (
                   <td key={c} className="px-3 py-1.5 whitespace-nowrap align-top">
-                    <Celda f={f} campo={c} t={t} puedeEditar={datos.puedeEditar} encargados={encargados}
+                    <Celda f={f} campo={c} t={t} dif={difs?.[f.patente]} puedeEditar={datos.puedeEditar} encargados={encargados}
                       editando={editando?.patente === f.patente && editando.campo === c}
                       onEditar={() => { setError(null); setEditando({ patente: f.patente, campo: c }); }}
                       onCancelar={() => setEditando(null)} onGuardar={guardar} />
@@ -141,8 +152,15 @@ export default function Maestra() {
   );
 }
 
-function Celda({ f, campo, t, puedeEditar, encargados, editando, onEditar, onCancelar, onGuardar }) {
-  if (campo === 'patente') return <a href={`/historial?p=${f.patente}`} className="font-mono text-gray-200 hover:text-sky-300 hover:underline">{f.patente}</a>;
+function Celda({ f, campo, t, dif, puedeEditar, encargados, editando, onEditar, onCancelar, onGuardar }) {
+  if (campo === 'patente') {
+    return (
+      <>
+        <a href={`/historial?p=${f.patente}`} className="font-mono text-gray-200 hover:text-sky-300 hover:underline">{f.patente}</a>
+        {dif?.falta && <p className="text-[10px] text-violet-300">{t('ma_no_en_hoja')}</p>}
+      </>
+    );
+  }
   if (campo === 'creado') return <span className="text-gray-400">{f.creado || '—'}</span>;
   if (campo === 'estadoFleet') return <span className="text-gray-500">{f.estadoFleet || '—'}</span>;
 
@@ -151,7 +169,8 @@ function Celda({ f, campo, t, puedeEditar, encargados, editando, onEditar, onCan
   const editable = puedeEditar && dato.valor !== 'TOTAL LOSS'
     && (campo !== 'nombre' || f.conductorId) && (campo !== 'rut' || f.conductorRutId);
 
-  if (editando) return <Editor campo={campo} dato={dato} t={t} encargados={encargados} onCancelar={onCancelar} onGuardar={onGuardar} />;
+  const enHoja = dif && campo in dif ? dif[campo] : undefined;
+  if (editando) return <Editor campo={campo} dato={dato} t={t} enHoja={enHoja} encargados={encargados} onCancelar={onCancelar} onGuardar={onGuardar} />;
 
   const texto = dato.valor ?? (campo === 'nombre' ? <span className="text-gray-600">{t('ma_sin_conductor')}</span> : <span className="text-gray-600">—</span>);
   const titulo = dato.editado ? `${t('ma_editado')(dato.autor)} · ${t('ma_fleet_dice')(dato.fleet)}` : undefined;
@@ -159,11 +178,12 @@ function Celda({ f, campo, t, puedeEditar, encargados, editando, onEditar, onCan
     <button type="button" disabled={!editable} onClick={onEditar} title={titulo}
       className={`text-left ${editable ? 'hover:text-sky-300 cursor-pointer' : 'cursor-default'} ${dato.editado ? 'text-amber-200' : 'text-gray-200'}`}>
       {texto}{dato.editado && <span className="ml-1 text-amber-400" aria-label={titulo}>●</span>}
+      {enHoja !== undefined && <span className="block text-[10px] text-violet-300">{t('ma_en_hoja')(enHoja)}</span>}
     </button>
   );
 }
 
-function Editor({ campo, dato, t, encargados, onCancelar, onGuardar }) {
+function Editor({ campo, dato, t, enHoja, encargados, onCancelar, onGuardar }) {
   const [valor, setValor] = useState(dato.valor ?? '');
   const [guardando, setGuardando] = useState(false);
   const enviar = async (v) => { setGuardando(true); await onGuardar(v); setGuardando(false); };
@@ -186,6 +206,11 @@ function Editor({ campo, dato, t, encargados, onCancelar, onGuardar }) {
       )}
       <button type="button" disabled={guardando} onClick={() => enviar(valor)} className="rounded bg-sky-500 px-2 py-1 font-semibold text-gray-950 disabled:opacity-50">{t('ma_guardar')}</button>
       <button type="button" onClick={onCancelar} className="px-1 text-gray-400 hover:text-white">{t('ma_cancelar')}</button>
+      {enHoja && (
+        <button type="button" disabled={guardando} onClick={() => enviar(enHoja)} className="px-1 text-violet-300 hover:text-violet-200">
+          {t('ma_usar_hoja')}
+        </button>
+      )}
       {dato.editado && (
         <button type="button" disabled={guardando} onClick={() => enviar('')} className="px-1 text-amber-300 hover:text-amber-200" title={t('ma_fleet_dice')(dato.fleet)}>
           {t('ma_volver_fleet')}

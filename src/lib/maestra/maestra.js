@@ -158,3 +158,27 @@ export function edicionesDesdeHoja(maestra, hoja) {
     return true;
   });
 }
+
+/**
+ * Diferencias entre la maestra y la hoja que se mantenía a mano, para
+ * revisarlas antes de que GoBills la reemplace. La fecha no se compara: la
+ * maestra usa siempre la de activación con formato AAAA-MM-DD.
+ *
+ * @param hoja  filas de la hoja como objetos { Name, Vehicles, Rut, Encargado, Tipo }
+ * @returns { PATENTE: { nombre?, rut?, encargado?, tipo?, falta? } }  valores de la hoja
+ */
+export function diferenciasConHoja(maestra, hoja) {
+  const porPatente = new Map((hoja || []).map((h) => [String(h.Vehicles ?? '').toUpperCase().replace(/[^A-Z0-9]/g, ''), h]));
+  const out = {};
+  for (const f of maestra) {
+    const h = porPatente.get(f.patente);
+    if (!h) { out[f.patente] = { falta: true }; continue; }
+    const d = {};
+    if (normalizarNombre(h.Name) !== normalizarNombre(f.nombre.valor)) d.nombre = String(h.Name ?? '').trim();
+    if (!mismoRut(h.Rut, f.rut.valor)) d.rut = String(h.Rut ?? '').trim();
+    if (!igual(h.Encargado, f.encargado.valor)) d.encargado = String(h.Encargado ?? '').trim();
+    if (!igual(h.Tipo, f.tipo.valor)) d.tipo = String(h.Tipo ?? '').trim();
+    if (Object.keys(d).length) out[f.patente] = d;
+  }
+  return out;
+}

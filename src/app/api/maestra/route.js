@@ -4,16 +4,23 @@ import { NextResponse } from 'next/server';
 import { getAppSession } from '@/lib/session';
 import { permisoCarga } from '@/lib/carga/permisos';
 import { validarEdicion, CAMPOS_AUTO } from '@/lib/maestra/maestra';
-import { leerMaestra, guardarEdicion, sincronizarHoja } from '@/lib/maestra/servidor';
+import { leerMaestra, guardarEdicion, sincronizarHoja, compararConHojaOriginal } from '@/lib/maestra/servidor';
 
-/** Maestra de Control Flota: la ve quien ve Carga de datos. */
-export async function GET() {
+/**
+ * Maestra de Control Flota: la ve quien ve Carga de datos. Con ?comparar=1
+ * agrega en qué difiere de la pestaña que se mantenía a mano.
+ */
+export async function GET(request) {
   const session = await getAppSession();
   const negado = permisoCarga(session?.user, 'revisar');
   if (negado) return NextResponse.json({ error: 'sin_permiso' }, { status: negado });
   try {
-    const datos = await leerMaestra();
-    return NextResponse.json({ ...datos, puedeEditar: !permisoCarga(session.user, 'aplicar') }, { headers: { 'Cache-Control': 'no-store' } });
+    const comparar = new URL(request.url).searchParams.get('comparar') === '1';
+    const [datos, diferencias] = await Promise.all([
+      leerMaestra(),
+      comparar ? compararConHojaOriginal().catch((err) => { console.error('maestra/comparar', err.message); return { error: true }; }) : null,
+    ]);
+    return NextResponse.json({ ...datos, diferencias, puedeEditar: !permisoCarga(session.user, 'aplicar') }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('maestra', err.message);
     return NextResponse.json({ error: 'base' }, { status: 500 });

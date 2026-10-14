@@ -1,7 +1,7 @@
 import 'server-only';
 import { google } from 'googleapis';
 import { supabaseServidor } from '@/lib/supabase/server';
-import { construirMaestra, filasHoja, CAMPOS_AUTO } from './maestra';
+import { construirMaestra, filasHoja, diferenciasConHoja, CAMPOS_AUTO } from './maestra';
 
 export const HOJA_ID = '15yNGkyE1kkk8E0yiLLMmahz-G048vwgy2NWN8xYmiFw';
 /**
@@ -10,6 +10,8 @@ export const HOJA_ID = '15yNGkyE1kkk8E0yiLLMmahz-G048vwgy2NWN8xYmiFw';
  * cambia la clave maestra_hoja de configuracion a esa pestaña.
  */
 export const PESTANA_INICIAL = 'Maestra GoBills';
+/** La pestaña que se mantenía a mano y que leen Copec, Vortex e inDrive. */
+export const PESTANA_ORIGINAL = 'Vehiculos y ConductoresII';
 
 async function config(sb, clave, defecto) {
   const { data } = await sb.from('configuracion').select('valor').eq('clave', clave).maybeSingle();
@@ -100,4 +102,18 @@ export async function sincronizarHoja() {
   const registro = { fecha: new Date().toISOString(), filas: filas.length - 1, pestana };
   await sb.from('configuracion').upsert({ clave: 'maestra_sincronizada', valor: registro });
   return registro;
+}
+
+/**
+ * Compara la maestra con la pestaña original mientras GoBills todavía no la
+ * reemplaza. Cuando la maestra ya escribe ahí, no hay nada que comparar.
+ */
+export async function compararConHojaOriginal() {
+  const sb = supabaseServidor();
+  const { pestana } = await config(sb, 'maestra_hoja', { pestana: PESTANA_INICIAL });
+  if (pestana === PESTANA_ORIGINAL) return null;
+  const res = await sheets().spreadsheets.values.get({ spreadsheetId: HOJA_ID, range: `'${PESTANA_ORIGINAL}'` });
+  const [cab = [], ...cuerpo] = res.data.values || [];
+  const filas = cuerpo.map((r) => Object.fromEntries(cab.map((h, i) => [String(h).trim(), r[i] ?? ''])));
+  return diferenciasConHoja(construirMaestra(await datosMaestra()), filas);
 }

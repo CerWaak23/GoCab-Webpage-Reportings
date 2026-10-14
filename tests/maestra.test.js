@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { construirMaestra, filasHoja, validarEdicion, edicionesDesdeHoja, ultimasEdiciones } from '@/lib/maestra/maestra';
+import { construirMaestra, filasHoja, validarEdicion, edicionesDesdeHoja, ultimasEdiciones, diferenciasConHoja } from '@/lib/maestra/maestra';
 import { leerBills, leerMultas, patenteDeVehiculo } from '@/lib/fleet/cobros';
 import { payloadPara } from '@/lib/carga/payload';
 
@@ -101,6 +101,22 @@ describe('maestra de Control Flota', () => {
       { patente: 'BBBB22', campo: 'tipo', valor: 'Renta' },
       { conductor_id: 'c2', campo: 'rut', valor: '22.222.222-2' },
     ]);
+  });
+});
+
+describe('comparar con la hoja que se mantenía a mano', () => {
+  it('marca solo los campos distintos, sin contar PPD ni el formato del RUT', () => {
+    const m = construirMaestra(base);
+    const hoja = [
+      { Name: 'ANA ROJAS', Vehicles: 'AAAA11', Rut: '11111111-1', Encargado: 'J. Silva', Tipo: 'renta' },
+      { Name: 'OTRA PERSONA', Vehicles: 'BBBB22', Rut: '123', Encargado: 'P.Gonzalez', Tipo: 'DTO' },
+      { Name: '', Vehicles: 'CCCC33', Rut: '123', Encargado: 'P.Gonzalez', Tipo: '' },
+    ];
+    const d = diferenciasConHoja(m, hoja);
+    expect(d.AAAA11).toBeUndefined();
+    expect(d.BBBB22).toEqual({ nombre: 'OTRA PERSONA' });
+    expect(d.CCCC33).toEqual({ tipo: '' });
+    expect(d.DDDD44).toEqual({ falta: true });
   });
 });
 
