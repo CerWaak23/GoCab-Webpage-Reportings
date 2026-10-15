@@ -75,8 +75,7 @@ async function descargarEnParalelo(drive, files, limite = 10) {
  */
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
-  // Mientras se termina de importar la historia, Supabase solo con ?fuente=supabase.
-  if (params.get('fuente') === 'supabase' && params.get('todosLosArchivos') !== '1') {
+  if (params.get('fuente') !== 'drive' && params.get('todosLosArchivos') !== '1') {
     try {
       return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase' }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (err) {

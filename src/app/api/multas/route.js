@@ -57,8 +57,7 @@ const SIN_CACHE = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-a
  * lee la carpeta de Drive como antes: queda de respaldo.
  */
 export async function GET(request) {
-  // Mientras se termina de importar la historia, Supabase solo con ?fuente=supabase.
-  if (new URL(request.url).searchParams.get('fuente') === 'supabase') {
+  if (new URL(request.url).searchParams.get('fuente') !== 'drive') {
     try {
       return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase', _fetchedAt: new Date().toISOString() }, { headers: SIN_CACHE });
     } catch (err) {
