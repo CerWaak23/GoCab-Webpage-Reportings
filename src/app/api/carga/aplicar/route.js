@@ -13,6 +13,7 @@ import { leerArchivo, cargasPrevias, conductoresBase } from '@/lib/carga/servido
 import { copiarADrive } from '@/lib/carga/drive';
 import { sincronizarHoja } from '@/lib/maestra/servidor';
 import { leerFilas, billsDeFilas } from '@/lib/bills/archivo';
+import { multasDeFilas } from '@/lib/multas/reporte';
 
 /**
  * Aplica cargas ya revisadas. Cada una entra completa o no entra
@@ -84,6 +85,14 @@ export async function POST(request) {
           p_filas: billsDeFilas(leerFilas(buffer, c.archivo)),
         });
         if (eh) console.error('carga/aplicar historia bills', eh.message);
+      }
+      if (c.tipo === 'fines') {
+        const leido = multasDeFilas(leerFilas(buffer, c.archivo, { html: false }));
+        const { error: em } = await sb.rpc('registrar_multas_version', {
+          p_archivo: { archivo: c.archivo, cargaId: c.id, subido: c.creado, origen: 'carga', formatoDesconocido: leido.formatoDesconocido, encabezado: leido.encabezado },
+          p_filas: leido.filas,
+        });
+        if (em) console.error('carga/aplicar historia multas', em.message);
       }
       const drive = (c.tipo === 'bills' || c.tipo === 'fines') ? await copiarADrive(c) : null;
       resultados.push({ ...base, ok: true, resultado: r, drive });

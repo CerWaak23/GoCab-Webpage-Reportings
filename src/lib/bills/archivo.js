@@ -54,7 +54,7 @@ export function parseHtmlRows(rows) {
 }
 
 /** Filas de un export (xlsx, xls o csv) como arreglos, con el caso HTML-en-celdas resuelto. */
-export function leerFilas(buffer, nombre) {
+export function leerFilas(buffer, nombre, { html = true } = {}) {
   const name = String(nombre || '').toLowerCase();
   let rows;
   if (name.endsWith('.csv')) {
@@ -67,7 +67,8 @@ export function leerFilas(buffer, nombre) {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
   }
-  if (isHtmlFile(rows)) rows = parseHtmlRows(rows);
+  // El export de multas nunca viene como HTML en celdas; el reporte de multas no lo revisa.
+  if (html && isHtmlFile(rows)) rows = parseHtmlRows(rows);
   return rows;
 }
 

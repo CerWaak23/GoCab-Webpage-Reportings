@@ -75,7 +75,8 @@ async function descargarEnParalelo(drive, files, limite = 10) {
  */
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
-  if (params.get('fuente') !== 'drive' && params.get('todosLosArchivos') !== '1') {
+  // Mientras se termina de importar la historia, Supabase solo con ?fuente=supabase.
+  if (params.get('fuente') === 'supabase' && params.get('todosLosArchivos') !== '1') {
     try {
       return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase' }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (err) {
@@ -90,7 +91,11 @@ async function reporteDesdeSupabase() {
   const todas = async (tabla, columnas) => {
     const out = [];
     for (let desde = 0; ; desde += 1000) {
-      const { data, error } = await sb.from(tabla).select(columnas).order('subido').order('id').range(desde, desde + 999);
+      // Por archivo y, dentro de cada uno, en el orden de las filas del export.
+      const { data, error } = await sb.from(tabla).select(columnas)
+        .order('subido').order(tabla.endsWith('_versiones') ? 'archivo_id' : 'id')
+        .order(tabla.endsWith('_versiones') ? 'orden' : 'id').order('id')
+        .range(desde, desde + 999);
       if (error) throw new Error(error.message);
       out.push(...data);
       if (data.length < 1000) return out;
