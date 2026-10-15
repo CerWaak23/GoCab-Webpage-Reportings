@@ -4,6 +4,8 @@ import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { parseAmount, isHtmlFile, parseHtmlRows } from '@/lib/bills/archivo';
+import { reporteDesdeVersiones, consolidarPorDia } from '@/lib/bills/desdeVersiones';
+import { supabaseServidor } from '@/lib/supabase/server';
 
 const BILLS_FOLDER_ID = '1Fd3sia5XyN1tXuk2pvQfbrIbmV_o-sKh';
 
@@ -66,7 +68,43 @@ async function descargarEnParalelo(drive, files, limite = 10) {
   return buffers;
 }
 
+/**
+ * Reporte de Bills. Desde oct-2026 lee la historia guardada en Supabase
+ * (los exports se suben en Carga de datos). Con ?fuente=drive, o si Supabase
+ * falla, lee la carpeta de Drive como antes: queda de respaldo.
+ */
 export async function GET(request) {
+  const params = new URL(request.url).searchParams;
+  if (params.get('fuente') !== 'drive' && params.get('todosLosArchivos') !== '1') {
+    try {
+      return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase' }, { headers: { 'Cache-Control': 'no-store' } });
+    } catch (err) {
+      console.error('bills: Supabase falló, se usa Drive', err.message);
+    }
+  }
+  return desdeDrive(request);
+}
+
+async function reporteDesdeSupabase() {
+  const sb = supabaseServidor();
+  const todas = async (tabla, columnas) => {
+    const out = [];
+    for (let desde = 0; ; desde += 1000) {
+      const { data, error } = await sb.from(tabla).select(columnas).order('subido').order('id').range(desde, desde + 999);
+      if (error) throw new Error(error.message);
+      out.push(...data);
+      if (data.length < 1000) return out;
+    }
+  };
+  const [archivos, versiones] = await Promise.all([
+    todas('bills_archivos', 'id, archivo, subido, filas, filas_sin_conductor, referencias'),
+    todas('bills_versiones', 'id, referencia, archivo_id, tipo, estado, vehiculo, conductor, telefono, descripcion, monto, pagado, creado_texto'),
+  ]);
+  if (archivos.length === 0) throw new Error('Supabase no tiene exports de bills');
+  return reporteDesdeVersiones(...consolidarPorDia(archivos, versiones));
+}
+
+async function desdeDrive(request) {
   try {
     // ?todosLosArchivos=1 lee todas las versiones en vez de una por día. Sirve
     // para contrastar ambos criterios sobre el mismo conjunto de archivos.
@@ -314,6 +352,7 @@ export async function GET(request) {
       sources: ultimosDelDia.map((f) => f.name),
       // Para poder ver de un vistazo cuántas versiones se saltaron por día
       archivos: { enCarpeta: tabulares.length, leidos: ultimosDelDia.length, descartadas },
+      fuente: 'drive',
     }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });

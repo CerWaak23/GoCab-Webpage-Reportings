@@ -117,3 +117,23 @@ export function reporteDesdeVersiones(archivos, versiones) {
     archivos: { leidos: archivos.length, descartadas },
   };
 }
+
+/**
+ * Un archivo por día, como el reporte: si ese día se subió el export varias
+ * veces, vale el último, y de cada bill la última versión del día. Así los
+ * pagos de un día quedan en un solo evento con la hora del último export.
+ */
+export function consolidarPorDia(archivos, versiones) {
+  const dia = (a) => new Date(a.subido).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+  const ultimoDelDia = new Map();
+  for (const a of archivos) ultimoDelDia.set(dia(a), a);
+  const destino = new Map(archivos.map((a) => [a.id, ultimoDelDia.get(dia(a))]));
+
+  const porDiaYRef = new Map();
+  for (const v of versiones) {
+    const a = destino.get(v.archivo_id);
+    if (!a) continue;
+    porDiaYRef.set(`${a.id}|${v.referencia}`, { ...v, archivo_id: a.id });
+  }
+  return [[...ultimoDelDia.values()], [...porDiaYRef.values()]];
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { billsDeFilas, ultimoPorDia, parseAmount, leerFilas } from '@/lib/bills/archivo';
-import { reporteDesdeVersiones } from '@/lib/bills/desdeVersiones';
+import { reporteDesdeVersiones, consolidarPorDia } from '@/lib/bills/desdeVersiones';
 
 describe('lectura de exports de bills (la misma del reporte)', () => {
   const rows = [
@@ -72,5 +72,28 @@ describe('reporte de Bills desde la historia en Supabase', () => {
   it('si el archivo nuevo no trae conductor, se mantiene el anterior', () => {
     const r = reporteDesdeVersiones(archivos.slice(0, 2), [v('B1', 1, 0), v('B1', 2, 0, { conductor: '', estado: 'Completed' })]);
     expect(r.bills[0]).toMatchObject({ driver: 'ANA', status: 'Completed' });
+  });
+});
+
+describe('varios exports el mismo día', () => {
+  it('vale el último del día y la última versión de cada bill', () => {
+    const archivos = [
+      { id: 1, subido: '2026-10-01T13:00:00Z' },
+      { id: 2, subido: '2026-10-01T20:00:00Z' },
+      { id: 3, subido: '2026-10-02T13:00:00Z' },
+    ];
+    const versiones = [
+      { referencia: 'B1', archivo_id: 1, pagado: 100 },
+      { referencia: 'B2', archivo_id: 1, pagado: 0 },
+      { referencia: 'B1', archivo_id: 2, pagado: 300 },
+      { referencia: 'B1', archivo_id: 3, pagado: 500 },
+    ];
+    const [as, vs] = consolidarPorDia(archivos, versiones);
+    expect(as.map((a) => a.id)).toEqual([2, 3]);
+    expect(vs).toEqual([
+      { referencia: 'B1', archivo_id: 2, pagado: 300 },
+      { referencia: 'B2', archivo_id: 2, pagado: 0 },
+      { referencia: 'B1', archivo_id: 3, pagado: 500 },
+    ]);
   });
 });
