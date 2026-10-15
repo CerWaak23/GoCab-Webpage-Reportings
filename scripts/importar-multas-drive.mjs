@@ -12,6 +12,7 @@ import { google } from 'googleapis';
 import { createClient } from '@supabase/supabase-js';
 import { leerFilas } from '@/lib/bills/archivo';
 import { multasDeFilas } from '@/lib/multas/reporte';
+import { guardarHistoria, versionesGuardadas } from '@/lib/historia/versiones';
 
 process.loadEnvFile('.env.local');
 
@@ -41,6 +42,7 @@ console.log(`Drive: ${tabulares.length} exports · ya guardados ${tabulares.leng
 
 let nuevas = 0;
 let cambios = 0;
+const guardadas = aplicar ? await versionesGuardadas(sb, 'fines') : [];
 for (const [i, f] of pendientes.entries()) {
   const { data } = await drive.files.get({ fileId: f.id, alt: 'media' }, { responseType: 'arraybuffer' });
   const leido = multasDeFilas(leerFilas(Buffer.from(data), f.name, { html: false }));
@@ -48,11 +50,8 @@ for (const [i, f] of pendientes.entries()) {
     if (i < 3) console.log(`  ${f.modifiedTime.slice(0, 10)} ${f.name}: ${leido.filas.length} multas${leido.formatoDesconocido ? ' (formato desconocido)' : ''}`);
     continue;
   }
-  const { data: r, error: e } = await sb.rpc('registrar_multas_version', {
-    p_archivo: { archivo: f.name, driveId: f.id, subido: f.modifiedTime, origen: 'drive', formatoDesconocido: leido.formatoDesconocido, encabezado: leido.encabezado },
-    p_filas: leido.filas,
-  });
-  if (e) throw new Error(`${f.name}: ${e.message}`);
+  const r = await guardarHistoria(sb, 'fines', { archivo: f.name, driveId: f.id, subido: f.modifiedTime, origen: 'drive', formatoDesconocido: leido.formatoDesconocido, encabezado: leido.encabezado }, leido.filas, guardadas)
+    .catch((e) => { throw new Error(`${f.name}: ${e.message}`); });
   nuevas += r.nuevas ?? 0;
   cambios += r.cambios ?? 0;
   process.stdout.write(`\r  ${i + 1}/${pendientes.length} · ${f.modifiedTime.slice(0, 10)} · multas nuevas ${nuevas} · cambios ${cambios}   `);

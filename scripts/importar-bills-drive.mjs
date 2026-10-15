@@ -12,6 +12,7 @@
 import { google } from 'googleapis';
 import { createClient } from '@supabase/supabase-js';
 import { leerFilas, billsDeFilas, ultimoPorDia } from '@/lib/bills/archivo';
+import { guardarHistoria, versionesGuardadas } from '@/lib/historia/versiones';
 
 process.loadEnvFile('.env.local');
 
@@ -87,6 +88,7 @@ if (pendientes.length) console.log(`Desde ${pendientes[0].modifiedTime.slice(0, 
 // compara con la anterior.
 let nuevas = 0;
 let cambios = 0;
+const guardadas = aplicar ? await versionesGuardadas(sb, 'bills') : [];
 for (let i = 0; i < pendientes.length; i += 10) {
   const lote = pendientes.slice(i, i + 10);
   const buffers = await Promise.all(lote.map(bajar));
@@ -97,11 +99,8 @@ for (let i = 0; i < pendientes.length; i += 10) {
       if (i + j < 3) console.log(`  ${f.modifiedTime.slice(0, 10)} ${f.name}: ${filas.length} bills`);
       continue;
     }
-    const { data: r, error: e } = await sb.rpc('registrar_bills_version', {
-      p_archivo: { archivo: f.name, driveId: f.id, subido: f.modifiedTime, origen: 'drive' },
-      p_filas: filas,
-    });
-    if (e) throw new Error(`${f.name}: ${e.message}`);
+    const r = await guardarHistoria(sb, 'bills', { archivo: f.name, driveId: f.id, subido: f.modifiedTime, origen: 'drive' }, filas, guardadas)
+      .catch((e) => { throw new Error(`${f.name}: ${e.message}`); });
     nuevas += r.nuevas ?? 0;
     cambios += r.cambios ?? 0;
     process.stdout.write(`\r  ${i + j + 1}/${pendientes.length} · ${f.modifiedTime.slice(0, 10)} · bills nuevas ${nuevas} · cambios ${cambios}   `);
