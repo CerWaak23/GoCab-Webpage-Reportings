@@ -14,6 +14,7 @@ export async function leerArchivo(ruta) {
   return {
     filas: XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false }),
     sha256: createHash('sha256').update(buf).digest('hex'),
+    buffer: buf,
   };
 }
 

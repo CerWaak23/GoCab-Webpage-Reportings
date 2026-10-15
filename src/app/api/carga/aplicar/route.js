@@ -12,6 +12,7 @@ import { supabaseServidor } from '@/lib/supabase/server';
 import { leerArchivo, cargasPrevias, conductoresBase } from '@/lib/carga/servidor';
 import { copiarADrive } from '@/lib/carga/drive';
 import { sincronizarHoja } from '@/lib/maestra/servidor';
+import { leerFilas, billsDeFilas } from '@/lib/bills/archivo';
 
 /**
  * Aplica cargas ya revisadas. Cada una entra completa o no entra
@@ -33,7 +34,7 @@ export async function POST(request) {
 
   const sb = supabaseServidor();
   const { data: cargas, error } = await sb.from('cargas')
-    .select('id, tipo, archivo, ruta_storage, aplicada, filas, sha256, numero_export, resumen').in('id', ids);
+    .select('id, tipo, archivo, ruta_storage, aplicada, filas, sha256, numero_export, resumen, creado').in('id', ids);
   if (error) return NextResponse.json({ error: 'base' }, { status: 500 });
 
   const hoy = hoyEnChile();
@@ -51,7 +52,7 @@ export async function POST(request) {
         continue;
       }
 
-      const { filas } = await leerArchivo(c.ruta_storage);
+      const { filas, buffer } = await leerArchivo(c.ruta_storage);
       let conductorDe;
       if (c.tipo === 'vehicles') {
         // Conductores recién aplicados en este mismo lote ya están en la base.
@@ -75,6 +76,14 @@ export async function POST(request) {
       if (e) {
         if (e.message === 'YA_APLICADA') { resultados.push({ ...base, ok: false, motivo: 'ya_aplicada' }); continue; }
         throw new Error(e.message);
+      }
+      // Historia de bills (cuándo se pagó cada una), leída igual que el reporte.
+      if (c.tipo === 'bills') {
+        const { error: eh } = await sb.rpc('registrar_bills_version', {
+          p_archivo: { archivo: c.archivo, cargaId: c.id, subido: c.creado, origen: 'carga' },
+          p_filas: billsDeFilas(leerFilas(buffer, c.archivo)),
+        });
+        if (eh) console.error('carga/aplicar historia bills', eh.message);
       }
       const drive = (c.tipo === 'bills' || c.tipo === 'fines') ? await copiarADrive(c) : null;
       resultados.push({ ...base, ok: true, resultado: r, drive });

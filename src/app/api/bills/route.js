@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'; // never cache — always fetch latest f
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { parseAmount, isHtmlFile, parseHtmlRows } from '@/lib/bills/archivo';
 
 const BILLS_FOLDER_ID = '1Fd3sia5XyN1tXuk2pvQfbrIbmV_o-sKh';
 
@@ -63,53 +64,6 @@ async function descargarEnParalelo(drive, files, limite = 10) {
     Array.from({ length: Math.min(limite, files.length) }, worker)
   );
   return buffers;
-}
-
-function parseAmount(val) {
-  if (val === null || val === undefined || val === '') return 0;
-  const n = parseFloat(String(val).replace(/[^\d.-]/g, ''));
-  return isNaN(n) ? 0 : n;
-}
-
-// ── HTML-in-cells parser ───────────────────────────────────────────────────────
-// Some exports (e.g. GoCab billing system) dump a full HTML table into an Excel
-// where every row in column A is one line of raw HTML.  We detect this case and
-// parse the embedded table instead of treating the cells as normal data.
-
-function stripHtml(s) {
-  return String(s || '')
-    .replace(/<[^>]+>/g, '')        // remove all tags
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&nbsp;/g, ' ')
-    .trim();
-}
-
-function isHtmlFile(rows) {
-  // Check if first few non-empty cells look like HTML markup
-  const sample = rows.slice(0, 10).flat().filter(Boolean).map(String);
-  return sample.some(c => /^<(tr|td|table|thead|tbody)/i.test(c.trim()));
-}
-
-function parseHtmlRows(rows) {
-  // Concatenate all cells into one HTML string
-  const html = rows.map(r => r.join('')).join('\n');
-
-  // Extract every <tr> block
-  const tableRows = [];
-  const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let trM;
-  while ((trM = trRe.exec(html)) !== null) {
-    const cells = [];
-    const tdRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;  // match <td> and <th>
-    let tdM;
-    while ((tdM = tdRe.exec(trM[1])) !== null) {
-      cells.push(stripHtml(tdM[1]));
-    }
-    if (cells.some(c => c)) tableRows.push(cells);
-  }
-  return tableRows;
 }
 
 export async function GET(request) {
