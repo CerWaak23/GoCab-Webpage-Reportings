@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { billsDeFilas, ultimoPorDia, parseAmount, leerFilas } from '@/lib/bills/archivo';
+import { reporteDesdeVersiones } from '@/lib/bills/desdeVersiones';
 
 describe('lectura de exports de bills (la misma del reporte)', () => {
   const rows = [
@@ -37,5 +38,39 @@ describe('lectura de exports de bills (la misma del reporte)', () => {
       { id: 'd', modifiedTime: '2026-10-02T15:00:00Z' },
     ];
     expect(ultimoPorDia(fs).map((f) => f.id)).toEqual(['c', 'd']);
+  });
+});
+
+describe('reporte de Bills desde la historia en Supabase', () => {
+  const archivos = [
+    { id: 1, archivo: 'a.xlsx', subido: '2026-10-01T15:00:00Z', filas: 2, filas_sin_conductor: 0, referencias: ['B1', 'B2'] },
+    { id: 2, archivo: 'b.xlsx', subido: '2026-10-02T15:00:00Z', filas: 2, filas_sin_conductor: 0, referencias: ['B1', 'B2'] },
+    { id: 3, archivo: 'c.xlsx', subido: '2026-10-03T15:00:00Z', filas: 1, filas_sin_conductor: 0, referencias: ['B1'] },
+  ];
+  const v = (referencia, archivo_id, pagado, extra = {}) => ({ referencia, archivo_id, tipo: 'Toll', estado: 'Pending', vehiculo: 'X (AAAA11)', conductor: 'ANA', telefono: '', descripcion: '', monto: 1000, pagado, creado_texto: '2026-09-30 10:00:00', ...extra });
+
+  it('un pago es la subida del pagado entre un archivo y el siguiente', () => {
+    const r = reporteDesdeVersiones(archivos.slice(0, 2), [v('B1', 1, 0), v('B2', 1, 0), v('B1', 2, 600)]);
+    expect(r.paymentEvents).toEqual([expect.objectContaining({ reference: 'B1', amount: 600, date: '2026-10-02T15:00:00.000Z' })]);
+    expect(r.snapshots.map((s) => s.totalPaid)).toEqual([0, 600]);
+  });
+
+  it('una bill que aparece ya pagada se cobra en su Created At', () => {
+    const r = reporteDesdeVersiones(archivos.slice(0, 1), [v('B1', 1, 1000)]);
+    expect(r.paymentEvents[0]).toMatchObject({ amount: 1000, date: '2026-09-30 10:00:00' });
+  });
+
+  it('se descarta lo que no viene en el último export si conserva el 90% del anterior', () => {
+    const vs = [v('B1', 1, 0), v('B2', 1, 0)];
+    expect(reporteDesdeVersiones(archivos.slice(0, 2), vs).bills).toHaveLength(2);
+    // c.xlsx conserva 1 de 2 (50%): no se poda y se avisa.
+    const r = reporteDesdeVersiones(archivos, vs);
+    expect(r.bills).toHaveLength(2);
+    expect(r.dataWarnings[0].issue).toBe('export_incompleto');
+  });
+
+  it('si el archivo nuevo no trae conductor, se mantiene el anterior', () => {
+    const r = reporteDesdeVersiones(archivos.slice(0, 2), [v('B1', 1, 0), v('B1', 2, 0, { conductor: '', estado: 'Completed' })]);
+    expect(r.bills[0]).toMatchObject({ driver: 'ANA', status: 'Completed' });
   });
 });

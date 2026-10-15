@@ -25,6 +25,18 @@ const auth = new google.auth.GoogleAuth({
 const drive = google.drive({ version: 'v3', auth });
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
 
+async function bajar(f) {
+  for (let intento = 0; ; intento++) {
+    try {
+      const res = await drive.files.get({ fileId: f.id, alt: 'media' }, { responseType: 'arraybuffer' });
+      return Buffer.from(res.data);
+    } catch (err) {
+      if (intento >= 2) throw new Error(`No se pudo leer "${f.name}": ${err.message}`);
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+}
+
 const archivos = [];
 let pageToken;
 do {
@@ -42,6 +54,25 @@ do {
 const tabulares = archivos.filter((f) => /\.(xlsx|xls|csv)$/i.test(f.name));
 const diarios = ultimoPorDia(tabulares);
 
+// --referencias: completa qué bills trajo cada archivo ya importado antes de la
+// migración 0010 (sin tocar las versiones).
+if (process.argv.includes('--referencias')) {
+  const { data: sinRefs, error: e0 } = await sb.from('bills_archivos').select('id, drive_id, archivo').is('referencias', null).not('drive_id', 'is', null);
+  if (e0) throw new Error(e0.message);
+  const porId = new Map(diarios.map((f) => [f.id, f]));
+  let n = 0;
+  for (const a of sinRefs) {
+    const f = porId.get(a.drive_id);
+    if (!f) continue;
+    const refs = billsDeFilas(leerFilas(await bajar(f), f.name)).map((b) => b.referencia);
+    const { error: e1 } = await sb.from('bills_archivos').update({ referencias: refs }).eq('id', a.id);
+    if (e1) throw new Error(e1.message);
+    process.stdout.write(`\r  ${++n}/${sinRefs.length} ${a.archivo}   `);
+  }
+  console.log(`\nReferencias completadas en ${n} archivos.`);
+  process.exit(0);
+}
+
 const { data: ya, error } = await sb.from('bills_archivos').select('drive_id').not('drive_id', 'is', null);
 if (error) throw new Error(error.message);
 const guardados = new Set(ya.map((x) => x.drive_id));
@@ -51,17 +82,6 @@ console.log(`Drive: ${tabulares.length} exports · ${diarios.length} días (últ
 console.log(`Ya guardados: ${diarios.length - pendientes.length} · Por guardar: ${pendientes.length}`);
 if (pendientes.length) console.log(`Desde ${pendientes[0].modifiedTime.slice(0, 10)} hasta ${pendientes.at(-1).modifiedTime.slice(0, 10)}`);
 
-async function bajar(f) {
-  for (let intento = 0; ; intento++) {
-    try {
-      const res = await drive.files.get({ fileId: f.id, alt: 'media' }, { responseType: 'arraybuffer' });
-      return Buffer.from(res.data);
-    } catch (err) {
-      if (intento >= 2) throw new Error(`No se pudo leer "${f.name}": ${err.message}`);
-      await new Promise((r) => setTimeout(r, 500));
-    }
-  }
-}
 
 // De a 10 en paralelo para bajar, pero se guardan en orden: cada versión se
 // compara con la anterior.
