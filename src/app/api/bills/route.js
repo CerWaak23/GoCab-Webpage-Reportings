@@ -71,27 +71,21 @@ async function descargarEnParalelo(drive, files, limite = 10) {
 
 /**
  * Reporte de Bills. Desde oct-2026 lee la historia guardada en Supabase
- * (los exports se suben en Carga de datos). Con ?fuente=drive, o si Supabase
- * falla, lee la carpeta de Drive como antes: queda de respaldo.
+ * (los exports se suben en Carga de datos). Con ?fuente=drive lee la carpeta
+ * de Drive como antes. Si Supabase falla NO se cae a Drive: Drive ya no se
+ * actualiza, y mostrar datos viejos sin avisar es peor que mostrar el error.
  */
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
-  let errorSupabase = null;
   if (params.get('fuente') !== 'drive' && params.get('todosLosArchivos') !== '1') {
     try {
       return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase' }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (err) {
-      console.error('bills: Supabase falló, se usa Drive', err.message);
-      // ?fuente=supabase muestra el error en vez de caer a Drive, para poder verlo.
-      if (params.get('fuente') === 'supabase') return NextResponse.json({ error: err.message, fuente: 'supabase' }, { status: 500 });
-      errorSupabase = err.message;
+      console.error('bills: Supabase falló', err.message);
+      return NextResponse.json({ error: `No se pudo leer Supabase: ${err.message}`, fuente: 'supabase' }, { status: 500 });
     }
   }
-  const res = await desdeDrive(request);
-  if (!errorSupabase) return res;
-  // Se avisa en la respuesta que se cayó al respaldo y por qué.
-  const cuerpo = await res.json();
-  return NextResponse.json({ ...cuerpo, errorSupabase }, { status: res.status, headers: { 'Cache-Control': 'no-store' } });
+  return desdeDrive(request);
 }
 
 async function reporteDesdeSupabase() {

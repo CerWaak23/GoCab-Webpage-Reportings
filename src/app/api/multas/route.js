@@ -54,16 +54,17 @@ const SIN_CACHE = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-a
 
 /**
  * Reporte de multas. Desde oct-2026 lee la historia guardada en Supabase (los
- * exports se suben en Carga de datos). Con ?fuente=drive, o si Supabase falla,
- * lee la carpeta de Drive como antes: queda de respaldo.
+ * exports se suben en Carga de datos). Con ?fuente=drive lee la carpeta de
+ * Drive como antes; si Supabase falla, se muestra el error.
  */
 export async function GET(request) {
   if (new URL(request.url).searchParams.get('fuente') !== 'drive') {
     try {
       return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase', _fetchedAt: new Date().toISOString() }, { headers: SIN_CACHE });
     } catch (err) {
-      console.error('multas: Supabase falló, se usa Drive', err.message);
-      if (new URL(request.url).searchParams.get('fuente') === 'supabase') return NextResponse.json({ error: err.message, fuente: 'supabase' }, { status: 500 });
+      // Sin caer a Drive: ya no se actualiza (ver /api/bills).
+      console.error('multas: Supabase falló', err.message);
+      return NextResponse.json({ error: `No se pudo leer Supabase: ${err.message}`, fuente: 'supabase' }, { status: 500 });
     }
   }
   return desdeDrive();
