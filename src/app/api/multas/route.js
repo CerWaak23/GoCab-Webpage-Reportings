@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'; // never cache — always fetch latest from Drive
+export const maxDuration = 60;
 
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
@@ -62,6 +63,7 @@ export async function GET(request) {
       return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase', _fetchedAt: new Date().toISOString() }, { headers: SIN_CACHE });
     } catch (err) {
       console.error('multas: Supabase falló, se usa Drive', err.message);
+      if (new URL(request.url).searchParams.get('fuente') === 'supabase') return NextResponse.json({ error: err.message, fuente: 'supabase' }, { status: 500 });
     }
   }
   return desdeDrive();

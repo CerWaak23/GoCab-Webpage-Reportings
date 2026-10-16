@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'; // never cache — always fetch latest from Drive
+export const maxDuration = 60;
 
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
@@ -75,14 +76,22 @@ async function descargarEnParalelo(drive, files, limite = 10) {
  */
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
+  let errorSupabase = null;
   if (params.get('fuente') !== 'drive' && params.get('todosLosArchivos') !== '1') {
     try {
       return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase' }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (err) {
       console.error('bills: Supabase falló, se usa Drive', err.message);
+      // ?fuente=supabase muestra el error en vez de caer a Drive, para poder verlo.
+      if (params.get('fuente') === 'supabase') return NextResponse.json({ error: err.message, fuente: 'supabase' }, { status: 500 });
+      errorSupabase = err.message;
     }
   }
-  return desdeDrive(request);
+  const res = await desdeDrive(request);
+  if (!errorSupabase) return res;
+  // Se avisa en la respuesta que se cayó al respaldo y por qué.
+  const cuerpo = await res.json();
+  return NextResponse.json({ ...cuerpo, errorSupabase }, { status: res.status, headers: { 'Cache-Control': 'no-store' } });
 }
 
 async function reporteDesdeSupabase() {
