@@ -20,6 +20,11 @@ export function supabaseServidor() {
   if (!cliente) {
     cliente = createClient(url, clave, {
       auth: { persistSession: false, autoRefreshToken: false },
+      // Next.js guarda en su caché de datos los fetch del servidor, también los
+      // de Supabase: en producción el reporte de Bills seguía mostrando el
+      // estado de horas antes aunque la carga ya estaba en la base. Cada
+      // consulta va a la base, siempre.
+      global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
     });
   }
   return cliente;
