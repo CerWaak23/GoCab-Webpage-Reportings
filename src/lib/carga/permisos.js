@@ -1,16 +1,16 @@
 import { puedeVerSeccion } from '@/lib/i18n/secciones';
 
 /**
- * Quién puede hacer qué en Carga de datos. Subir y revisar: quien ve la
- * sección. Aplicar (escribe en la base): solo gerencia, hasta que el login
- * con Google traiga el rol "admin" (U2).
+ * Quién puede hacer qué en Carga de datos y en la maestra: todo el que ve la
+ * sección puede subir, revisar, aplicar y corregir (oct-2026: lo pidió el
+ * usuario, para que la carga diaria no dependa de gerencia). Cada carga y
+ * cada corrección queda con el correo de quien la hizo.
  *
  * @returns null si puede; 401 o 403 si no.
  */
 export function permisoCarga(usuario, accion) {
   if (!usuario) return 401;
   if (!puedeVerSeccion(usuario.role, 'carga')) return 403;
-  if (accion === 'aplicar' && !usuario.isManager) return 403;
   return null;
 }
 

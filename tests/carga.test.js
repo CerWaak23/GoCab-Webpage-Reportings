@@ -64,9 +64,9 @@ describe('permisos de Carga de datos', () => {
     expect(permisoCarga(gerente, 'revisar')).toBe(null);
     expect(permisoCarga(gerente, 'aplicar')).toBe(null);
   });
-  it('un coordinador revisa pero no aplica', () => {
+  it('un coordinador también revisa y aplica', () => {
     expect(permisoCarga(coord, 'revisar')).toBe(null);
-    expect(permisoCarga(coord, 'aplicar')).toBe(403);
+    expect(permisoCarga(coord, 'aplicar')).toBe(null);
   });
   it('el encargado de taller no entra', () => expect(permisoCarga(taller, 'revisar')).toBe(403));
 });
