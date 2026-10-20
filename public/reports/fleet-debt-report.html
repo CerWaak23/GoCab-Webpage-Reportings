@@ -1017,9 +1017,65 @@ function namesMatch(fleetName,billName){
 // La patente en Bills viene dentro del vehiculo ("BAIC Eu5 (VZSS61)") y en la
 // planilla como columna aparte; se normalizan las dos a solo letras y numeros.
 function normPatente(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
+// "BAIC Eu5 (VZSS68)" → "VZSS68". Si no viene entre paréntesis, el texto entero.
+// La versión anterior había perdido las barras invertidas y no calzaba nunca con
+// ese formato, así que no devolvía patente para ningún cargo.
 function patenteDeVehiculo(v){
-  var m=String(v||'').match(/(([^)]+))s*$/);
-  return m?normPatente(m[1]):'';
+  var s=String(v||'');
+  var m=s.match(/\(([^)]+)\)\s*$/);
+  return normPatente(m?m[1]:s);
+}
+
+/* El módulo de multas escribe a algunos conductores distinto que el de bills:
+   "PABLO BERNAL" en vez de "PPD PABLO FELIPE BERNAL CARBAJAL". Cada nombre armaba
+   su propia fila, y la deuda de la multa quedaba en una fila fantasma.
+
+   Una multa cuyo conductor no existe tal cual se une a un conductor conocido solo
+   si se cumplen las dos cosas:
+     · nombre: todas sus palabras (sin prefijos como PPD) están en el nombre del
+       conductor, y hay un solo conductor que calza;
+     · patente: ese conductor manejó el auto de la multa según bills.
+   Si falla cualquiera, o hay más de un candidato, la multa queda con su nombre:
+   pegarle una multa a la persona equivocada es peor que una fila de más. */
+var NOMBRES_UNIDOS=[]; // [{de, a, n}] para poder auditar qué se unió
+function palabrasDeNombre(s){
+  return normalizeName(s).replace(/^(PPD|PDD|DTO)\s+/,'').split(' ').filter(function(w){return w.length>1;});
+}
+function unificarNombresMultas(multas,bills,flota){
+  NOMBRES_UNIDOS=[];
+  var conocidos={},porPatente={};
+  bills.forEach(function(b){
+    var n=normalizeName(b.driver);if(!n)return;
+    conocidos[n]=true;
+    var p=patenteDeVehiculo(b.vehicle);
+    if(p)(porPatente[p]=porPatente[p]||{})[n]=true;
+  });
+  flota.forEach(function(d){var n=normalizeName(d.conductor);if(n)conocidos[n]=true;});
+  var lista=Object.keys(conocidos), resuelto={};
+  multas.forEach(function(f){
+    var n=normalizeName(f.driver);
+    if(!n||conocidos[n])return;
+    var p=patenteDeVehiculo(f.vehicle), clave=n+'|'+p;
+    if(!(clave in resuelto)){
+      var pal=palabrasDeNombre(n), cand=[];
+      if(pal.length>=2){
+        cand=lista.filter(function(c){
+          var pc=palabrasDeNombre(c);
+          return pal.every(function(w){return pc.indexOf(w)>=0;});
+        });
+      }
+      resuelto[clave]=(cand.length===1&&p&&porPatente[p]&&porPatente[p][cand[0]])?cand[0]:null;
+    }
+    var a=resuelto[clave];
+    if(!a)return;
+    f.driverOriginal=f.driver;
+    f.driver=a;
+    var u=NOMBRES_UNIDOS.filter(function(x){return x.de===n&&x.a===a;})[0];
+    if(u)u.n++;else NOMBRES_UNIDOS.push({de:n,a:a,n:1});
+  });
+  if(NOMBRES_UNIDOS.length){
+    console.log('[Multas] nombres unidos a su conductor: '+NOMBRES_UNIDOS.map(function(u){return u.de+' → '+u.a;}).join(' | '));
+  }
 }
 
 /* Cargos que llegan sin conductor.
@@ -1160,8 +1216,16 @@ async function loadData(){
     MULTAS_TOTALS=(multasJson&&multasJson.totals)||null;
     if(multasJson&&multasJson.error)console.warn('[Multas]',multasJson.error);
     // Las multas se suman como cargos más: mismo shape, type 'Multa'
+    unificarNombresMultas(MULTAS,ALL_BILLS,fleetJson.drivers||[]); // antes de mezclarlas con bills
     ALL_BILLS=ALL_BILLS.concat(MULTAS);
-    ALL_PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.concat((multasJson&&multasJson.paymentEvents)||[]);
+    // Los pagos de una multa unida se van con ella: si no, el pago quedaría en la
+    // fila del nombre viejo y la deuda en la del conductor
+    var unidaA={};
+    MULTAS.forEach(function(f){if(f.driverOriginal)unidaA[f.reference]=f.driver;});
+    var pagosMultas=((multasJson&&multasJson.paymentEvents)||[]).map(function(p){
+      return unidaA[p.reference]?Object.assign({},p,{driver:unidaA[p.reference]}):p;
+    });
+    ALL_PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.concat(pagosMultas);
     excluirCargos();
     consolidarPeajes(); // el peaje pasa a contar el miércoles que cierra su tramo
     var fleetDrivers=fleetJson.drivers||[];
