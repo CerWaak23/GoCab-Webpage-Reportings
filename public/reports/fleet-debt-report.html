@@ -611,6 +611,7 @@ var FLEET_NAMES = []; // normalized names from fleet control sheet
 var FLEET_ROWS = []; // [{nameNorm, coordinador, patente}] — planilla Control Flota
 var TALLER = [];     // hoja VEHÍCULOS EN TALLER de la misma planilla
 var VEHICULOS = [];  // toda patente de Control Flota, con o sin conductor
+var GARANTIAS = [];  // [{nombres, garantia}] de la ficha de Fleet, para quien no está en Control Flota
 var _coordFilter = null; // coordinador seleccionado (columna E), null = todos
 var LANG = 'es';
 var CUR = 'CLP';
@@ -703,7 +704,7 @@ var T = {
       period_weekly:'Semanal',period_daily:'Diario',
       peaje_pend_a:'peajes esperando el miércoles:',peaje_pend_b:'aparecen el',peaje_nota:'El peaje cuenta el miércoles que cierra su tramo jueves→miércoles, no el día que se cargó.',
       evol_title:'Evolución Semanal de Pagos',evol_sub:'Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado',
-      sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cubierto / cargado de su semana:',sem_a_deuda:'a deuda anterior',sem_sin_deuda:'sin deuda que cubrir',sem_tip_pago:'Pagó',sem_tip_semana:'esta semana',sem_tip_cubren:'cubren su semana',sem_tip_a:'a su deuda de la semana',sem_sin_cargos:'No se le cargó nada esa semana',sem_ya_pagado:'ya pagado antes de que cayera el cargo',sem_pago_despues:'cubierto con pagos posteriores',sem_debe:'Según sus boletas debe',
+      sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cubierto / cargado de su semana:',sem_a_deuda:'a deuda anterior',sem_sin_deuda:'sin deuda que cubrir',sem_tip_pago:'Pagó',sem_tip_semana:'esta semana',sem_tip_cubren:'cubren su semana',sem_tip_a:'a su deuda de la semana',sem_sin_cargos:'No se le cargó nada esa semana',sem_ya_pagado:'ya pagado antes de que cayera el cargo',sem_pago_despues:'cubierto con pagos posteriores',sem_debe:'Según sus boletas debe',gar_col:'GARANTÍA',gar_sem:'sem. atrasadas',gar_sem1:'sem. atrasada',gar_completa:'completa',gar_aldia:'al día',gar_sin_dato:'sin dato',gar_tip_pago:'Pagó',gar_tip_de:'de los',gar_tip_debia:'que debía a hoy',gar_tip_tope:'tope',gar_atrasados:'atrasados',
       orden_semaforo:'🚦 Rojo primero',orden_deuda:'Mayor deuda',
       evol_pending_col:'PENDIENTE ACTUAL',evol_total:'Total',
       fired_section_title:'Deuda Irrecuperable — Conductores Despedidos',
@@ -775,7 +776,7 @@ var T = {
       period_weekly:'Weekly',period_daily:'Daily',
       peaje_pend_a:'tolls waiting for Wednesday:',peaje_pend_b:'they show up on',peaje_nota:'Tolls count on the Wednesday that closes their Thursday→Wednesday block, not on the day they were charged.',
       evol_title:'Weekly Payment Evolution',evol_sub:'Red +X = charges added · Green −X = payments logged · Bold = accumulated pending balance',
-      sem_col:'PAID THEIR WEEK',sem_tooltip:'Covered / charged for their week:',sem_a_deuda:'to earlier debt',sem_sin_deuda:'no earlier debt to cover',sem_tip_pago:'Paid',sem_tip_semana:'this week',sem_tip_cubren:'cover their own week',sem_tip_a:'to their debt from the week of',sem_sin_cargos:'Nothing was charged to them that week',sem_ya_pagado:'already paid before the charge landed',sem_pago_despues:'covered by later payments',sem_debe:'Their bills say they owe',
+      sem_col:'PAID THEIR WEEK',sem_tooltip:'Covered / charged for their week:',sem_a_deuda:'to earlier debt',sem_sin_deuda:'no earlier debt to cover',sem_tip_pago:'Paid',sem_tip_semana:'this week',sem_tip_cubren:'cover their own week',sem_tip_a:'to their debt from the week of',sem_sin_cargos:'Nothing was charged to them that week',sem_ya_pagado:'already paid before the charge landed',sem_pago_despues:'covered by later payments',sem_debe:'Their bills say they owe',gar_col:'DEPOSIT',gar_sem:'weeks behind',gar_sem1:'week behind',gar_completa:'complete',gar_aldia:'up to date',gar_sin_dato:'no data',gar_tip_pago:'Paid',gar_tip_de:'of the',gar_tip_debia:'due by today',gar_tip_tope:'cap',gar_atrasados:'behind',
       orden_semaforo:'🚦 Red first',orden_deuda:'Largest debt',
       evol_pending_col:'CURRENT PENDING',evol_total:'Total',
       fired_section_title:'Irrecoverable Debt — Fired Drivers',
@@ -847,7 +848,7 @@ var T = {
       period_weekly:'Недельно',period_daily:'Дневно',
       peaje_pend_a:'пошлины ждут среды:',peaje_pend_b:'появятся',peaje_nota:'Пошлина учитывается в среду, закрывающую отрезок четверг→среда, а не в день начисления.',
       evol_title:'Еженедельная динамика платежей',evol_sub:'Красный +X = начисления · Зелёный −X = платежи · Жирный = накопленный долг',
-      sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Покрыто / начислено за его неделю:',sem_a_deuda:'на прежний долг',sem_sin_deuda:'нет долга для погашения',sem_tip_pago:'Оплатил',sem_tip_semana:'на этой неделе',sem_tip_cubren:'покрывают его неделю',sem_tip_a:'на его долг недели',sem_sin_cargos:'За ту неделю ему ничего не начислили',sem_ya_pagado:'оплачено ещё до появления начисления',sem_pago_despues:'покрыто более поздними платежами',sem_debe:'По его счетам он должен',
+      sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Покрыто / начислено за его неделю:',sem_a_deuda:'на прежний долг',sem_sin_deuda:'нет долга для погашения',sem_tip_pago:'Оплатил',sem_tip_semana:'на этой неделе',sem_tip_cubren:'покрывают его неделю',sem_tip_a:'на его долг недели',sem_sin_cargos:'За ту неделю ему ничего не начислили',sem_ya_pagado:'оплачено ещё до появления начисления',sem_pago_despues:'покрыто более поздними платежами',sem_debe:'По его счетам он должен',gar_col:'ЗАЛОГ',gar_sem:'нед. просрочки',gar_sem1:'нед. просрочки',gar_completa:'внесён',gar_aldia:'в срок',gar_sin_dato:'нет данных',gar_tip_pago:'Внёс',gar_tip_de:'из',gar_tip_debia:'положенных на сегодня',gar_tip_tope:'максимум',gar_atrasados:'с просрочкой',
       orden_semaforo:'🚦 Сначала красные',orden_deuda:'Больший долг',
       evol_pending_col:'ТЕКУЩИЙ ДОЛГ',evol_total:'Итого',
       fired_section_title:'Безвозвратный долг — Уволенные водители',
@@ -1232,10 +1233,12 @@ async function loadData(){
     FLEET_NAMES=fleetDrivers.map(function(d){return normalizeName(d.conductor);});
     FLEET_ROWS=fleetDrivers.map(function(d){
       return {nameNorm:normalizeName(d.conductor),coordinador:String(d.coordinador||'').trim(),
-              patente:d.patente||'',tipo:String(d.tipo||'').trim()};
+              patente:d.patente||'',tipo:String(d.tipo||'').trim(),
+              garantia:d.garantia||null};
     });
     TALLER=fleetJson.taller||[];
     VEHICULOS=fleetJson.vehiculos||[];
+    GARANTIAS=fleetJson.garantias||[];
     detectarCoordEnConflicto();
     _coordCache={};
     recuperarConductorPorPatente(); // completa los nombres antes de agrupar
@@ -2091,6 +2094,41 @@ function lineaCubiertoAparte(s){
   return '<div title="'+esc(tip)+'" style="font-size:9px;color:#93c5fd;margin-top:1px;'
     +'white-space:normal;line-height:1.25;cursor:help">'+t(cual)+'</div>';
 }
+/* Garantía del conductor: la calcula /api/fleet con el plan de pago (50.000 a la
+   entrega y 25.000 cada miércoles hasta el tope), y acá solo se pinta. */
+function garantiaDe(drv){
+  for(var i=0;i<FLEET_ROWS.length;i++){
+    var fr=FLEET_ROWS[i];
+    if(fr.nameNorm&&fr.garantia&&namesMatch(fr.nameNorm,drv))return fr.garantia;
+  }
+  // Quien no está en Control Flota se busca por nombre en la ficha de Fleet
+  for(var j=0;j<GARANTIAS.length;j++){
+    var g=GARANTIAS[j];
+    for(var k=0;k<g.nombres.length;k++){
+      if(namesMatch(normalizeName(g.nombres[k]),drv))return g.garantia;
+    }
+  }
+  return null;
+}
+function celdaGarantia(g){
+  var gris='<td style="text-align:center;color:#4b5563;font-size:10px">';
+  if(!g)return gris+'—</td>';
+  if(!g.aplica)return gris+'DTO</td>';
+  if(g.sinDato)return gris+esc(t('gar_sin_dato'))+'</td>';
+  var tip=t('gar_tip_pago')+' '+fmtAmt(g.pagada)+' '+t('gar_tip_de')+' '+fmtAmt(g.debia)+' '+t('gar_tip_debia')
+    +' ('+t('gar_tip_tope')+' '+fmtAmt(g.tope)+')';
+  var pie='<div style="font-size:9px;color:#64748b;margin-top:2px;white-space:nowrap">'
+    +fmtShort(g.pagada)+' / '+fmtShort(g.completa?g.tope:g.debia)+'</div>';
+  if(g.completa||g.atraso===0){
+    return '<td title="'+esc(tip)+'" style="text-align:center;cursor:help">'
+      +'<span style="color:#34d399;font-weight:700;font-size:11px">✓ '+esc(t(g.completa?'gar_completa':'gar_aldia'))+'</span>'+pie+'</td>';
+  }
+  var color=g.atraso>=3?'#f87171':'#fbbf24';
+  return '<td title="'+esc(tip)+'" style="text-align:center;cursor:help">'
+    +'<div style="color:'+color+';font-weight:800;font-size:15px;line-height:1.1">'+g.atraso+'</div>'
+    +'<div style="font-size:9px;color:'+color+';white-space:nowrap">'+esc(t(g.atraso===1?'gar_sem1':'gar_sem'))+'</div>'
+    +pie+'</td>';
+}
 function celdaSemaforo(s){
   if(!s||s.estado==='gris'){
     return '<td style="text-align:center"><span style="color:#374151;font-size:11px" title="'
@@ -2240,10 +2278,14 @@ function renderEvolTable(){
   html+='<th style="background:#1e2a42;color:#93c5fd;text-align:center">'+t('sem_col')
     +(rangoSem?'<div style="font-weight:400;color:#64748b;font-size:9px;text-transform:none;letter-spacing:0">'+rangoSem+'</div>':'')
     +'</th>';
+  html+='<th style="background:#1e2a42;color:#93c5fd;text-align:center">'+t('gar_col')+'</th>';
   html+='</tr></thead><tbody>';
 
   topDrivers.forEach(function(drv){
-    html+='<tr><td>'+esc(drv)+'</td>';
+    var coordDrv=coordOf(drv);
+    html+='<tr><td>'+esc(drv)
+      +(coordDrv?'<div style="font-size:9.5px;color:#64748b;font-weight:500;margin-top:1px">'+esc(coordDrv)+'</div>':'')
+      +'</td>';
     // running starts at 0.  The bills API now emits synthetic payment events for
     // bills that appear pre-paid on first upload, so sum(payMap) == sum(paidAmount)
     // and the running converges to `pending` naturally — no back-calculation needed.
@@ -2274,6 +2316,7 @@ function renderEvolTable(){
     }
     html+=celdaGestion(drv,pendienteActual);
     html+=celdaSemaforo(SEM.porConductor[drv]);
+    html+=celdaGarantia(garantiaDe(drv));
     html+='</tr>';
   });
 
@@ -2309,7 +2352,11 @@ function renderEvolTable(){
     +'<span style="color:'+SEM_COLOR.rojo+'">'+conteo.rojo+'</span>'
     +' <span style="color:#374151">·</span> <span style="color:'+SEM_COLOR.amarillo+'">'+conteo.amarillo+'</span>'
     +' <span style="color:#374151">·</span> <span style="color:'+SEM_COLOR.verde+'">'+conteo.verde+'</span>'
-    +'</td></tr></tfoot>';
+    +'</td>';
+  var garAtr=topDrivers.filter(function(drv){var g=garantiaDe(drv);return g&&g.aplica&&!g.sinDato&&g.atraso>0;}).length;
+  html+='<td style="text-align:center;font-size:11px;font-weight:700;color:'+(garAtr?'#f87171':'#34d399')+'">'
+    +garAtr+' <span style="font-weight:500;color:#6b7280">'+t('gar_atrasados')+'</span></td>';
+  html+='</tr></tfoot>';
   tbl.innerHTML=html;
 }
 

@@ -2,6 +2,42 @@ export const dynamic = 'force-dynamic'; // never cache — always fetch latest f
 
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
+import { supabaseServidor } from '@/lib/supabase/server';
+import { estadoGarantia } from '@/lib/fleet/garantia';
+
+const soloRut = (s) => String(s || '').toUpperCase().replace(/[^0-9K]/g, '');
+const claveNombre = (s) =>
+  String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()
+    .replace(/^(PPD|PDD|DTO)\s+/, '').replace(/\s+/g, ' ').trim();
+
+/* Garantía pagada, activación y modalidad de cada conductor, desde la tabla
+   conductores (la carga el export de conductores de Fleet). Si Supabase falla, la
+   flota se sirve igual, sin la columna de garantía. */
+async function fichasConductores() {
+  try {
+    const { data, error } = await supabaseServidor()
+      .from('conductores')
+      .select('rut, nombre, nombre_fleet, garantia_pagada, activacion, modalidad, baja');
+    if (error) throw error;
+    const porRut = new Map();
+    const porNombre = new Map();
+    const activos = [];
+    for (const c of data || []) {
+      if (c.baja) continue;
+      activos.push(c);
+      if (c.rut) porRut.set(soloRut(c.rut), c);
+      for (const n of [c.nombre, c.nombre_fleet]) if (n) porNombre.set(claveNombre(n), c);
+    }
+    return { porRut, porNombre, activos };
+  } catch (e) {
+    console.error('[fleet] sin fichas de conductores:', e.message);
+    return null;
+  }
+}
+
+function hoyChile() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+}
 
 const FLEET_SHEET_ID = '15yNGkyE1kkk8E0yiLLMmahz-G048vwgy2NWN8xYmiFw';
 const FLEET_SHEET_NAME = 'Vehiculos y ConductoresII';
@@ -55,14 +91,34 @@ export async function GET(request) {
     // Modalidad del vehículo: DTO (drive to own) o renta
     const iTipo = header.findIndex((h) => h === 'tipo' || h.includes('modalidad'));
 
-    const drivers = body.map((r) => ({
-      conductor: String(r[0] || '').trim().toUpperCase(),
-      patente: String(r[1] || '').trim(),
-      fechaInicio: String(r[2] || '').trim(),
-      nota: String(r[3] || '').trim(),
-      coordinador: iCoord >= 0 ? String(r[iCoord] || '').trim() : '',
-      tipo: iTipo >= 0 ? String(r[iTipo] || '').trim() : '',
-    }));
+    // Por encabezado y no por posición: cuando la hoja ganó la columna "Rut" en la
+    // C, el campo fechaInicio (que se leía de la C) pasó a llevar el RUT de cada
+    // conductor y la API lo devolvía. El RUT se usa solo acá adentro, para cruzar
+    // con la ficha del conductor, y nunca sale en la respuesta.
+    const iRut = header.findIndex((h) => h === 'rut' || h.includes('rut'));
+    const iCreado = header.findIndex((h) => h.includes('created') || h.includes('fecha'));
+    const iNota = header.findIndex((h) => h.includes('nota'));
+    const fichas = await fichasConductores();
+    const hoy = hoyChile();
+
+    const drivers = body.map((r) => {
+      const conductor = String(r[0] || '').trim().toUpperCase();
+      const rut = iRut >= 0 ? soloRut(r[iRut]) : '';
+      const ficha = fichas
+        ? (rut && fichas.porRut.get(rut)) || fichas.porNombre.get(claveNombre(conductor)) || null
+        : null;
+      return {
+        conductor,
+        patente: String(r[1] || '').trim(),
+        fechaInicio: iCreado >= 0 ? String(r[iCreado] || '').trim() : '',
+        nota: iNota >= 0 ? String(r[iNota] || '').trim() : '',
+        coordinador: iCoord >= 0 ? String(r[iCoord] || '').trim() : '',
+        tipo: iTipo >= 0 ? String(r[iTipo] || '').trim() : '',
+        garantia: ficha
+          ? estadoGarantia({ garantia: ficha.garantia_pagada, activacion: ficha.activacion, modalidad: ficha.modalidad }, hoy)
+          : null,
+      };
+    });
 
     // Un auto sin conductor (en taller, esperando entrega) sigue en la hoja con su
     // patente y su encargado, solo que sin nombre. `drivers` lo descarta porque es
@@ -131,7 +187,14 @@ export async function GET(request) {
     }
 
     const noCache = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' };
-    return NextResponse.json({ drivers, vehiculos, taller, _fetchedAt: new Date().toISOString() }, { headers: noCache });
+    // La garantía de todos los conductores de Fleet por nombre (sin RUT), para los
+    // que salen en el reporte pero no están en Control Flota
+    const garantias = (fichas?.activos || []).map((c) => ({
+      nombres: [...new Set([c.nombre, c.nombre_fleet].filter(Boolean).map((n) => String(n).toUpperCase()))],
+      garantia: estadoGarantia({ garantia: c.garantia_pagada, activacion: c.activacion, modalidad: c.modalidad }, hoy),
+    }));
+
+    return NextResponse.json({ drivers, vehiculos, taller, garantias, _fetchedAt: new Date().toISOString() }, { headers: noCache });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
