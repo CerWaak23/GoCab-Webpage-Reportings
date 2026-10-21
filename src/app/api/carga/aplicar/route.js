@@ -72,9 +72,10 @@ export async function POST(request) {
         };
       }
       const datos = payloadPara(analizarExport(filas, {}, hoy), conductorDe);
-      const { data: r, error: e } = await sb.rpc('aplicar_carga', {
-        p_tipo: c.tipo, p_datos: datos, p_carga_id: c.id, p_hoy: hoy,
-      });
+      // Los despedidos van a su propia tabla (migración 0017): no tocan la maestra
+      const { data: r, error: e } = c.tipo === 'despedidos'
+        ? await sb.rpc('aplicar_despedidos', { p_datos: datos, p_carga_id: c.id })
+        : await sb.rpc('aplicar_carga', { p_tipo: c.tipo, p_datos: datos, p_carga_id: c.id, p_hoy: hoy });
       if (e) {
         if (e.message === 'YA_APLICADA') { resultados.push({ ...base, ok: false, motivo: 'ya_aplicada' }); continue; }
         throw new Error(e.message);

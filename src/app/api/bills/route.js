@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { parseAmount, isHtmlFile, parseHtmlRows } from '@/lib/bills/archivo';
 import { reporteDesdeVersiones, consolidarPorDia } from '@/lib/bills/desdeVersiones';
+import { reporteDesdeSupabase } from '@/lib/bills/supabase';
 import { supabaseServidor } from '@/lib/supabase/server';
 
 const BILLS_FOLDER_ID = '1Fd3sia5XyN1tXuk2pvQfbrIbmV_o-sKh';
@@ -88,28 +89,6 @@ export async function GET(request) {
   return desdeDrive(request);
 }
 
-async function reporteDesdeSupabase() {
-  const sb = supabaseServidor();
-  const todas = async (tabla, columnas) => {
-    const out = [];
-    for (let desde = 0; ; desde += 1000) {
-      // Por archivo y, dentro de cada uno, en el orden de las filas del export.
-      const { data, error } = await sb.from(tabla).select(columnas)
-        .order('subido').order(tabla.endsWith('_versiones') ? 'archivo_id' : 'id')
-        .order(tabla.endsWith('_versiones') ? 'orden' : 'id').order('id')
-        .range(desde, desde + 999);
-      if (error) throw new Error(error.message);
-      out.push(...data);
-      if (data.length < 1000) return out;
-    }
-  };
-  const [archivos, versiones] = await Promise.all([
-    todas('bills_archivos', 'id, archivo, subido, filas, filas_sin_conductor, referencias'),
-    todas('bills_versiones', 'id, referencia, archivo_id, tipo, estado, vehiculo, conductor, telefono, descripcion, monto, pagado, creado_texto'),
-  ]);
-  if (archivos.length === 0) throw new Error('Supabase no tiene exports de bills');
-  return reporteDesdeVersiones(...consolidarPorDia(archivos, versiones));
-}
 
 async function desdeDrive(request) {
   try {

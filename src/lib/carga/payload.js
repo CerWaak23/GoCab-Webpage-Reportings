@@ -1,7 +1,7 @@
 import { normalizarNombre } from '@/lib/fleet/nombres';
 
 /** Orden en que se aplican varias cargas juntas: conductores antes que autos. */
-export const ORDEN_TIPOS = ['drivers', 'vehicles', 'bills', 'fines'];
+export const ORDEN_TIPOS = ['drivers', 'vehicles', 'bills', 'fines', 'despedidos'];
 
 export function ordenarParaAplicar(cargas) {
   return [...cargas].sort((a, b) => ORDEN_TIPOS.indexOf(a.tipo) - ORDEN_TIPOS.indexOf(b.tipo));
@@ -52,6 +52,12 @@ export function payloadPara(analisis, conductorDe = () => null) {
       creado: c.creado,
       modalidad: c.modalidad,
     }));
+  }
+  if (analisis.tipo === 'despedidos') {
+    // Una fila por despedido: dos con el mismo RUT harían fallar la carga entera
+    const porClave = new Map();
+    for (const d of analisis.datos) porClave.set(d.clave, { ...d });
+    return [...porClave.values()];
   }
   if (analisis.tipo === 'bills' || analisis.tipo === 'fines') {
     return analisis.datos.map((f) => ({ ...f, conductorId: conductorDe(f) }));

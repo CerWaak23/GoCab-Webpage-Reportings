@@ -144,6 +144,30 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
           </svg>
         </Link>
         )}
+
+        {puedeVerSeccion(role, 'despedidos') && (
+        <Link
+          href="/despedidos"
+          className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-rose-500/40 hover:bg-gray-900/80 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/15 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t.dp_title}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t.dp_sub}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-gray-600 group-hover:text-rose-400 transition"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        )}
       </div>
     </main>
   );

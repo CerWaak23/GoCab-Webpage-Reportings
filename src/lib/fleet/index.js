@@ -2,6 +2,7 @@ import { detectarTipo } from './detectar';
 import { leerVehiculos, resumenVehiculos, diferenciasVehiculos } from './vehiculos';
 import { leerConductores, resumenConductores } from './conductores';
 import { leerBills, leerMultas, resumenBills, resumenMultas } from './cobros';
+import { esExportDespedidos, leerDespedidos, resumenDespedidos } from './despedidos';
 
 /**
  * Reconoce un export de Fleet y describe lo que cambiaría, sin escribir nada.
@@ -12,8 +13,15 @@ import { leerBills, leerMultas, resumenBills, resumenMultas } from './cobros';
  */
 export function analizarExport(filas, base, hoy) {
   if (!filas || filas.length === 0) return { tipo: null, error: 'vacio' };
-  const tipo = detectarTipo(Object.keys(filas[0]));
+  let tipo = detectarTipo(Object.keys(filas[0]));
   if (!tipo) return { tipo: null, error: 'no_reconocido' };
+  // Mismas columnas que el de conductores: lo distingue que todos vienen despedidos
+  if (tipo === 'drivers' && esExportDespedidos(filas)) tipo = 'despedidos';
+
+  if (tipo === 'despedidos') {
+    const despedidos = leerDespedidos(filas);
+    return { tipo, datos: despedidos, resumen: resumenDespedidos(despedidos) };
+  }
 
   if (tipo === 'vehicles') {
     const autos = leerVehiculos(filas);

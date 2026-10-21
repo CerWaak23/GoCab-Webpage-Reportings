@@ -12,6 +12,8 @@ const REGLAS = {
   talleres: () => true,
   registros: () => true,
   carga: (rol) => !esTaller(rol),
+  // Coordinadores y gerentes: los de taller no ven la plata de los despedidos
+  despedidos: (rol) => !esTaller(rol),
 };
 
 export function puedeVerSeccion(rol, seccion) {
