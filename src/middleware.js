@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { COOKIE_NAME, verifySessionToken } from '@/lib/session-core';
 import { COOKIE_CONDUCTOR, verificarTokenConductor } from '@/lib/sesion-conductor';
 import { rutaPausada } from '@/lib/pausado';
+import { buscarUsuario } from '@/lib/usuarios';
 
 /**
  * Rutas del equipo interno que responden sin sesión:
@@ -66,6 +67,18 @@ export async function middleware(request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
     return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // Un usuario desactivado en la tabla `usuarios` sale aunque su cookie siga
+  // vigente: los reportes HTML no tienen otra puerta que esta. Si la base no
+  // responde se deja pasar a la sesión válida, para no cerrarle el portal a todos.
+  const vivo = await buscarUsuario(session.email);
+  if (vivo.ok && !vivo.usuario) {
+    const salida = esApi
+      ? NextResponse.json({ error: 'Usuario desactivado' }, { status: 401 })
+      : NextResponse.redirect(new URL('/', request.url));
+    salida.cookies.delete(COOKIE_NAME);
+    return salida;
   }
 
   return NextResponse.next();

@@ -5,8 +5,7 @@ import { createSessionToken, COOKIE_NAME, SESSION_SECONDS } from '@/lib/session-
 // Contraseña única del portal, compartida por todo el equipo. Vive en la variable
 // de entorno PORTAL_PASSWORD (local: .env.local — en Vercel: Settings →
 // Environment Variables) y nunca en el código, para que no viaje al repo.
-// Si algún día se quiere una clave por persona, basta mover el campo a USERS
-// en lib/users.js y comparar contra user.password en vez de contra esta.
+// Quién puede entrar lo decide la tabla `usuarios` de Supabase (lib/usuarios.js).
 const ERROR_GENERICO = 'Email o contraseña incorrectos.';
 
 // Freno de fuerza bruta. Es por instancia de función, así que en Vercel no es
@@ -75,7 +74,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Error interno' }, { status: 500 });
     }
 
-    const user = getUserByEmail(email);
+    let user;
+    try {
+      user = await getUserByEmail(email);
+    } catch (e) {
+      // Sin la lista de usuarios no se deja entrar a nadie: no hay cómo saber
+      // si el correo sigue activo.
+      console.error('[login] usuarios:', e.message);
+      return NextResponse.json({ error: 'No se pudo verificar el usuario. Intenta en un minuto.' }, { status: 503 });
+    }
     const passwordOk = comparaSegura(password, esperada);
 
     // Un solo mensaje para los dos casos: si el error distinguiera "email no

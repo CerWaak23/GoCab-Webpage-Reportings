@@ -13,6 +13,7 @@ import {
   createSessionToken,
   verifySessionToken,
 } from './session-core';
+import { buscarUsuario } from './usuarios';
 
 // ── Server-Component helper ───────────────────────────────────────────────────
 
@@ -26,13 +27,20 @@ export async function getAppSession() {
   const payload = await verifySessionToken(token);
   if (!payload) return null;
 
+  // La tabla de usuarios manda sobre lo que quedó en la cookie: si lo
+  // desactivaron, la sesión deja de valer; si le cambiaron el rol, vale el nuevo.
+  // Si la base no responde se usa lo de la cookie, para no dejar a todos afuera.
+  const vivo = await buscarUsuario(payload.email);
+  if (vivo.ok && !vivo.usuario) return null;
+  const u = vivo.ok ? vivo.usuario : payload;
+
   return {
     user: {
       email: payload.email,
-      name: payload.name,
-      gocabName: payload.name,
-      role: payload.role,
-      isManager: payload.isManager,
+      name: u.name,
+      gocabName: u.name,
+      role: u.role,
+      isManager: u.isManager,
     },
   };
 }

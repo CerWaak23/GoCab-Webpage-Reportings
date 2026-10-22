@@ -21,7 +21,7 @@ export const authOptions = {
     async signIn({ account, profile }) {
       if (account?.provider === 'google') {
         // Solo permite usuarios explícitamente registrados en la lista maestra
-        return isRegisteredUser(profile?.email) ?? false;
+        return (await isRegisteredUser(profile?.email).catch(() => false)) ?? false;
       }
       return false;
     },
@@ -31,7 +31,7 @@ export const authOptions = {
      */
     async jwt({ token, profile }) {
       if (profile?.email) {
-        const user = getUserByEmail(profile.email);
+        const user = await getUserByEmail(profile.email).catch(() => null);
         token.role = user?.role ?? 'Colaborador';
         token.isManager = user?.isManager ?? false;
         token.gocabName = user?.name ?? token.name;

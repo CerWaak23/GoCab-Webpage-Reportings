@@ -1,51 +1,28 @@
 /**
- * GoCab user database.
+ * Usuarios del portal interno. La lista vive en la tabla `usuarios` de Supabase
+ * (ver src/lib/usuarios.js): para agregar a alguien, cambiarle el rol o sacarlo,
+ * se edita esa tabla. Ya no hay que tocar este archivo ni desplegar.
  *
- * Para agregar o editar usuarios, actualiza el arreglo USERS.
- * El campo "email" debe coincidir exactamente con la cuenta Google @gocab.io.
- *
- * Roles con acceso al Reporte Financiero: cualquier rol que contenga "Gerente".
+ * Gerentes (rol gerencia o admin) ven el Reporte Financiero.
  */
+import { buscarUsuario } from './usuarios';
 
-const USERS = [
-  { name: 'Joy Varela',      email: 'joy.varela@gocab.io',      role: 'Coordinador de Flota'    },
-  { name: 'Pablo González',  email: 'pablogonzalez@gocab.io',   role: 'Coordinador de Flota'    },
-  { name: 'Paula Flores',    email: 'paula.flores@gocab.io',    role: 'Coordinadora de Flota'   },
-  { name: 'Javiera Silva',   email: 'javiera.silva@gocab.io',   role: 'Coordinadora de Flota'   },
-  { name: 'Artem Tokarev',   email: 'artem.tokarev@gocab.io',   role: 'Gerente de Producto'     },
-  { name: 'Andrés Cerda',    email: 'andres.cerda@gocab.io',    role: 'Gerente de Operaciones'  },
-  { name: 'Felipe Catalan',  email: 'felipe@gocab.io',          role: 'Gerente de Pais'         },
-];
-
-/**
- * Cualquier rol que contenga "gerente" (case-insensitive) tiene acceso al reporte financiero.
- */
+/** Rol de gerente por el texto del cargo: lo siguen usando partes viejas del código. */
 export function isManager(role) {
   if (!role) return false;
-  return role.toLowerCase().includes('gerente');
+  return role.toLowerCase().includes('gerente') || role.toLowerCase().includes('gerencia');
 }
 
 /**
- * Devuelve true solo si el email está explícitamente registrado en la lista maestra.
- * Un @gocab.io no registrado NO tiene acceso.
+ * Usuario activo con ese correo, o null. Si la base no responde lanza un error:
+ * mejor un login que falla que uno que deja entrar a alguien dado de baja.
  */
-export function isRegisteredUser(email) {
-  if (!email) return false;
-  return USERS.some(u => u.email.toLowerCase() === email.toLowerCase());
+export async function getUserByEmail(email) {
+  const r = await buscarUsuario(email);
+  if (!r.ok) throw new Error('No se pudo consultar la lista de usuarios');
+  return r.usuario;
 }
 
-export function getUserByEmail(email) {
-  if (!email) return null;
-
-  const found = USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
-
-  if (found) {
-    return { ...found, isManager: isManager(found.role) };
-  }
-
-  // Sin fallback por dominio: un @gocab.io que no esté en USERS NO tiene acceso.
-  // Antes esta función devolvía un usuario sintético con rol "Colaborador" para
-  // cualquier dirección terminada en @gocab.io, así que bastaba inventar un correo
-  // del dominio para entrar al portal. Para dar acceso, agregar la persona a USERS.
-  return null;
+export async function isRegisteredUser(email) {
+  return !!(await getUserByEmail(email));
 }
