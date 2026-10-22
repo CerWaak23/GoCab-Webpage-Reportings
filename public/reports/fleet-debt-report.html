@@ -153,6 +153,30 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .ghist-item{font-size:11.5px;color:#6b7280;padding:6px 0;border-bottom:1px solid #1a2030;line-height:1.5}
 .ghist-item:last-child{border-bottom:none}
 .ghist-item b{color:#9ca3af;font-weight:600}
+/* Acuerdos de pago: compromisos y planes que registra el coordinador */
+.gbtn.acv{border-color:#7f1d1d99;color:#fca5a5;background:#1a0808}
+.gbtn.acp{border-color:#5b21b699;color:#c4b5fd;background:#120b24}
+.acu{margin-top:16px;border-top:1px solid #1f2937;padding-top:12px}
+.acu-item{border:1px solid #1f2937;border-radius:9px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#cbd5e1}
+.acu-cab{display:flex;gap:8px;align-items:baseline;color:#9ca3af;font-size:11px;margin-bottom:4px}
+.acu-cab b{color:#e2e8f0;font-size:12px}
+.acu-cuota{display:flex;gap:8px;align-items:center;padding:3px 0;flex-wrap:wrap}
+.acu-pill{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;white-space:nowrap}
+.acu-pill.prox{background:#1e1b4b;color:#c4b5fd}.acu-pill.venc{background:#3b0a0a;color:#fca5a5}
+.acu-pill.ok{background:#052e16;color:#86efac}.acu-pill.no{background:#27272a;color:#a1a1aa}
+.acu-mini{background:none;border:1px solid #374151;color:#9ca3af;border-radius:6px;padding:1px 7px;font-size:10.5px;cursor:pointer}
+.acu-mini:hover{border-color:#6b7280;color:#e2e8f0}
+.acu-form{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.acu-form input,.acu-form select{background:#0f1117;border:1px solid #374151;border-radius:7px;color:#e2e8f0;
+  font-family:inherit;font-size:12px;padding:5px 7px;outline:none}
+.acu-form input:focus{border-color:#2563eb}
+.acu-tabs{display:flex;gap:6px;margin-bottom:4px}
+.acu-tab{background:none;border:1px solid #374151;color:#6b7280;border-radius:999px;padding:2px 10px;font-size:11px;cursor:pointer}
+.acu-tab.on{border-color:#7c3aed;color:#c4b5fd;background:#1e1b4b}
+.rec-card{max-width:620px}
+.rec-row{border-bottom:1px solid #1a2030;padding:9px 0;font-size:12.5px;color:#cbd5e1}
+.rec-row:last-child{border-bottom:none}
+.rec-row .rec-acts{display:flex;gap:6px;margin-top:6px}
 
 /* Global type filter bar — aplica a todo el reporte */
 .gtf-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#111827;border:1px solid #1f2937;border-radius:12px;padding:11px 16px;margin-bottom:18px}
@@ -581,12 +605,45 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
       <div class="glabel" style="margin-top:14px" data-i18n="gest_label_i">Indicación para el coordinador</div>
       <textarea id="gInd" rows="3"></textarea>
       <div class="gmeta" id="gIndMeta"></div>
+      <div class="acu">
+        <div class="glabel" data-i18n="acu_titulo">Acuerdos</div>
+        <div id="acuLista"></div>
+        <div class="acu-tabs">
+          <button type="button" class="acu-tab on" id="acuTabC" onclick="acuTipo('compromiso')" data-i18n="acu_compromiso">Compromiso de pago</button>
+          <button type="button" class="acu-tab" id="acuTabP" onclick="acuTipo('plan')" data-i18n="acu_plan">Plan de pago</button>
+        </div>
+        <div class="acu-form">
+          <input type="number" id="acuMonto" min="0" style="width:96px">
+          <span id="acuPlanCampos" style="display:none;gap:6px;align-items:center">
+            <span style="font-size:11px;color:#6b7280" data-i18n="acu_cada_semana">cada semana ×</span>
+            <input type="number" id="acuCuotas" min="2" max="26" value="4" style="width:52px">
+            <span style="font-size:11px;color:#6b7280" data-i18n="acu_desde">desde</span>
+          </span>
+          <input type="date" id="acuFecha">
+          <input type="time" id="acuHora" value="10:00">
+          <input type="text" id="acuNota" style="flex:1;min-width:140px">
+          <button type="button" class="gsave" style="padding:5px 12px" onclick="agregarAcuerdo()" data-i18n="acu_agregar">Agregar</button>
+        </div>
+        <div class="gmeta" id="acuEstado"></div>
+      </div>
       <div class="gacts">
         <button class="gsave" onclick="guardarComentario()" data-i18n="gest_guardar">Guardar</button>
         <button class="gcancel" onclick="cerrarComentario()" data-i18n="gest_cancelar">Cancelar</button>
         <span id="gEstado" style="margin-left:auto;font-size:11px;color:#4b5563"></span>
       </div>
       <div class="ghist" id="gHist" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Recordatorio de acuerdos vencidos al abrir el reporte -->
+  <div id="recModal" class="gmodal" style="display:none">
+    <div class="gcard rec-card">
+      <h3 id="recTitulo">—</h3>
+      <div class="gsub" id="recSub"></div>
+      <div id="recLista"></div>
+      <div class="gacts">
+        <button class="gcancel" style="margin-left:auto" onclick="cerrarRecordatorio()" data-i18n="acu_mas_tarde">Recordarme más tarde</button>
+      </div>
     </div>
   </div>
 
@@ -688,7 +745,7 @@ var T = {
       gest_ultima:'Última edición por',gest_escrita:'Escrita por',gest_dias:'días',
       gest_sin_com_aun:'Sin comentario todavía.',gest_sin_ind:'Sin indicación.',
       gest_vers_g:'Versiones anteriores · gestión',gest_vers_i:'Versiones anteriores · indicaciones',
-      gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
+      acu_titulo:'Acuerdos',acu_compromiso:'Compromiso de pago',acu_plan:'Plan de pago',acu_cada_semana:'cada semana ×',acu_desde:'desde',acu_agregar:'Agregar',acu_ph_monto:'Monto',acu_ph_cuota:'Monto cuota',acu_ph_nota:'Qué se acordó (opcional)',acu_sin:'Sin acuerdos todavía.',acu_cancelar:'Cancelar acuerdo',acu_cancelar_conf:'¿Cancelar este acuerdo? Queda en el historial.',acu_e_prox:'por venir',acu_e_venc:'venció sin pago',acu_e_auto:'cumplido (pagó)',acu_e_cumplio:'cumplió',acu_e_no_cumplio:'no cumplió',acu_e_cancelado:'cancelado',acu_err_fecha:'Falta la fecha',acu_err_monto:'Revisa el monto',acu_btn_vencio:'Venció',acu_proximo:'Acuerdo:',acu_rec_titulo:'Acuerdos vencidos',acu_rec_sub:'Conductores que se comprometieron a pagar y, según la última carga, todavía no lo hacen. Un pago hecho después de la última carga aparece en la siguiente.',acu_rec_prometio:'Prometió pagar',acu_rec_el:'el',acu_rec_pago:'Pagó',acu_rec_desde:'desde el acuerdo del',acu_abrir:'Abrir gestión',acu_cumplio:'Cumplió',acu_no_cumplio:'No cumplió',acu_mas_tarde:'Recordarme más tarde',gest_guardar:'Guardar',gest_cancelar:'Cancelar',gest_guardando:'Guardando…',gest_guardado:'☁️ Guardado',
       gest_err_archivo:'⚠ Falta el archivo tareas-comentarios.json en Drive',gest_err:'⚠ Error al guardar',
       gest_sin_conexion:'⚠ Sin conexión',ver_todos:'Ver todos',excl_cargos:'cargos excluidos del',excl_al:'al',ver_menos:'Ver menos',kpi_taller:'Autos en Taller',kpi_policia:'Autos en Policía',taller_policia:'Policía',kpi_taller_sub:'con fecha de salida',kpi_modalidad:'Flota por Modalidad',kpi_modalidad_renta:'en renta',kpi_modalidad_renta_lbl:'Renta',kpi_modalidad_sin:'sin modalidad',taller_title:'🔧 Vehículos en Taller',taller_sub:'Sin fecha de egreso = hay que exigirle una al taller',taller_patente:'Patente',taller_taller:'Taller',taller_ingreso:'Ingreso',taller_dias:'Días',taller_egreso:'Egreso',taller_obs:'Observaciones',taller_d:'d',taller_sin:'Sin fecha',taller_sin_fecha:'sin fecha de salida comprometida',taller_todos_con_fecha:'todos con fecha de salida',taller_sin_asignar:'sin asignar',taller_sale:'Sale',taller_sin_coord:'sin coordinador',taller_atrasado1:'atrasado',taller_atrasados:'atrasados',taller_debio:'Debió salir el',taller_d_atraso:'días de atraso',taller_d_atraso1:'día de atraso',
       clear_all:'Limpiar',previous:'Anterior',next:'Siguiente',of:'de',results:'resultados',
@@ -760,7 +817,7 @@ var T = {
       gest_ultima:'Last edited by',gest_escrita:'Written by',gest_dias:'days',
       gest_sin_com_aun:'No comment yet.',gest_sin_ind:'No instruction.',
       gest_vers_g:'Earlier versions · follow-up',gest_vers_i:'Earlier versions · instructions',
-      gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
+      acu_titulo:'Agreements',acu_compromiso:'Payment promise',acu_plan:'Payment plan',acu_cada_semana:'every week ×',acu_desde:'from',acu_agregar:'Add',acu_ph_monto:'Amount',acu_ph_cuota:'Installment',acu_ph_nota:'What was agreed (optional)',acu_sin:'No agreements yet.',acu_cancelar:'Cancel agreement',acu_cancelar_conf:'Cancel this agreement? It stays in the history.',acu_e_prox:'upcoming',acu_e_venc:'due, not paid',acu_e_auto:'met (paid)',acu_e_cumplio:'kept',acu_e_no_cumplio:'not kept',acu_e_cancelado:'cancelled',acu_err_fecha:'Date is missing',acu_err_monto:'Check the amount',acu_btn_vencio:'Overdue',acu_proximo:'Agreement:',acu_rec_titulo:'Overdue agreements',acu_rec_sub:'Drivers who promised to pay and, as of the last upload, have not yet. A payment made after the last upload shows up in the next one.',acu_rec_prometio:'Promised to pay',acu_rec_el:'on',acu_rec_pago:'Paid',acu_rec_desde:'since the agreement of',acu_abrir:'Open notes',acu_cumplio:'Kept',acu_no_cumplio:'Not kept',acu_mas_tarde:'Remind me later',gest_guardar:'Save',gest_cancelar:'Cancel',gest_guardando:'Saving…',gest_guardado:'☁️ Saved',
       gest_err_archivo:'⚠ Missing tareas-comentarios.json in Drive',gest_err:'⚠ Save error',
       gest_sin_conexion:'⚠ Offline',ver_todos:'Show all',excl_cargos:'charges excluded from',excl_al:'to',ver_menos:'Show less',kpi_taller:'Cars in the Shop',kpi_policia:'Cars Impounded',taller_policia:'Police',kpi_taller_sub:'with an exit date',kpi_modalidad:'Fleet by Model',kpi_modalidad_renta:'on rent',kpi_modalidad_renta_lbl:'Rent',kpi_modalidad_sin:'unset',taller_title:'🔧 Vehicles in the Shop',taller_sub:'No exit date = someone has to push the shop for one',taller_patente:'Plate',taller_taller:'Shop',taller_ingreso:'In',taller_dias:'Days',taller_egreso:'Out',taller_obs:'Notes',taller_d:'d',taller_sin:'No date',taller_sin_fecha:'with no committed exit date',taller_todos_con_fecha:'all have an exit date',taller_sin_asignar:'unassigned',taller_sale:'Out on',taller_sin_coord:'with no coordinator',taller_atrasado1:'overdue',taller_atrasados:'overdue',taller_debio:'Was due out on',taller_d_atraso:'days overdue',taller_d_atraso1:'day overdue',
       clear_all:'Clear',previous:'Previous',next:'Next',of:'of',results:'results',
@@ -832,7 +889,7 @@ var T = {
       gest_ultima:'Последнее изменение:',gest_escrita:'Написано:',gest_dias:'дн.',
       gest_sin_com_aun:'Комментария пока нет.',gest_sin_ind:'Указаний нет.',
       gest_vers_g:'Прежние версии · работа',gest_vers_i:'Прежние версии · указания',
-      gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
+      acu_titulo:'Договорённости',acu_compromiso:'Обещание оплаты',acu_plan:'План платежей',acu_cada_semana:'каждую неделю ×',acu_desde:'с',acu_agregar:'Добавить',acu_ph_monto:'Сумма',acu_ph_cuota:'Взнос',acu_ph_nota:'О чём договорились (необязательно)',acu_sin:'Договорённостей пока нет.',acu_cancelar:'Отменить',acu_cancelar_conf:'Отменить эту договорённость? Она останется в истории.',acu_e_prox:'впереди',acu_e_venc:'просрочено',acu_e_auto:'выполнено (оплатил)',acu_e_cumplio:'выполнил',acu_e_no_cumplio:'не выполнил',acu_e_cancelado:'отменено',acu_err_fecha:'Нет даты',acu_err_monto:'Проверьте сумму',acu_btn_vencio:'Просрочено',acu_proximo:'Договорённость:',acu_rec_titulo:'Просроченные договорённости',acu_rec_sub:'Водители, обещавшие заплатить и, по последней загрузке, ещё не заплатившие. Платёж после последней загрузки появится в следующей.',acu_rec_prometio:'Обещал заплатить',acu_rec_el:'',acu_rec_pago:'Заплатил',acu_rec_desde:'с договорённости от',acu_abrir:'Открыть',acu_cumplio:'Выполнил',acu_no_cumplio:'Не выполнил',acu_mas_tarde:'Напомнить позже',gest_guardar:'Сохранить',gest_cancelar:'Отмена',gest_guardando:'Сохранение…',gest_guardado:'☁️ Сохранено',
       gest_err_archivo:'⚠ Нет файла tareas-comentarios.json на Drive',gest_err:'⚠ Ошибка сохранения',
       gest_sin_conexion:'⚠ Нет связи',ver_todos:'Показать все',excl_cargos:'начислений исключено за',excl_al:'—',ver_menos:'Свернуть',kpi_taller:'Машины в сервисе',kpi_policia:'Машины на штрафстоянке',taller_policia:'Полиция',kpi_taller_sub:'с датой выдачи',kpi_modalidad:'Парк по схеме',kpi_modalidad_renta:'в аренде',kpi_modalidad_renta_lbl:'Аренда',kpi_modalidad_sin:'без схемы',taller_title:'🔧 Машины в сервисе',taller_sub:'Нет даты выдачи — её нужно требовать у сервиса',taller_patente:'Номер',taller_taller:'Сервис',taller_ingreso:'Приём',taller_dias:'Дней',taller_egreso:'Выдача',taller_obs:'Примечания',taller_d:'дн.',taller_sin:'Нет даты',taller_sin_fecha:'без обещанной даты выдачи',taller_todos_con_fecha:'у всех есть дата выдачи',taller_sin_asignar:'без водителя',taller_sale:'Выдача',taller_sin_coord:'без координатора',taller_atrasado1:'просрочено',taller_atrasados:'просрочено',taller_debio:'Должен был выйти',taller_d_atraso:'дней просрочки',taller_d_atraso1:'день просрочки',
       clear_all:'Очистить',previous:'Назад',next:'Вперёд',of:'из',results:'результатов',
@@ -2778,6 +2835,7 @@ async function cargarComentarios(){
     if(j2&&j2.state&&j2.state.items)COMENTARIOS=j2.state;
   }catch(e){}
   renderEvolTable();
+  revisarAcuerdos();
 }
 
 function abrirComentario(drv){
@@ -2803,6 +2861,12 @@ function abrirComentario(drv){
   };
   var htm=bloque(t('gest_vers_g'),c.historial)+bloque(t('gest_vers_i'),(c.ind||{}).historial);
   if(htm){h.style.display='';h.innerHTML=htm;}else{h.style.display='none';h.innerHTML='';}
+  acuTipo('compromiso');
+  document.getElementById('acuNota').placeholder=t('acu_ph_nota');
+  document.getElementById('acuMonto').value='';document.getElementById('acuNota').value='';
+  document.getElementById('acuFecha').value='';
+  document.getElementById('acuEstado').textContent='';
+  pintarAcuerdos();
   document.getElementById('gModal').style.display='flex';
   document.getElementById('gTexto').focus();
 }
@@ -2815,6 +2879,12 @@ function _comPendiente(drv){
 
 async function guardarComentario(){
   if(!_comDrv)return;
+  // Relee el documento: si otro agregó un acuerdo mientras este modal estaba
+  // abierto, escribir la copia vieja lo borraría.
+  try{
+    var rf=await fetch(COM_API+'&_='+Date.now());var jf=await rf.json();
+    if(jf&&jf.state&&jf.state.items)COMENTARIOS=jf.state;
+  }catch(e){}
   var texto=document.getElementById('gTexto').value.trim();
   var indTexto=document.getElementById('gInd').value.trim();
   var prev=COMENTARIOS.items[_comDrv]||{};
@@ -2843,9 +2913,10 @@ async function guardarComentario(){
       quien:(indTexto&&indTexto!==prevInd.texto)?comQuien():(prevInd.quien||null),
       fecha:(indTexto&&indTexto!==prevInd.texto)?Date.now():(prevInd.fecha||null),
       historial:indHist
-    }
+    },
+    acuerdos:prev.acuerdos||[]
   };
-  if(!texto&&!indTexto&&!hist.length&&!indHist.length)delete COMENTARIOS.items[_comDrv];
+  if(!texto&&!indTexto&&!hist.length&&!indHist.length&&!reg.acuerdos.length)delete COMENTARIOS.items[_comDrv];
   else COMENTARIOS.items[_comDrv]=reg;
   COMENTARIOS.updatedAt=Date.now();
 
@@ -2880,8 +2951,14 @@ function celdaGestion(drv,pendiente){
   // Una indicación más nueva que la última gestión es una instrucción sin responder:
   // gana sobre los demás estados, porque es la que exige acción de alguien.
   var pendiente=ind&&(!c||(ind.fecha||0)>(c.fecha||0));
+  // Un acuerdo vencido sin pago gana sobre todo: es plata que se prometió y no llegó
+  var acu=acuResumen(drv);
   var cls,label,tip;
-  if(pendiente){
+  if(acu.vencidas.length){
+    var v0=acu.vencidas[0].x.c;
+    cls='acv';label='⚠ '+t('acu_btn_vencio');
+    tip=t('acu_rec_prometio')+' '+(Number(v0.monto)>0?fmtAmt(v0.monto)+' ':'')+t('acu_rec_el')+' '+acuCuando(v0);
+  }else if(pendiente){
     cls='ind';label=t('gest_ind_btn');tip=t('gest_ind_de')+' '+(ind.quien||'—')+': '+esc(ind.texto).slice(0,160);
   }else if(!c){
     cls='';label=t('gest_comentar');tip=t('gest_sin_com');
@@ -2890,8 +2967,235 @@ function celdaGestion(drv,pendiente){
   }else{
     cls='tiene';label=t('gest_ver');tip=esc(c.texto).slice(0,180);
   }
+  // Con un acuerdo por venir, el botón dice cuándo (salvo que haya algo más urgente)
+  if(!acu.vencidas.length&&!pendiente&&acu.proxima){
+    cls='acp';label='📅 '+acuCuando(acu.proxima.c).replace(/ \d{2}-\d{2} /,' ');
+    tip=t('acu_proximo')+' '+acuCuando(acu.proxima.c)+(Number(acu.proxima.c.monto)>0?' · '+fmtAmt(acu.proxima.c.monto):'');
+  }
   return '<td style="text-align:center"><button class="gbtn '+cls+'" title="'+tip+'" '+
     'onclick="abrirComentario('+JSON.stringify(drv).replace(/"/g,'&quot;')+')">'+label+'</button></td>';
+}
+
+/* ── ACUERDOS DE PAGO ──────────────────────────────────────────────────────
+   Lo que el conductor se comprometió a pagar y cuándo: un compromiso ("el
+   viernes a las 10 paga $50.000") o un plan de cuotas semanales. Se guardan en
+   el mismo registro de gestión del conductor, en items[drv].acuerdos:
+     { id, tipo:'compromiso'|'plan', nota, creado, quien, cancelado,
+       cuotas:[{ fecha:'YYYY-MM-DD', hora:'HH:MM', monto, estado, marcadoPor, marcadoFecha }] }
+
+   Cuando una cuota vence, el reporte mira si el conductor pagó desde que se hizo
+   el acuerdo lo suficiente para cubrir lo comprometido hasta esa cuota. Si pagó,
+   queda cumplida sola; si no, queda vencida y sale en el recordatorio al abrir el
+   reporte, hasta que alguien marque si cumplió o no. Un acuerdo sin monto se da
+   por cumplido con cualquier pago.
+
+   Los pagos se ven recién cuando se sube la carga, así que uno hecho después de
+   la última carga sale como no pagado hasta la siguiente. */
+var _acuTipo='compromiso';
+
+function acuVence(c){return new Date(c.fecha+'T'+(c.hora||'10:00')+':00').getTime();}
+function acuPagadoDesde(drv,desde){
+  var s=0;
+  ALL_PAYMENT_EVENTS.forEach(function(p){
+    if(normalizeName(p.driver)!==drv)return;
+    var d=parseDate(p.date);
+    if(d&&!isNaN(d)&&d.getTime()>=desde)s+=Number(p.amount)||0;
+  });
+  return s;
+}
+/* Estado de cada cuota: marcada a mano (cumplio / no_cumplio), cumplida sola
+   porque los pagos alcanzan, vencida o por venir. */
+function acuEstados(drv,a){
+  var ahora=Date.now(),pagado=acuPagadoDesde(drv,a.creado||0),acum=0;
+  return (a.cuotas||[]).map(function(c){
+    acum+=Number(c.monto)||0;
+    var e;
+    if(a.cancelado)e='cancelado';
+    else if(c.estado)e=c.estado;
+    else if(acuVence(c)>ahora)e='prox';
+    else if(acum>0?pagado>=acum-0.5:pagado>0)e='auto';
+    else e='venc';
+    return {c:c,estado:e,pagado:pagado,acum:acum};
+  });
+}
+// Lo más urgente de un conductor: una cuota vencida, o la próxima por venir
+function acuResumen(drv){
+  var reg=COMENTARIOS.items[drv];
+  var res={vencidas:[],proxima:null};
+  ((reg&&reg.acuerdos)||[]).forEach(function(a){
+    acuEstados(drv,a).forEach(function(x){
+      if(x.estado==='venc')res.vencidas.push({a:a,x:x});
+      if(x.estado==='prox'&&(!res.proxima||acuVence(x.c)<acuVence(res.proxima.c)))res.proxima=x;
+    });
+  });
+  return res;
+}
+
+var DIAS_CORTOS={es:['dom','lun','mar','mié','jue','vie','sáb'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],ru:['вс','пн','вт','ср','чт','пт','сб']};
+function acuCuando(c){
+  var d=new Date(acuVence(c)),p=function(n){return('0'+n).slice(-2);};
+  return (DIAS_CORTOS[LANG]||DIAS_CORTOS.es)[d.getDay()]+' '+p(d.getDate())+'-'+p(d.getMonth()+1)+' '+(c.hora||'10:00');
+}
+
+/* Coordinadores del usuario conectado: "J. Silva" es de Javiera Silva y
+   "P.Gonzalez" de Pablo González — inicial del nombre más apellido. Los gerentes
+   ven a todos. Si el nombre no calza con ningún coordinador también ve a todos:
+   un recordatorio de más es mejor que uno que nadie ve. */
+function coordinadoresDelUsuario(){
+  if(!ME_DEUDA||ME_DEUDA.isManager)return null;
+  var nombre=normalizeName(ME_DEUDA.name||'').split(' ').filter(Boolean);
+  if(nombre.length<2)return null;
+  var inicial=nombre[0].charAt(0),apellidos=nombre.slice(1);
+  var mios={};
+  FLEET_ROWS.forEach(function(fr){
+    var c=fr.coordinador;if(!c||mios[c])return;
+    var partes=normalizeName(c).replace(/\./g,' ').split(' ').filter(Boolean);
+    if(partes.length<2)return;
+    if(partes[0].charAt(0)===inicial&&apellidos.indexOf(partes[partes.length-1])>=0)mios[c]=true;
+  });
+  return Object.keys(mios).length?mios:null;
+}
+
+/* ── El recordatorio al abrir el reporte ── */
+function revisarAcuerdos(){
+  var mios=coordinadoresDelUsuario();
+  var lista=[];
+  Object.keys(COMENTARIOS.items||{}).forEach(function(drv){
+    if(mios&&!mios[coordOf(drv)])return;
+    acuResumen(drv).vencidas.forEach(function(v){lista.push({drv:drv,a:v.a,x:v.x});});
+  });
+  if(!lista.length)return;
+  lista.sort(function(p,q){return acuVence(p.x.c)-acuVence(q.x.c);});
+  document.getElementById('recTitulo').textContent='⏰ '+t('acu_rec_titulo')+' ('+lista.length+')';
+  document.getElementById('recSub').textContent=t('acu_rec_sub');
+  document.getElementById('recLista').innerHTML=lista.map(function(it){
+    var c=it.x.c,q=JSON.stringify(it.drv).replace(/"/g,'&quot;');
+    var coord=coordOf(it.drv);
+    return '<div class="rec-row"><b style="color:#f9fafb">'+esc(it.drv)+'</b>'
+      +(coord?' <span style="color:#64748b;font-size:11px">· '+esc(coord)+'</span>':'')
+      +'<div style="margin-top:3px">'+t('acu_rec_prometio')+' '+(Number(c.monto)>0?'<b>'+fmtAmt(c.monto)+'</b> ':'')
+      +t('acu_rec_el')+' '+esc(acuCuando(c))
+      +(it.a.nota?' <span style="color:#94a3b8">· '+esc(it.a.nota)+'</span>':'')+'</div>'
+      +'<div style="color:#fca5a5;font-size:11.5px;margin-top:2px">'+t('acu_rec_pago')+' '+fmtAmt(it.x.pagado)
+      +' '+t('acu_rec_desde')+' '+comFecha(it.a.creado)+'</div>'
+      +'<div class="rec-acts">'
+      +'<button class="acu-mini" onclick="cerrarRecordatorio();abrirComentario('+q+')">'+t('acu_abrir')+'</button>'
+      +'<button class="acu-mini" onclick="marcarCuota('+q+',\''+it.a.id+'\','+it.a.cuotas.indexOf(c)+',\'cumplio\',true)">✓ '+t('acu_cumplio')+'</button>'
+      +'<button class="acu-mini" onclick="marcarCuota('+q+',\''+it.a.id+'\','+it.a.cuotas.indexOf(c)+',\'no_cumplio\',true)">✕ '+t('acu_no_cumplio')+'</button>'
+      +'</div></div>';
+  }).join('');
+  document.getElementById('recModal').style.display='flex';
+}
+function cerrarRecordatorio(){document.getElementById('recModal').style.display='none';}
+
+/* ── La sección dentro del modal de gestión ── */
+function acuTipo(tipo){
+  _acuTipo=tipo;
+  document.getElementById('acuTabC').className='acu-tab'+(tipo==='compromiso'?' on':'');
+  document.getElementById('acuTabP').className='acu-tab'+(tipo==='plan'?' on':'');
+  document.getElementById('acuPlanCampos').style.display=tipo==='plan'?'inline-flex':'none';
+  document.getElementById('acuMonto').placeholder=t(tipo==='plan'?'acu_ph_cuota':'acu_ph_monto');
+}
+function pintarAcuerdos(){
+  var drv=_comDrv;if(!drv)return;
+  var reg=COMENTARIOS.items[drv]||{};
+  var lista=(reg.acuerdos||[]).slice().sort(function(a,b){return (b.creado||0)-(a.creado||0);});
+  var q=JSON.stringify(drv).replace(/"/g,'&quot;');
+  var pill={prox:'prox',venc:'venc',auto:'ok',cumplio:'ok',no_cumplio:'no',cancelado:'no'};
+  document.getElementById('acuLista').innerHTML=lista.length?lista.map(function(a){
+    var est=acuEstados(drv,a);
+    var cab=a.tipo==='plan'
+      ?t('acu_plan')+' · '+a.cuotas.length+' × '+fmtAmt(a.cuotas[0]&&a.cuotas[0].monto)
+      :t('acu_compromiso');
+    return '<div class="acu-item"'+(a.cancelado?' style="opacity:.55"':'')+'>'
+      +'<div class="acu-cab"><b>'+esc(cab)+'</b><span>'+esc(a.quien||'—')+' · '+comFecha(a.creado)+'</span>'
+      +(a.cancelado?'':'<button class="acu-mini" style="margin-left:auto" onclick="cancelarAcuerdo('+q+',\''+a.id+'\')">'+t('acu_cancelar')+'</button>')
+      +'</div>'
+      +(a.nota?'<div style="color:#94a3b8;margin-bottom:3px">'+esc(a.nota)+'</div>':'')
+      +est.map(function(x,i){
+        var botones=(x.estado==='venc'||x.estado==='prox')
+          ?'<button class="acu-mini" onclick="marcarCuota('+q+',\''+a.id+'\','+i+',\'cumplio\')">✓</button>'
+           +'<button class="acu-mini" onclick="marcarCuota('+q+',\''+a.id+'\','+i+',\'no_cumplio\')">✕</button>':'';
+        var quien=x.c.marcadoPor?' <span style="color:#4b5563;font-size:10px">'+esc(x.c.marcadoPor)+'</span>':'';
+        return '<div class="acu-cuota"><span style="min-width:112px">'+esc(acuCuando(x.c))+'</span>'
+          +'<span style="min-width:70px">'+(Number(x.c.monto)>0?fmtAmt(x.c.monto):'—')+'</span>'
+          +'<span class="acu-pill '+pill[x.estado]+'">'+t('acu_e_'+x.estado)+'</span>'+quien+botones+'</div>';
+      }).join('')
+      +'</div>';
+  }).join(''):'<div class="gmeta" style="margin:0 0 8px">'+t('acu_sin')+'</div>';
+}
+
+// Relee el documento antes de escribir: dos coordinadores agregando acuerdos a la
+// vez no deben pisarse.
+async function guardarAcuerdos(drv,cambiar){
+  try{
+    var r=await fetch(COM_API+'&_='+Date.now());var j=await r.json();
+    if(j&&j.state&&j.state.items)COMENTARIOS=j.state;
+  }catch(e){}
+  var reg=COMENTARIOS.items[drv]||{texto:'',historial:[],ind:{texto:'',historial:[]}};
+  reg.acuerdos=cambiar((reg.acuerdos||[]).map(function(a){return JSON.parse(JSON.stringify(a));}));
+  COMENTARIOS.items[drv]=reg;
+  COMENTARIOS.updatedAt=Date.now();
+  try{
+    var r2=await fetch(COM_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(COMENTARIOS)});
+    return r2.ok;
+  }catch(e){return false;}
+}
+function acuAviso(txt,ok){
+  var e=document.getElementById('acuEstado');if(!e)return;
+  e.textContent=txt;e.style.color=ok?'#34d399':'#f87171';
+}
+
+async function agregarAcuerdo(){
+  var drv=_comDrv;if(!drv)return;
+  var monto=Math.round(Number(document.getElementById('acuMonto').value)||0);
+  var fecha=document.getElementById('acuFecha').value;
+  var hora=document.getElementById('acuHora').value||'10:00';
+  var nota=document.getElementById('acuNota').value.trim().slice(0,300);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){acuAviso(t('acu_err_fecha'),false);return;}
+  if(monto<0){acuAviso(t('acu_err_monto'),false);return;}
+  var cuotas=[];
+  if(_acuTipo==='plan'){
+    var n=Math.min(26,Math.max(2,Math.round(Number(document.getElementById('acuCuotas').value)||0)));
+    if(!monto){acuAviso(t('acu_err_monto'),false);return;}
+    var base=new Date(fecha+'T12:00:00');
+    for(var i=0;i<n;i++){
+      var d=new Date(base.getTime()+i*7*MS_DIA),p=function(x){return('0'+x).slice(-2);};
+      cuotas.push({fecha:d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()),hora:hora,monto:monto});
+    }
+  }else{
+    cuotas.push({fecha:fecha,hora:hora,monto:monto});
+  }
+  var nuevo={id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),tipo:_acuTipo,nota:nota,
+    creado:Date.now(),quien:comQuien(),cuotas:cuotas};
+  acuAviso(t('gest_guardando'),true);
+  var ok=await guardarAcuerdos(drv,function(l){l.push(nuevo);return l;});
+  if(!ok){acuAviso(t('gest_err'),false);return;}
+  document.getElementById('acuMonto').value='';document.getElementById('acuNota').value='';
+  acuAviso(t('gest_guardado'),true);
+  pintarAcuerdos();renderEvolTable();
+}
+async function marcarCuota(drv,id,i,estado,desdeRecordatorio){
+  var ok=await guardarAcuerdos(drv,function(l){
+    l.forEach(function(a){
+      if(a.id!==id||!a.cuotas[i])return;
+      a.cuotas[i].estado=estado;a.cuotas[i].marcadoPor=comQuien();a.cuotas[i].marcadoFecha=Date.now();
+    });
+    return l;
+  });
+  if(!ok){alert(t('gest_err'));return;}
+  if(desdeRecordatorio){cerrarRecordatorio();revisarAcuerdos();}
+  else pintarAcuerdos();
+  renderEvolTable();
+}
+async function cancelarAcuerdo(drv,id){
+  if(!confirm(t('acu_cancelar_conf')))return;
+  var ok=await guardarAcuerdos(drv,function(l){
+    l.forEach(function(a){if(a.id===id){a.cancelado=true;a.canceladoPor=comQuien();a.canceladoFecha=Date.now();}});
+    return l;
+  });
+  if(!ok){alert(t('gest_err'));return;}
+  pintarAcuerdos();renderEvolTable();
 }
 
 /* ── VEHÍCULOS EN TALLER ───────────────────────────────────────────────────
