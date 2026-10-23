@@ -36,7 +36,17 @@ export default function Despedidos() {
 
   if (!datos) return <p className="text-sm text-gray-400">{t('dp_cargando')}</p>;
   if (datos.error === 'sin_migracion') return <p className="text-sm text-amber-400">{t('dp_sin_migracion')}</p>;
-  if (datos.error) return <p className="text-sm text-red-400">{t('dp_error_guardar')}</p>;
+  // Un error al cargar no es un error al guardar: antes decía "No se pudo guardar"
+  // cuando la página no alcanzaba a cargar, y parecía que nada se guardaba.
+  if (datos.error) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-red-400">{t('dp_error_cargar')}</p>
+        <button type="button" onClick={() => { setDatos(null); cargar(); }}
+          className="rounded-lg bg-sky-500 hover:bg-sky-400 text-gray-950 font-semibold text-sm px-4 py-2">{t('dp_reintentar')}</button>
+      </div>
+    );
+  }
   if (datos.filas.length === 0) {
     return (
       <div className="text-sm text-gray-400 space-y-3">
@@ -58,10 +68,16 @@ export default function Despedidos() {
         {datos.ultimaCarga && <> · {t('dp_ultima_carga')}: {fechaCorta(datos.ultimaCarga.creado)} ({datos.ultimaCarga.archivo})</>}
       </p>
       {datos.avisos?.map((a) => <p key={a} className="text-xs text-amber-400">{t('dp_aviso_fuente')(a)}</p>)}
+      {datos.devolucionesSinAsignar?.length > 0 && (
+        <p className="text-xs text-amber-400">
+          {t('dp_dev_sin_asignar')(datos.devolucionesSinAsignar.length)}: {datos.devolucionesSinAsignar.map((x) => x.nombre).join(', ')}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Tarjeta titulo={t('dp_nos_deben')} valor={plata(deben.reduce((s, f) => s + f.liquidacion.nosDebe, 0))} pie={t('dp_personas')(deben.length)} color="text-red-400" />
-        <Tarjeta titulo={t('dp_devolver')} valor={plata(devolver.reduce((s, f) => s + f.liquidacion.devolver, 0))} pie={t('dp_personas')(devolver.length)} color="text-emerald-400" />
+        <Tarjeta titulo={t('dp_devolver')} valor={plata(devolver.reduce((s, f) => s + f.liquidacion.devolver, 0))}
+          pie={`${t('dp_personas')(devolver.length)} · ${t('dp_ya_devueltas')(todas.filter((f) => f.devolucionEnviada > 0).length)}`} color="text-emerald-400" />
         <Tarjeta titulo={t('dp_anexos')} valor={`${anexos} / ${todas.length}`} pie="" color="text-sky-300" />
       </div>
 
@@ -119,9 +135,15 @@ function Tarjeta({ titulo, valor, pie, color }) {
 
 const montoCelda = (n) => (n > 0 ? plata(n) : <span className="text-gray-600">—</span>);
 
-function Resultado({ l, t }) {
-  if (l.nosDebe > 0) return <span className="font-semibold text-red-400">{t('dp_saldo_debe')} {plata(l.nosDebe)}</span>;
-  if (l.devolver > 0) return <span className="font-semibold text-emerald-400">{t('dp_saldo_devolver')} {plata(l.devolver)}</span>;
+function Resultado({ f, t }) {
+  const l = f.liquidacion;
+  const pendCF = f.devolucionPendiente > 0
+    ? <div className="text-[10px] text-amber-400 font-normal">{t('dp_pendiente_cf')} {plata(f.devolucionPendiente)}</div> : null;
+  if (l.nosDebe > 0) return <span className="font-semibold text-red-400">{t('dp_saldo_debe')} {plata(l.nosDebe)}{pendCF}</span>;
+  if (f.devolucionEnviada > 0) {
+    return <span className="text-gray-400">✓ {t('dp_devuelta')} {plata(f.devolucionEnviada)}<div className="text-[10px] text-gray-600">{t('dp_en_cf')}</div></span>;
+  }
+  if (l.devolver > 0) return <span className="font-semibold text-emerald-400">{t('dp_saldo_devolver')} {plata(l.devolver)}{pendCF}</span>;
   if (l.devuelto > 0) return <span className="text-gray-400">✓ {t('dp_devuelta')}</span>;
   return <span className="text-gray-400">✓ {t('dp_saldo_cero')}</span>;
 }
@@ -151,7 +173,7 @@ function Fila({ f, t, abierto, onAbrir, onCambio }) {
       <td className="px-3 py-2 text-right">{montoCelda(l.otros)}</td>
       <td className="px-3 py-2 text-right">{l.ajustes ? plata(l.ajustes) : <span className="text-gray-600">—</span>}</td>
       <td className="px-3 py-2 text-right">{montoCelda(f.garantia)}</td>
-      <td className="px-3 py-2 text-right whitespace-nowrap cursor-pointer" onClick={onAbrir}><Resultado l={l} t={t} /></td>
+      <td className="px-3 py-2 text-right whitespace-nowrap cursor-pointer" onClick={onAbrir}><Resultado f={f} t={t} /></td>
       <td className="px-3 py-2 text-center">
         <input type="checkbox" checked={f.gestion.anexoDicom} disabled={guardando} onChange={(e) => anexo(e.target.checked)}
           title={f.gestion.anexoDicom && f.gestion.anexoPor ? t('dp_anexo_por')(f.gestion.anexoPor, fechaCorta(f.gestion.anexoFecha)) : ''}
@@ -198,6 +220,21 @@ function Detalle({ f, t, onCambio }) {
           {l.devuelto > 0 && <Linea k={`${t('dp_det_ya_devuelto')}${g.devueltoFecha ? ' · ' + fechaCorta(g.devueltoFecha) : ''}`} v={-l.devuelto} />}
           {l.devolver > 0 && <Linea k={t('dp_saldo_devolver')} v={l.devolver} fuerte verde />}
         </dl>
+        {f.devoluciones?.length > 0 && (
+          <div className="mt-3">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">{t('dp_dev_titulo')}</p>
+            {f.devoluciones.map((x) => (
+              <p key={x.fila} className="text-xs text-gray-300">
+                <span className={x.devuelta ? 'text-emerald-400' : 'text-amber-400'}>{x.devuelta ? '✓ ' + t('dp_dev_enviada') : '⏳ ' + t('dp_dev_pendiente')}</span>
+                {' '}{plata(x.monto)} <span className="text-gray-600">· {t('dp_dev_fila')} {x.fila}</span>
+                {x.observaciones && <span className="text-gray-500"> · {x.observaciones}</span>}
+              </p>
+            ))}
+            {f.devolucionEnviada > 0 && l.devolverCalculado > 0 && (
+              <p className="text-[11px] text-gray-500 mt-1">{t('dp_dev_diferencia')(plata(l.devolverCalculado))}</p>
+            )}
+          </div>
+        )}
         {f.comentario && (
           <p className="mt-3 text-xs text-gray-500 whitespace-pre-line"><span className="text-gray-400">{t('dp_comentario_fleet')}:</span> {f.comentario}</p>
         )}

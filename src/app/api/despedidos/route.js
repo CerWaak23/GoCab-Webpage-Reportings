@@ -9,6 +9,30 @@ import { reporteDesdeSupabase as billsDesdeSupabase } from '@/lib/bills/supabase
 import { reporteDesdeSupabase as multasDesdeSupabase } from '@/lib/multas/supabase';
 import { liquidar, asignarPorNombre } from '@/lib/fleet/despedidos';
 import { normalizarNombre } from '@/lib/fleet/nombres';
+import { google } from 'googleapis';
+import { leerFilaDevolucion, asignarDevoluciones } from '@/lib/fleet/devoluciones';
+
+const CONTROL_FLOTA = '15yNGkyE1kkk8E0yiLLMmahz-G048vwgy2NWN8xYmiFw';
+const HOJA_DEVOLUCIONES = 'Devoluciones de Garantia';
+
+/** Filas de la hoja de devoluciones con su color: el verde dice que ya se devolvió. */
+async function leerDevoluciones() {
+  const auth = new google.auth.GoogleAuth({
+    credentials: { client_email: process.env.GOOGLE_CLIENT_EMAIL, private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n') },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+  const r = await google.sheets({ version: 'v4', auth }).spreadsheets.get({
+    spreadsheetId: CONTROL_FLOTA,
+    ranges: [`'${HOJA_DEVOLUCIONES}'!A:D`],
+    includeGridData: true,
+    fields: 'sheets(data(rowData(values(formattedValue,effectiveFormat(backgroundColor)))))',
+  });
+  const filas = r.data.sheets?.[0]?.data?.[0]?.rowData || [];
+  return filas.map((f, i) => {
+    const vs = f.values || [];
+    return leerFilaDevolucion([0, 1, 2, 3].map((j) => vs[j]?.formattedValue ?? ''), vs[0]?.effectiveFormat?.backgroundColor, i + 1);
+  }).filter(Boolean);
+}
 
 const SIN_CACHE = { 'Cache-Control': 'no-store' };
 const saldo = (x) => Math.max(0, (Number(x.amount) || 0) - (Number(x.paidAmount) || 0));
@@ -44,10 +68,12 @@ export async function GET() {
   // Mismas fuentes que el reporte de deudas. Si una falla, se muestra igual
   // con lo que haya y se avisa cuál faltó.
   const avisos = [];
-  const [bills, multas] = await Promise.all([
+  const [bills, multas, devoluciones] = await Promise.all([
     billsDesdeSupabase().catch((e) => { console.error('despedidos bills', e.message); avisos.push('bills'); return { bills: [] }; }),
     multasDesdeSupabase().catch((e) => { console.error('despedidos multas', e.message); avisos.push('multas'); return { fines: [] }; }),
+    leerDevoluciones().catch((e) => { console.error('despedidos devoluciones', e.message); avisos.push('devoluciones'); return []; }),
   ]);
+  const { porClave: devPorClave, sinAsignar: devSinAsignar } = asignarDevoluciones(devoluciones, despedidos);
   // Una boleta a nombre de alguien que sigue activo es de él, aunque un
   // despedido tenga un nombre parecido ("CARLOS GONZÁLEZ" y "CARLOS GONZÁLEZ MUÑOZ").
   const { data: activos } = await sb.from('conductores').select('nombre, nombre_fleet').is('baja', null);
@@ -82,6 +108,15 @@ export async function GET() {
   const filas = despedidos.map((d) => {
     const g = gestion.get(d.clave) || {};
     const c = cobros.get(d.clave);
+    const devs = devPorClave.get(d.clave) || [];
+    const enviado = devs.filter((x) => x.devuelta).reduce((s, x) => s + x.monto, 0);
+    const pendienteCF = devs.filter((x) => !x.devuelta).reduce((s, x) => s + x.monto, 0);
+    const liq = liquidar(d, c, { ajustes: g.ajustes || [], devuelto: (g.devuelto || 0) + enviado });
+    // Con la devolución hecha en Control Flota la garantía queda liquidada: se
+    // devolvió lo que se calculó en su momento, aunque la cuenta de hoy dé otro
+    // número (una multa que llegó después, un tag que se pagó). La diferencia se
+    // muestra, pero no queda como algo por devolver.
+    if (enviado > 0) { liq.devolverCalculado = liq.devolver; liq.devolver = 0; }
     return {
       clave: d.clave,
       nombre: d.nombre,
@@ -104,13 +139,17 @@ export async function GET() {
         actualizadoPor: g.actualizado_por || null,
         actualizado: g.actualizado || null,
       },
-      liquidacion: liquidar(d, c, { ajustes: g.ajustes || [], devuelto: g.devuelto || 0 }),
+      devoluciones: devs.map(({ cuenta, ...x }) => x), // sin la cuenta bancaria
+      devolucionEnviada: enviado,
+      devolucionPendiente: pendienteCF,
+      liquidacion: liq,
     };
   }).sort((a, b) => String(b.despido || '').localeCompare(String(a.despido || '')));
 
   return NextResponse.json({
     filas,
     ultimaCarga: carga.data?.[0] || null,
+    devolucionesSinAsignar: devSinAsignar.map((x) => ({ fila: x.fila, nombre: x.nombre, monto: x.monto, devuelta: x.devuelta })),
     avisos,
     puedeEditar: puedeVerSeccion(session.user.role, 'despedidos'),
   }, { headers: SIN_CACHE });
