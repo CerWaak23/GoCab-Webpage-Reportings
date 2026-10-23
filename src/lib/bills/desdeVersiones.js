@@ -14,18 +14,32 @@
  * @param versiones  [{ referencia, archivo_id, tipo, estado, vehiculo, conductor, telefono, descripcion, monto, pagado, creado_texto }]
  */
 export function reporteDesdeVersiones(archivos, versiones) {
+  const estado = aplicarArchivos(estadoVacio(), archivos, versiones);
+  return cerrarReporte(estado, archivos, refsDe(archivos[archivos.length - 1]), refsDe(archivos[archivos.length - 2]));
+}
+
+/*
+ * El recorrido en tres pasos, para poder retomarlo: el estado después de
+ * aplicar los exports hasta cierto día se puede guardar y seguir desde ahí con
+ * los exports nuevos (lib/bills/supabase.js), en vez de repasar toda la
+ * historia cada vez. Aplicar los exports en dos tandas da lo mismo que en una.
+ */
+export function estadoVacio() {
+  return { bills: new Map(), paymentEvents: [], snapshots: [], dataWarnings: [] };
+}
+
+export const refsDe = (a) => (a ? { nombre: a.archivo, refs: new Set(a.referencias || []) } : null);
+
+/** Aplica exports, en orden, sobre un estado (lo modifica y lo devuelve). */
+export function aplicarArchivos(estado, archivos, versiones) {
   const porArchivo = new Map();
   for (const v of versiones) {
     if (!porArchivo.has(v.archivo_id)) porArchivo.set(v.archivo_id, []);
     porArchivo.get(v.archivo_id).push(v);
   }
 
-  const billsMap = new Map();
-  const paymentEvents = [];
-  const snapshots = [];
-  const dataWarnings = [];
-  let refsUltimo = null;
-  let refsPenultimo = null;
+  const billsMap = estado.bills;
+  const { paymentEvents, snapshots, dataWarnings } = estado;
 
   for (const a of archivos) {
     const fecha = new Date(a.subido).toISOString();
@@ -90,11 +104,20 @@ export function reporteDesdeVersiones(archivos, versiones) {
       totalPaid += b.paidAmount;
     }
     snapshots.push({ date: fecha, name: a.archivo, totalCharged, totalPaid });
-
-    refsPenultimo = refsUltimo;
-    refsUltimo = { nombre: a.archivo, refs: new Set(a.referencias || []) };
   }
+  return estado;
+}
 
+/**
+ * El reporte a partir del estado. Descarta las bills que no vienen en el export
+ * más nuevo sobre una copia, para que el estado se pueda seguir usando.
+ * @param archivos  todos los exports aplicados, para `sources`
+ * @param refsUltimo, refsPenultimo  referencias de los dos últimos (refsDe)
+ */
+export function cerrarReporte(estado, archivos, refsUltimo, refsPenultimo) {
+  const billsMap = new Map(estado.bills);
+  const dataWarnings = [...estado.dataWarnings];
+  const { paymentEvents, snapshots } = estado;
   let descartadas = 0;
   if (refsUltimo) {
     const anterior = refsPenultimo ? refsPenultimo.refs.size : 0;
