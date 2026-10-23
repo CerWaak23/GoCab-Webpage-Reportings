@@ -4,6 +4,8 @@ import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { estadoGarantia } from '@/lib/fleet/garantia';
+import { rentaDeAuto, leerBalance } from '@/lib/fleet/renta';
+import * as XLSX from 'xlsx';
 
 const soloRut = (s) => String(s || '').toUpperCase().replace(/[^0-9K]/g, '');
 const claveNombre = (s) =>
@@ -31,6 +33,41 @@ async function fichasConductores() {
     return { porRut, porNombre, activos };
   } catch (e) {
     console.error('[fleet] sin fichas de conductores:', e.message);
+    return null;
+  }
+}
+
+/* Balance de cada conductor (renta: 0 = al día, negativo = lo que debe) del
+   último export de conductores aplicado en Carga de datos, y la marca de cada
+   auto para saber su renta semanal. Si algo falla, la flota se sirve igual sin
+   esos datos. */
+async function rentasFleet() {
+  try {
+    const sb = supabaseServidor();
+    const [{ data: carga, error }, { data: autos }] = await Promise.all([
+      sb.from('cargas').select('archivo, ruta_storage, creado').eq('tipo', 'drivers').eq('aplicada', true)
+        .order('creado', { ascending: false }).limit(1).maybeSingle(),
+      sb.from('autos').select('patente, marca, modelo'),
+    ]);
+    if (error) throw error;
+    const porRut = new Map();
+    const porNombre = new Map();
+    if (carga) {
+      const { data: blob, error: e2 } = await sb.storage.from('cargas').download(carga.ruta_storage);
+      if (e2) throw e2;
+      const wb = XLSX.read(Buffer.from(await blob.arrayBuffer()), { type: 'buffer' });
+      const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false });
+      for (const f of filas) {
+        const balance = leerBalance(f['Balance']);
+        if (balance == null) continue;
+        if (soloRut(f['ID Number'])) porRut.set(soloRut(f['ID Number']), balance);
+        if (f['Name']) porNombre.set(claveNombre(f['Name']), balance);
+      }
+    }
+    const marcas = new Map((autos || []).map((a) => [String(a.patente).toUpperCase().replace(/[^A-Z0-9]/g, ''), a]));
+    return { porRut, porNombre, al: carga?.creado || null, marcas };
+  } catch (e) {
+    console.error('[fleet] sin rentas:', e.message);
     return null;
   }
 }
@@ -98,7 +135,7 @@ export async function GET(request) {
     const iRut = header.findIndex((h) => h === 'rut' || h.includes('rut'));
     const iCreado = header.findIndex((h) => h.includes('created') || h.includes('fecha'));
     const iNota = header.findIndex((h) => h.includes('nota'));
-    const fichas = await fichasConductores();
+    const [fichas, rentas] = await Promise.all([fichasConductores(), rentasFleet()]);
     const hoy = hoyChile();
 
     const drivers = body.map((r) => {
@@ -117,6 +154,14 @@ export async function GET(request) {
         garantia: ficha
           ? estadoGarantia({ garantia: ficha.garantia_pagada, activacion: ficha.activacion, modalidad: ficha.modalidad }, hoy)
           : null,
+        garantiaPagada: ficha ? ficha.garantia_pagada ?? null : null,
+        renta: rentas ? (() => {
+          const pat = String(r[1] || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          const auto = rentas.marcas.get(pat);
+          const tarifa = auto ? rentaDeAuto(auto.marca, auto.modelo) : null;
+          const balance = (rut ? rentas.porRut.get(rut) : undefined) ?? rentas.porNombre.get(claveNombre(conductor)) ?? null;
+          return { semanal: tarifa?.monto ?? null, modelo: tarifa?.modelo ?? null, balance, balanceAl: rentas.al };
+        })() : null,
       };
     });
 
