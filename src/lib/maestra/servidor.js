@@ -98,6 +98,18 @@ export async function sincronizarHoja() {
     valueInputOption: 'RAW',
     requestBody: { values: filas },
   });
+  // Al lado de los títulos y no bajo la tabla: los scripts que leen esta hoja
+  // (Copec, inDrive, el reporte) tomarían una fila extra abajo como conductor.
+  const ahora = new Intl.DateTimeFormat('es-CL', {
+    timeZone: 'America/Santiago', day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(new Date()).replace(',', '');
+  await api.spreadsheets.values.update({
+    spreadsheetId: HOJA_ID,
+    range: `${rango}!H1:H2`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [['Última actualización (GoBills)'], [ahora]] },
+  });
 
   const registro = { fecha: new Date().toISOString(), filas: filas.length - 1, pestana };
   await sb.from('configuracion').upsert({ clave: 'maestra_sincronizada', valor: registro });

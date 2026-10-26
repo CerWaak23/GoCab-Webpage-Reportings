@@ -1,32 +1,36 @@
 /**
- * Sincroniza la tabla de usuarios de Copec con Control Flota.
+ * Sincroniza la nómina de conductores de Copec con Control Flota.
  *
- * El mismo archivo sirve para las dos planillas: solo cambia MODALIDAD en la
- * configuración de abajo. Se pega en Extensiones → Apps Script de CADA planilla.
+ * Desde oct-2026 todos los conductores tienen el mismo 15% de descuento, así que
+ * hay UNA sola lista: Drive to own y arriendo juntos. Se pega en Extensiones →
+ * Apps Script de la planilla que se comparte con Copec.
  *
  * Qué hace:
- *   1. Lee la hoja de conductores de Control Flota.
- *   2. Se queda con los de la modalidad que corresponda (DTO o Arriendo).
+ *   1. Lee la hoja de conductores de Control Flota ("Vehiculos y ConductoresII",
+ *      la que escribe la maestra de GoBills con cada carga de Fleet).
+ *   2. Toma a todos los conductores con RUT, sin importar la modalidad.
  *   3. Reescribe la tabla de esta planilla con esos conductores.
  *   4. Si hubo altas o bajas —no si solo cambió un dato— avisa por correo a Copec.
  *
  * La comparación se hace contra lo que ya está escrito en esta misma tabla, así
  * que si alguien la edita a mano la próxima corrida lo detecta como cambio.
+ *
+ * Al pasar de dos listas a una: correr una vez "Primera carga (sin marcar ni
+ * avisar)" en la planilla que queda, para que los que venían de la otra lista no
+ * salgan como altas, y quitar la programación del script en la planilla que se
+ * deja de usar, para que no avise sus conductores como bajas.
  */
 
 // ─────────────────────────── CONFIGURACIÓN ───────────────────────────
 const CONFIG = {
-  // Planilla Control Flota (la misma para ambos scripts)
+  // Planilla Control Flota
   FLOTA_ID: '15yNGkyE1kkk8E0yiLLMmahz-G048vwgy2NWN8xYmiFw',
   FLOTA_HOJA: 'Vehiculos y ConductoresII',
 
-  // ⚠ LO ÚNICO QUE CAMBIA ENTRE LAS DOS PLANILLAS
-  //   Plan Drive to own → 'DTO'
-  //   Plan arriendo     → 'Renta'
-  MODALIDAD: 'DTO',
-
-  // Texto que se escribe en la columna Modalidad de esta tabla
-  ETIQUETA_MODALIDAD: 'Drive to own',   // en la de arriendo: 'Arriendo'
+  // Columna "Modalidad" de esta tabla. Vacío = la modalidad de cada conductor
+  // (Drive to own / Arriendo). Con texto = ese mismo texto para todos.
+  ETIQUETA_UNICA: '',
+  ETIQUETAS: { dto: 'Drive to own', renta: 'Arriendo' },
 
   // Dónde escribir en ESTA planilla
   HOJA_DESTINO: '',        // vacío = la primera hoja
@@ -35,9 +39,9 @@ const CONFIG = {
   COL_INICIO: 2,           // columna B (Agregar/Eliminar). La A tiene la numeración y no se toca
 
   // A quién avisar. Separar con comas.
-  CORREOS: 'pendiente@copec.cl',
-  COPIA: '',               // opcional, en copia
-  ASUNTO: 'GoCab · actualización de conductores del plan',
+  CORREOS: 'jniedmann@copec.cl, bzfernandez@copec.cl',
+  COPIA: 'andres.cerda@gocab.io',               // opcional, en copia
+  ASUNTO: 'GoCab · actualización de conductores (descuento 15%)',
 };
 // ─────────────────────────────────────────────────────────────────────
 
@@ -47,25 +51,28 @@ function onOpen() {
     .createMenu('GoCab')
     .addItem('Sincronizar ahora', 'sincronizar')
     .addItem('Sincronizar sin enviar correo', 'sincronizarSinCorreo')
+    .addItem('Primera carga (sin marcar ni avisar)', 'primeraCarga')
     .addSeparator()
     .addItem('Programar sincronización diaria', 'programarDiaria')
     .addItem('Quitar programación', 'quitarProgramacion')
     .addToUi();
 }
 
-function sincronizar() { ejecutar(true); }
-function sincronizarSinCorreo() { ejecutar(false); }
+function sincronizar() { ejecutar({ correo: true, marcar: true }); }
+function sincronizarSinCorreo() { ejecutar({ correo: false, marcar: true }); }
+/** Para unir las dos listas: escribe todo sin marcar "Agregar" ni avisar a Copec. */
+function primeraCarga() { ejecutar({ correo: false, marcar: false }); }
 
 /** Punto de entrada para el disparador automático. */
-function sincronizarAutomatico() { ejecutar(true); }
+function sincronizarAutomatico() { ejecutar({ correo: true, marcar: true }); }
 
-function ejecutar(avisarPorCorreo) {
+function ejecutar(op) {
   const hoja = CONFIG.HOJA_DESTINO
     ? SpreadsheetApp.getActive().getSheetByName(CONFIG.HOJA_DESTINO)
     : SpreadsheetApp.getActive().getSheets()[0];
   if (!hoja) throw new Error('No encuentro la hoja destino: ' + CONFIG.HOJA_DESTINO);
 
-  const deFlota = leerFlota();                 // conductores de la modalidad, desde Control Flota
+  const deFlota = leerFlota();                 // todos los conductores, desde Control Flota
   const enTabla = leerTablaActual(hoja);       // lo que hay escrito hoy en esta planilla
 
   // Las altas y bajas se calculan por RUT, que es lo único que no cambia de escritura
@@ -80,18 +87,18 @@ function ejecutar(avisarPorCorreo) {
   const hoy = new Date();
 
   const filas = deFlota.map(f => ([
-    rutsAntes.has(f.rut) ? '' : 'Agregar',     // marca solo lo nuevo para Copec
+    op.marcar && !rutsAntes.has(f.rut) ? 'Agregar' : '',   // marca solo lo nuevo para Copec
     fechaPrevia[f.rut] || hoy,
     f.rut,
     f.nombre,
     f.apellido,
-    CONFIG.ETIQUETA_MODALIDAD,
+    f.modalidad,
   ]));
 
   escribirTabla(hoja, filas, enTabla.length);
 
   const resumen = 'Total ' + filas.length + ' · altas ' + altas.length + ' · bajas ' + bajas.length;
-  if (avisarPorCorreo && (altas.length || bajas.length)) {
+  if (op.correo && (altas.length || bajas.length)) {
     enviarCorreo(altas, bajas, filas.length);
     SpreadsheetApp.getActive().toast(resumen + ' · correo enviado', 'GoCab', 8);
   } else {
@@ -101,7 +108,7 @@ function ejecutar(avisarPorCorreo) {
   return { altas: altas, bajas: bajas, total: filas.length };
 }
 
-/** Lee Control Flota y devuelve los conductores de la modalidad configurada. */
+/** Lee Control Flota y devuelve todos los conductores con RUT. */
 function leerFlota() {
   const hoja = SpreadsheetApp.openById(CONFIG.FLOTA_ID).getSheetByName(CONFIG.FLOTA_HOJA);
   if (!hoja) throw new Error('No encuentro la hoja "' + CONFIG.FLOTA_HOJA + '" en Control Flota');
@@ -124,11 +131,10 @@ function leerFlota() {
   const iNombre = buscar('name', 'nombre', 'conductor');
   const iRut = buscar('rut');
   const iTipo = buscar('tipo', 'modalidad');
-  if (iNombre < 0 || iRut < 0 || iTipo < 0) {
-    throw new Error('Control Flota cambió de columnas: falta Name, Rut o Tipo');
+  if (iNombre < 0 || iRut < 0) {
+    throw new Error('Control Flota cambió de columnas: falta Name o Rut');
   }
 
-  const quiero = normalizar(CONFIG.MODALIDAD);
   const salida = [];
   const sinRut = [];
   const vistos = {};
@@ -136,16 +142,18 @@ function leerFlota() {
   for (let i = 1; i < datos.length; i++) {
     const fila = datos[i];
     const nombreCrudo = String(fila[iNombre] || '').trim();
-    if (!nombreCrudo) continue;
-    if (normalizar(fila[iTipo]).indexOf(quiero) === -1) continue;
+    if (!nombreCrudo) continue;                // autos sin conductor (en taller, por entregar)
 
     const rut = limpiarRut(fila[iRut]);
     if (!rut) { sinRut.push(nombreCrudo); continue; }
-    if (vistos[rut]) continue;                 // un mismo rut no puede ir dos veces
+    if (vistos[rut]) continue;                 // un mismo rut no puede ir dos veces (dos autos)
     vistos[rut] = true;
 
     const partes = partirNombre(nombreCrudo);
-    salida.push({ rut: rut, nombre: partes.nombre, apellido: partes.apellido, original: nombreCrudo });
+    salida.push({
+      rut: rut, nombre: partes.nombre, apellido: partes.apellido, original: nombreCrudo,
+      modalidad: etiquetaModalidad(iTipo >= 0 ? fila[iTipo] : ''),
+    });
   }
 
   if (sinRut.length) {
@@ -155,6 +163,14 @@ function leerFlota() {
       'Faltan datos en Control Flota', 10);
   }
   return salida;
+}
+
+function etiquetaModalidad(tipo) {
+  if (CONFIG.ETIQUETA_UNICA) return CONFIG.ETIQUETA_UNICA;
+  const t = normalizar(tipo);
+  if (t.indexOf('dto') !== -1 || t.indexOf('drive') !== -1) return CONFIG.ETIQUETAS.dto;
+  if (t.indexOf('renta') !== -1 || t.indexOf('arriendo') !== -1) return CONFIG.ETIQUETAS.renta;
+  return '';
 }
 
 /** Lee lo que hay escrito hoy en la tabla de esta planilla. */
@@ -199,7 +215,7 @@ function enviarCorreo(altas, bajas, total) {
 
   const html =
     '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.5">' +
-    '<p>Se actualizó la nómina de conductores del plan <b>' + escapar(CONFIG.ETIQUETA_MODALIDAD) + '</b>.</p>' +
+    '<p>Se actualizó la nómina de conductores de GoCab con <b>descuento del 15%</b>.</p>' +
     '<p><b>Conductores agregados (' + altas.length + ')</b></p>' + lista(altas) +
     '<p><b>Conductores dados de baja (' + bajas.length + ')</b></p>' + lista(bajas) +
     '<p>La planilla queda con <b>' + total + '</b> conductores activos.</p>' +
@@ -216,8 +232,7 @@ function enviarCorreo(altas, bajas, total) {
 
   MailApp.sendEmail(
     para,
-    CONFIG.ASUNTO + ' — ' + CONFIG.ETIQUETA_MODALIDAD +
-      ' (' + altas.length + ' alta(s), ' + bajas.length + ' baja(s))',
+    CONFIG.ASUNTO + ' (' + altas.length + ' alta(s), ' + bajas.length + ' baja(s))',
     'Se actualizó la nómina de conductores. Abra el correo en formato HTML para ver el detalle.',
     opciones
   );
@@ -261,9 +276,9 @@ function limpiarRut(v) {
  * Parte "PPD JUAN FRANCISCO LIRA MANZANO" en nombre y apellido.
  *
  * Es una heurística, no una certeza: el nombre viene en una sola celda y no hay
- * forma de saber dónde termina. Se aplica la convención chilena de dos apellidos
- * y se avisa en el correo si algo se ve raro. Si un caso queda mal, lo correcto
- * es arreglarlo en Control Flota, no acá.
+ * forma de saber dónde termina. Se aplica la convención chilena de dos apellidos.
+ * Si un caso queda mal, lo correcto es arreglarlo en Control Flota (Carga de
+ * datos → Maestra), no acá.
  */
 function partirNombre(crudo) {
   let s = String(crudo || '').replace(/\s+/g, ' ').trim();
