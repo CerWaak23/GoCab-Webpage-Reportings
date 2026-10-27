@@ -3,13 +3,13 @@ export const maxDuration = 60;
 
 import { NextResponse } from 'next/server';
 import { getAppSession } from '@/lib/session';
-import { permisoCarga } from '@/lib/carga/permisos';
+import { permisoMaestra } from '@/lib/carga/permisos';
 import { sincronizarHoja } from '@/lib/maestra/servidor';
 
-/** Copia la maestra a la hoja de Control Flota ahora. */
+/** Copia la maestra a la hoja de Control Flota ahora. Solo gerencia; al aplicar una carga se copia sola. */
 export async function POST() {
   const session = await getAppSession();
-  const negado = permisoCarga(session?.user, 'aplicar');
+  const negado = permisoMaestra(session?.user);
   if (negado) return NextResponse.json({ error: 'sin_permiso' }, { status: negado });
   try {
     return NextResponse.json({ ok: true, hoja: await sincronizarHoja() });

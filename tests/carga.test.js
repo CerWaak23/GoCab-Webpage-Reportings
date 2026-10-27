@@ -3,7 +3,7 @@ import vehicles from './fixtures/fleet/vehicles.json';
 import drivers from './fixtures/fleet/drivers.json';
 import { analizarExport } from '@/lib/fleet';
 import { payloadPara, ordenarParaAplicar, hoyEnChile } from '@/lib/carga/payload';
-import { permisoCarga, validarArchivo } from '@/lib/carga/permisos';
+import { permisoCarga, permisoMaestra, validarArchivo } from '@/lib/carga/permisos';
 
 const HOY = '2026-10-01';
 
@@ -69,6 +69,12 @@ describe('permisos de Carga de datos', () => {
     expect(permisoCarga(coord, 'aplicar')).toBe(null);
   });
   it('el encargado de taller no entra', () => expect(permisoCarga(taller, 'revisar')).toBe(403));
+  it('la maestra solo la corrige gerencia', () => {
+    expect(permisoMaestra(null)).toBe(401);
+    expect(permisoMaestra(gerente)).toBe(null);
+    expect(permisoMaestra(coord)).toBe(403);
+    expect(permisoMaestra(taller)).toBe(403);
+  });
 });
 
 describe('validar archivo antes de subir', () => {

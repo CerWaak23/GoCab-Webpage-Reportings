@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { getAppSession } from '@/lib/session';
-import { permisoCarga } from '@/lib/carga/permisos';
+import { permisoCarga, permisoMaestra } from '@/lib/carga/permisos';
 import { validarEdicion, CAMPOS_AUTO } from '@/lib/maestra/maestra';
 import { leerMaestra, guardarEdicion, sincronizarHoja, compararConHojaOriginal } from '@/lib/maestra/servidor';
 
@@ -20,7 +20,7 @@ export async function GET(request) {
       leerMaestra(),
       comparar ? compararConHojaOriginal().catch((err) => { console.error('maestra/comparar', err.message); return { error: true }; }) : null,
     ]);
-    return NextResponse.json({ ...datos, diferencias, puedeEditar: !permisoCarga(session.user, 'aplicar') }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ ...datos, diferencias, puedeEditar: !permisoMaestra(session.user) }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('maestra', err.message);
     return NextResponse.json({ error: 'base' }, { status: 500 });
@@ -31,10 +31,11 @@ export async function GET(request) {
  * Corrige un campo: { campo, valor, patente } (encargado, tipo) o
  * { campo, valor, conductorId } (nombre, rut). Valor vacío = volver a Fleet.
  * Después copia la maestra a la hoja; si eso falla, la corrección igual queda.
+ * Solo gerencia.
  */
 export async function POST(request) {
   const session = await getAppSession();
-  const negado = permisoCarga(session?.user, 'aplicar');
+  const negado = permisoMaestra(session?.user);
   if (negado) return NextResponse.json({ error: 'sin_permiso' }, { status: negado });
 
   const { campo, valor, patente, conductorId } = await request.json().catch(() => ({}));
