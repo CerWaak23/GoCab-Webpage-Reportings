@@ -141,9 +141,8 @@ export async function GET(request) {
     const drivers = body.map((r) => {
       const conductor = String(r[0] || '').trim().toUpperCase();
       const rut = iRut >= 0 ? soloRut(r[iRut]) : '';
-      const ficha = fichas
-        ? (rut && fichas.porRut.get(rut)) || fichas.porNombre.get(claveNombre(conductor)) || null
-        : null;
+      const fichaRut = fichas && rut ? fichas.porRut.get(rut) || null : null;
+      const ficha = fichaRut || (fichas ? fichas.porNombre.get(claveNombre(conductor)) || null : null);
       return {
         conductor,
         patente: String(r[1] || '').trim(),
@@ -155,6 +154,12 @@ export async function GET(request) {
           ? estadoGarantia({ garantia: ficha.garantia_pagada, activacion: ficha.activacion, modalidad: ficha.modalidad }, hoy)
           : null,
         garantiaPagada: ficha ? ficha.garantia_pagada ?? null : null,
+        // Cómo se llama esta persona en Fleet, según su RUT: las boletas traen solo
+        // el nombre de Fleet, y con esto el reporte las une a la fila del RUT y no a
+        // la de alguien con un nombre parecido (hay dos César Hermosilla). Va el
+        // nombre de Fleet tal cual: `nombre` viene sin el PPD y al del PPD le
+        // daría también el nombre del otro. El RUT no sale.
+        nombresPorRut: fichaRut && (fichaRut.nombre_fleet || fichaRut.nombre) ? [fichaRut.nombre_fleet || fichaRut.nombre] : [],
         renta: rentas ? (() => {
           const pat = String(r[1] || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
           const auto = rentas.marcas.get(pat);

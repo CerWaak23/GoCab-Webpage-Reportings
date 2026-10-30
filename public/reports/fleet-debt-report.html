@@ -1103,19 +1103,25 @@ function namesMatch(fleetName,billName){
   return false;
 }
 
-// Fila de Control Flota de un conductor. El nombre exacto gana sobre el difuso:
-// "PPD CESAR HERMOSILLA" y "CESAR HERMOSILLA" son dos personas distintas, y con
-// el difuso solo, el primero se quedaba con la fila (coordinador, garantía,
+// Fila de Control Flota de un conductor, en tres pasos:
+//   1. RUT: la fila cuyo RUT corresponde a ese nombre en Fleet (/api/fleet manda
+//      los nombres de Fleet de cada RUT, no el RUT). Solo si hay una.
+//   2. Nombre exacto de la planilla.
+//   3. Nombre parecido (todas las palabras de uno en el otro), el primero.
+// "PPD CESAR HERMOSILLA" y "CESAR HERMOSILLA" son dos personas distintas; con el
+// parecido solo, el primero se quedaba con la fila (coordinador, garantía,
 // renta) del que apareciera antes en la planilla.
 function filaFlotaDe(drv){
-  var difusa=null;
+  var porRut=[],exacta=null,difusa=null;
   for(var i=0;i<FLEET_ROWS.length;i++){
     var fr=FLEET_ROWS[i];
+    if(fr.nombresRut&&fr.nombresRut.indexOf(drv)>=0)porRut.push(fr);
     if(!fr.nameNorm)continue;
-    if(fr.nameNorm===drv)return fr;
+    if(!exacta&&fr.nameNorm===drv)exacta=fr;
     if(!difusa&&namesMatch(fr.nameNorm,drv))difusa=fr;
   }
-  return difusa;
+  if(porRut.length===1)return porRut[0];
+  return exacta||difusa;
 }
 
 // La patente en Bills viene dentro del vehiculo ("BAIC Eu5 (VZSS61)") y en la
@@ -1334,7 +1340,8 @@ async function loadData(){
     FLEET_ROWS=fleetDrivers.map(function(d){
       return {nameNorm:normalizeName(d.conductor),coordinador:String(d.coordinador||'').trim(),
               patente:d.patente||'',tipo:String(d.tipo||'').trim(),
-              garantia:d.garantia||null,renta:d.renta||null,garantiaPagada:d.garantiaPagada};
+              garantia:d.garantia||null,renta:d.renta||null,garantiaPagada:d.garantiaPagada,
+              nombresRut:(d.nombresPorRut||[]).map(normalizeName)};
     });
     TALLER=fleetJson.taller||[];
     VEHICULOS=fleetJson.vehiculos||[];
