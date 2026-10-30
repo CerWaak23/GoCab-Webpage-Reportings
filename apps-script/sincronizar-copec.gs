@@ -328,7 +328,7 @@ function listaCorreos(v) {
 /** Sin tildes, minúsculas y sin espacios de más. */
 function normalizar(v) {
   return String(v == null ? '' : v)
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
