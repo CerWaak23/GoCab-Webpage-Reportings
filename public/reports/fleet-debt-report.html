@@ -1103,6 +1103,21 @@ function namesMatch(fleetName,billName){
   return false;
 }
 
+// Fila de Control Flota de un conductor. El nombre exacto gana sobre el difuso:
+// "PPD CESAR HERMOSILLA" y "CESAR HERMOSILLA" son dos personas distintas, y con
+// el difuso solo, el primero se quedaba con la fila (coordinador, garantía,
+// renta) del que apareciera antes en la planilla.
+function filaFlotaDe(drv){
+  var difusa=null;
+  for(var i=0;i<FLEET_ROWS.length;i++){
+    var fr=FLEET_ROWS[i];
+    if(!fr.nameNorm)continue;
+    if(fr.nameNorm===drv)return fr;
+    if(!difusa&&namesMatch(fr.nameNorm,drv))difusa=fr;
+  }
+  return difusa;
+}
+
 // La patente en Bills viene dentro del vehiculo ("BAIC Eu5 (VZSS61)") y en la
 // planilla como columna aparte; se normalizan las dos a solo letras y numeros.
 function normPatente(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
@@ -1271,11 +1286,8 @@ function detectarCoordEnConflicto(){
 var _coordCache={};
 function coordOf(normalizedDriver){
   if(Object.prototype.hasOwnProperty.call(_coordCache,normalizedDriver))return _coordCache[normalizedDriver];
-  var found='';
-  for(var i=0;i<FLEET_ROWS.length;i++){
-    var fr=FLEET_ROWS[i];
-    if(fr.nameNorm&&namesMatch(fr.nameNorm,normalizedDriver)){found=fr.coordinador||'';break;}
-  }
+  var fr=filaFlotaDe(normalizedDriver);
+  var found=fr?(fr.coordinador||''):'';
   _coordCache[normalizedDriver]=found;
   return found;
 }
@@ -2209,18 +2221,20 @@ function lineaCubiertoAparte(s){
 /* Garantía del conductor: la calcula /api/fleet con el plan de pago (50.000 a la
    entrega y 25.000 cada miércoles hasta el tope), y acá solo se pinta. */
 function garantiaDe(drv){
-  for(var i=0;i<FLEET_ROWS.length;i++){
-    var fr=FLEET_ROWS[i];
-    if(fr.nameNorm&&fr.garantia&&namesMatch(fr.nameNorm,drv))return fr.garantia;
-  }
-  // Quien no está en Control Flota se busca por nombre en la ficha de Fleet
+  var fr=filaFlotaDe(drv);
+  if(fr&&fr.garantia)return fr.garantia;
+  // Quien no está en Control Flota se busca por nombre en la ficha de Fleet,
+  // también con el nombre exacto primero
+  var difusa=null;
   for(var j=0;j<GARANTIAS.length;j++){
     var g=GARANTIAS[j];
     for(var k=0;k<g.nombres.length;k++){
-      if(namesMatch(normalizeName(g.nombres[k]),drv))return g.garantia;
+      var n=normalizeName(g.nombres[k]);
+      if(n===drv)return g.garantia;
+      if(!difusa&&namesMatch(n,drv))difusa=g.garantia;
     }
   }
-  return null;
+  return difusa;
 }
 /* ── PLAZO: cuántos días se le puede dar antes de que sea un riesgo ─────────
    Si hoy se le quita el auto, lo que tenemos para cubrir su deuda es la
@@ -2241,13 +2255,6 @@ function garantiaDe(drv){
    semana se le suma como deuda. */
 var POSPAGO={'LUISA MEZA':true};
 var PLAZO_DIAS_TAGS=28;
-function filaFlotaDe(drv){
-  for(var i=0;i<FLEET_ROWS.length;i++){
-    var fr=FLEET_ROWS[i];
-    if(fr.nameNorm&&namesMatch(fr.nameNorm,drv))return fr;
-  }
-  return null;
-}
 // Último miércoles a las 14:00 (hora del navegador, que es la de Chile) hasta t
 function ultimoCargoRenta(t){
   var d=new Date(t);
