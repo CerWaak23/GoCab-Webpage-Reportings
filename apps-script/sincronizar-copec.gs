@@ -12,8 +12,11 @@
  *   3. Reescribe la tabla de esta planilla con esos conductores.
  *   4. Si hubo altas o bajas —no si solo cambió un dato— avisa por correo a Copec.
  *
- * La comparación se hace contra lo que ya está escrito en esta misma tabla, así
- * que si alguien la edita a mano la próxima corrida lo detecta como cambio.
+ * La comparación se hace contra la lista del último aviso, guardada en las
+ * propiedades del script, no contra la tabla: si la tabla se borra, se ordena o
+ * se edita a mano, Copec no recibe la nómina completa como si fueran todos nuevos.
+ * Si igual salen demasiadas altas de una vez, no se envía nada solo: la corrida
+ * automática lo salta y la manual pide confirmar.
  *
  * Al pasar de dos listas a una: correr una vez "Primera carga (sin marcar ni
  * avisar)" en la planilla que queda, para que los que venían de la otra lista no
@@ -42,6 +45,10 @@ const CONFIG = {
   CORREOS: 'jniedmann@copec.cl, bzfernandez@copec.cl',
   COPIA: 'andres.cerda@gocab.io',               // opcional, en copia
   ASUNTO: 'GoCab · actualización de conductores (descuento 15%)',
+
+  // Más altas que esto de una vez huele a error (tabla borrada, hoja cambiada),
+  // no a conductores nuevos: en un día normal entran 1 a 5.
+  MAX_ALTAS_SIN_CONFIRMAR: 15,
 };
 // ─────────────────────────────────────────────────────────────────────
 
@@ -58,7 +65,7 @@ function onOpen() {
     .addToUi();
 }
 
-function sincronizar() { ejecutar({ correo: true, marcar: true }); }
+function sincronizar() { ejecutar({ correo: true, marcar: true, manual: true }); }
 function sincronizarSinCorreo() { ejecutar({ correo: false, marcar: true }); }
 /** Para unir las dos listas: escribe todo sin marcar "Agregar" ni avisar a Copec. */
 function primeraCarga() { ejecutar({ correo: false, marcar: false }); }
@@ -74,12 +81,37 @@ function ejecutar(op) {
 
   const deFlota = leerFlota();                 // todos los conductores, desde Control Flota
   const enTabla = leerTablaActual(hoja);       // lo que hay escrito hoy en esta planilla
+  // Contra qué se compara: la lista del último aviso. Recién instalado no hay,
+  // y se usa la tabla, como antes.
+  const antes = leerUltimaLista() || enTabla;
 
   // Las altas y bajas se calculan por RUT, que es lo único que no cambia de escritura
-  const rutsAntes = new Set(enTabla.map(f => f.rut));
+  const rutsAntes = new Set(antes.map(f => f.rut));
   const rutsAhora = new Set(deFlota.map(f => f.rut));
   const altas = deFlota.filter(f => !rutsAntes.has(f.rut));
-  const bajas = enTabla.filter(f => !rutsAhora.has(f.rut));
+  const bajas = antes.filter(f => !rutsAhora.has(f.rut));
+
+  if (op.correo && altas.length > CONFIG.MAX_ALTAS_SIN_CONFIRMAR) {
+    const aviso = altas.length + ' altas de una vez es raro: puede que la tabla o la lista guardada no sea la de Copec.';
+    if (!op.manual) {
+      // Sin nadie mirando no se escribe ni se avisa a Copec: queda todo como
+      // estaba y solo se le avisa a quien va en copia, para que lo revise.
+      console.warn(aviso + ' Corrida automática saltada.');
+      const copia = listaCorreos(CONFIG.COPIA);
+      if (copia) {
+        MailApp.sendEmail(copia, 'Copec: sincronización saltada (' + altas.length + ' altas)',
+          aviso + '\n\nNo se avisó a Copec. Abra la planilla y use "Primera carga (sin marcar ni avisar)" ' +
+          'si la lista está bien, o "Sincronizar ahora" para enviar igual.\n\n' + SpreadsheetApp.getActive().getUrl(),
+          { name: 'GoCab Chile' });
+      }
+      return { altas: altas, bajas: bajas, total: deFlota.length, saltada: true };
+    }
+    const ui = SpreadsheetApp.getUi();
+    const r = ui.alert('Revisar antes de avisar a Copec',
+      aviso + '\n\n¿Enviar igual el correo con las ' + altas.length + ' altas?\n' +
+      '(Si no, use "Primera carga" para dejar la lista al día sin avisar.)', ui.ButtonSet.YES_NO);
+    if (r !== ui.Button.YES) return { altas: altas, bajas: bajas, total: deFlota.length, saltada: true };
+  }
 
   // La fecha de un conductor que ya estaba se respeta; los nuevos llevan la de hoy
   const fechaPrevia = {};
@@ -96,6 +128,7 @@ function ejecutar(op) {
   ]));
 
   escribirTabla(hoja, filas, enTabla.length);
+  guardarUltimaLista(deFlota);
 
   const resumen = 'Total ' + filas.length + ' · altas ' + altas.length + ' · bajas ' + bajas.length;
   if (op.correo && (altas.length || bajas.length)) {
@@ -236,6 +269,39 @@ function enviarCorreo(altas, bajas, total) {
     'Se actualizó la nómina de conductores. Abra el correo en formato HTML para ver el detalle.',
     opciones
   );
+}
+
+// ───────────────────── LISTA DEL ÚLTIMO AVISO ─────────────────────
+// Una línea "rut|nombre|apellido" por conductor, repartida en trozos porque cada
+// propiedad del script admite unos 9 KB.
+
+const CLAVE_LISTA = 'copec_ultima_lista';
+const TROZO = 8000;
+
+function leerUltimaLista() {
+  const props = PropertiesService.getScriptProperties();
+  const n = Number(props.getProperty(CLAVE_LISTA + '_n') || 0);
+  if (!n) return null;
+  let texto = '';
+  for (let i = 0; i < n; i++) texto += props.getProperty(CLAVE_LISTA + '_' + i) || '';
+  return texto.split('\n').filter(Boolean).map(function (l) {
+    const p = l.split('|');
+    return { rut: p[0], nombre: p[1] || '', apellido: p[2] || '' };
+  });
+}
+
+function guardarUltimaLista(lista) {
+  const props = PropertiesService.getScriptProperties();
+  const texto = lista.map(function (f) {
+    return [f.rut, f.nombre, f.apellido].map(function (s) { return String(s || '').replace(/[|\n]/g, ' '); }).join('|');
+  }).join('\n');
+  const viejos = Number(props.getProperty(CLAVE_LISTA + '_n') || 0);
+  const valores = {};
+  let n = 0;
+  for (let i = 0; i < texto.length; i += TROZO) valores[CLAVE_LISTA + '_' + (n++)] = texto.slice(i, i + TROZO);
+  valores[CLAVE_LISTA + '_n'] = String(n);
+  props.setProperties(valores);
+  for (let i = n; i < viejos; i++) props.deleteProperty(CLAVE_LISTA + '_' + i);
 }
 
 // ─────────────────────────── AUXILIARES ───────────────────────────
