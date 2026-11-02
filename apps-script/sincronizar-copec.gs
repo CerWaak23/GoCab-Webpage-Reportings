@@ -9,7 +9,9 @@
  *   1. Lee la hoja de conductores de Control Flota ("Vehiculos y ConductoresII",
  *      la que escribe la maestra de GoBills con cada carga de Fleet).
  *   2. Toma a todos los conductores con RUT, sin importar la modalidad.
- *   3. Reescribe la tabla de esta planilla con esos conductores.
+ *   3. Reescribe la tabla de esta planilla con esos conductores, en el orden que
+ *      pidió Copec: Modalidad, Fecha ingreso, Rut, Nombre, Apellido y después sus
+ *      columnas ESTADO. Los nuevos llevan la fecha de hoy en Fecha ingreso.
  *   4. Si hubo altas o bajas —no si solo cambió un dato— avisa por correo a Copec.
  *
  * La comparación se hace contra la lista del último aviso, guardada en las
@@ -18,8 +20,8 @@
  * Si igual salen demasiadas altas de una vez, no se envía nada solo: la corrida
  * automática lo salta y la manual pide confirmar.
  *
- * Al pasar de dos listas a una: correr una vez "Primera carga (sin marcar ni
- * avisar)" en la planilla que queda, para que los que venían de la otra lista no
+ * Al pasar de dos listas a una: correr una vez "Sincronizar sin enviar
+ * correo" en la planilla que queda, para que los que venían de la otra lista no
  * salgan como altas, y quitar la programación del script en la planilla que se
  * deja de usar, para que no avise sus conductores como bajas.
  */
@@ -39,7 +41,7 @@ const CONFIG = {
   HOJA_DESTINO: '',        // vacío = la primera hoja
   FILA_ENCABEZADO: 8,      // la fila con los títulos
   PRIMERA_FILA: 9,         // primera fila de datos
-  COL_INICIO: 1,           // columna A (Agregar/Eliminar). Las que siguen a Modalidad son de Copec
+  COL_INICIO: 1,           // columna A (Modalidad). Las que siguen a Apellido son de Copec
 
   // A quién avisar. Separar con comas.
   CORREOS: 'jniedmann@copec.cl, bzfernandez@copec.cl',
@@ -52,36 +54,40 @@ const CONFIG = {
 };
 // ─────────────────────────────────────────────────────────────────────
 
+// Las columnas que escribe el script, en el orden que pidió Copec (nov-2026). Lo
+// nuevo se reconoce por la fecha de ingreso, no por una marca "Agregar". Todo lo
+// que esté a la derecha (ESTADO 02-11, ESTADO 2710…) lo agrega Copec en cada
+// revisión y el script solo lo mueve junto a su RUT.
+const COLUMNAS = ['Modalidad', 'Fecha ingreso', 'Rut (sin puntos ni guión)', 'Nombre', 'Apellido'];
+
 /** Menú propio al abrir la planilla. */
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('GoCab')
     .addItem('Sincronizar ahora', 'sincronizar')
     .addItem('Sincronizar sin enviar correo', 'sincronizarSinCorreo')
-    .addItem('Primera carga (sin marcar ni avisar)', 'primeraCarga')
     .addSeparator()
     .addItem('Programar sincronización diaria', 'programarDiaria')
     .addItem('Quitar programación', 'quitarProgramacion')
     .addToUi();
 }
 
-function sincronizar() { ejecutar({ correo: true, marcar: true, manual: true }); }
-function sincronizarSinCorreo() { ejecutar({ correo: false, marcar: true }); }
-/** Para unir las dos listas: escribe todo sin marcar "Agregar" ni avisar a Copec. */
-function primeraCarga() { ejecutar({ correo: false, marcar: false }); }
+function sincronizar() { ejecutar({ correo: true, manual: true }); }
+/** Deja la lista al día sin avisar a Copec (por ejemplo, al unir las dos listas). */
+function sincronizarSinCorreo() { ejecutar({ correo: false }); }
 
 /** Punto de entrada para el disparador automático. */
-function sincronizarAutomatico() { ejecutar({ correo: true, marcar: true }); }
+function sincronizarAutomatico() { ejecutar({ correo: true }); }
 
 function ejecutar(op) {
   const hoja = CONFIG.HOJA_DESTINO
     ? SpreadsheetApp.getActive().getSheetByName(CONFIG.HOJA_DESTINO)
     : SpreadsheetApp.getActive().getSheets()[0];
   if (!hoja) throw new Error('No encuentro la hoja destino: ' + CONFIG.HOJA_DESTINO);
-  revisarEncabezado(hoja);
 
+  const tabla = leerTablaActual(hoja);         // lo que hay escrito hoy en esta planilla
+  const enTabla = tabla.filas;
   const deFlota = leerFlota();                // todos los conductores, desde Control Flota
-  const enTabla = leerTablaActual(hoja);       // lo que hay escrito hoy en esta planilla
   // Contra qué se compara: la lista del último aviso. Recién instalado no hay,
   // y se usa la tabla, como antes.
   const antes = leerUltimaLista() || enTabla;
@@ -101,7 +107,7 @@ function ejecutar(op) {
       const copia = listaCorreos(CONFIG.COPIA);
       if (copia) {
         MailApp.sendEmail(copia, 'Copec: sincronización saltada (' + altas.length + ' altas)',
-          aviso + '\n\nNo se avisó a Copec. Abra la planilla y use "Primera carga (sin marcar ni avisar)" ' +
+          aviso + '\n\nNo se avisó a Copec. Abra la planilla y use "Sincronizar sin enviar correo" ' +
           'si la lista está bien, o "Sincronizar ahora" para enviar igual.\n\n' + SpreadsheetApp.getActive().getUrl(),
           { name: 'GoCab Chile' });
       }
@@ -110,33 +116,31 @@ function ejecutar(op) {
     const ui = SpreadsheetApp.getUi();
     const r = ui.alert('Revisar antes de avisar a Copec',
       aviso + '\n\n¿Enviar igual el correo con las ' + altas.length + ' altas?\n' +
-      '(Si no, use "Primera carga" para dejar la lista al día sin avisar.)', ui.ButtonSet.YES_NO);
+      '(Si no, use "Sincronizar sin enviar correo" para dejar la lista al día sin avisar.)', ui.ButtonSet.YES_NO);
     if (r !== ui.Button.YES) return { altas: altas, bajas: bajas, total: deFlota.length, saltada: true };
   }
 
-  // La fecha de un conductor que ya estaba se respeta; los nuevos llevan la de hoy.
-  // Las columnas de Copec (estado, etc.) viajan con su RUT: si un alta corre las
-  // filas, el estado sigue al conductor y no queda en la fila de otro.
+  // La fecha de ingreso de un conductor que ya estaba se respeta; los nuevos llevan
+  // la de hoy, y así Copec los reconoce. Las columnas de Copec (ESTADO…) viajan
+  // con su RUT: si un alta corre las filas, el estado sigue al conductor y no
+  // queda en la fila de otro. Un alta las lleva vacías.
   const previa = {};
   enTabla.forEach(f => { previa[f.rut] = f; });
-  const anchoCopec = enTabla.reduce((m, f) => Math.max(m, f.copec.length), 0);
   const hoy = new Date();
 
   const filas = deFlota.map(f => {
     const p = previa[f.rut];
-    const copec = (p ? p.copec : []).slice();
-    while (copec.length < anchoCopec) copec.push('');
+    const copec = p ? p.copec : tabla.titulosCopec.map(() => '');
     return [
-      op.marcar && !rutsAntes.has(f.rut) ? 'Agregar' : '',   // marca solo lo nuevo para Copec
+      f.modalidad,
       (p && p.fecha) || hoy,
       f.rut,
       f.nombre,
       f.apellido,
-      f.modalidad,
     ].concat(copec);
   });
 
-  escribirTabla(hoja, filas, enTabla.length, 6 + anchoCopec);
+  escribirTabla(hoja, COLUMNAS.concat(tabla.titulosCopec), filas, enTabla.length, tabla.ancho);
   guardarUltimaLista(deFlota);
 
   const resumen = 'Total ' + filas.length + ' · altas ' + altas.length + ' · bajas ' + bajas.length;
@@ -215,46 +219,87 @@ function etiquetaModalidad(tipo) {
   return '';
 }
 
-/**
- * Antes de escribir nada, confirma que la tabla está donde el script cree. Si la
- * columna del RUT no dice "rut", el script leería otra columna, creería que la
- * tabla está vacía, mandaría la nómina entera como altas y escribiría corrido
- * encima de las columnas de Copec.
- */
-function revisarEncabezado(hoja) {
-  const titulos = hoja.getRange(CONFIG.FILA_ENCABEZADO, CONFIG.COL_INICIO, 1, 6).getValues()[0].map(normalizar);
-  if (titulos[2].indexOf('rut') === -1 || titulos[3].indexOf('nombre') === -1) {
-    throw new Error('La tabla no está donde el script espera: en la fila ' + CONFIG.FILA_ENCABEZADO +
-      ' deberían ir Agregar/Eliminar, Fecha, Rut, Nombre, Apellido y Modalidad desde la columna ' +
-      String.fromCharCode(64 + CONFIG.COL_INICIO) + '. Encontré: ' + titulos.join(' | ') +
-      '. Revise FILA_ENCABEZADO y COL_INICIO en la configuración.');
-  }
+/** Qué columna del script es un título, o null si es de Copec. */
+function columnaDelScript(titulo) {
+  const t = normalizar(titulo);
+  if (t.indexOf('agregar') === 0 || t.indexOf('eliminar') === 0) return 'marca';   // la del formato anterior
+  if (t.indexOf('modalidad') === 0) return 'modalidad';
+  if (t === 'fecha' || t.indexOf('fecha ingreso') === 0 || t.indexOf('fecha de ingreso') === 0) return 'fecha';
+  if (t.indexOf('rut') === 0) return 'rut';
+  if (t === 'nombre' || t === 'nombres') return 'nombre';
+  if (t.indexOf('apellido') === 0) return 'apellido';
+  return null;
 }
 
-/** Lee lo que hay escrito hoy en la tabla de esta planilla, con las columnas de Copec. */
+/**
+ * Lee lo que hay escrito hoy en la tabla de esta planilla, con las columnas de
+ * Copec. Las columnas se buscan por título y no por posición, así da igual si la
+ * tabla viene en el formato anterior (Agregar/Eliminar, Fecha, Rut, Nombre,
+ * Apellido, Modalidad) o en el que pidió Copec: se reescribe en el nuevo.
+ *
+ * Si no encuentra Rut y Nombre en la fila de títulos no sigue: leería otra
+ * columna, creería que la tabla está vacía, mandaría la nómina entera como altas
+ * y escribiría encima de las columnas de Copec.
+ *
+ * @returns { filas, titulosCopec, ancho }  ancho = columnas que ocupa hoy la tabla
+ */
 function leerTablaActual(hoja) {
+  const ultimaCol = hoja.getLastColumn();
+  const ancho = Math.max(COLUMNAS.length, ultimaCol - CONFIG.COL_INICIO + 1);
+  const titulos = hoja.getRange(CONFIG.FILA_ENCABEZADO, CONFIG.COL_INICIO, 1, ancho).getValues()[0];
   const ultima = hoja.getLastRow();
-  if (ultima < CONFIG.PRIMERA_FILA) return [];
-  const alto = ultima - CONFIG.PRIMERA_FILA + 1;
-  const ancho = Math.max(6, hoja.getLastColumn() - CONFIG.COL_INICIO + 1);
-  const valores = hoja.getRange(CONFIG.PRIMERA_FILA, CONFIG.COL_INICIO, alto, ancho).getValues();
+  const valores = ultima >= CONFIG.PRIMERA_FILA
+    ? hoja.getRange(CONFIG.PRIMERA_FILA, CONFIG.COL_INICIO, ultima - CONFIG.PRIMERA_FILA + 1, ancho).getValues()
+    : [];
+
+  // Hoja recién creada: sin títulos ni datos, se escribe desde cero
+  if (titulos.every(t => t === '') && !valores.some(v => v.some(c => c !== ''))) {
+    return { filas: [], titulosCopec: [], ancho: ancho };
+  }
+
+  const col = {};
+  const copecIdx = [];
+  titulos.forEach(function (t, i) {
+    const c = columnaDelScript(t);
+    if (c && col[c] === undefined) col[c] = i;
+    else if (!c || col[c] !== undefined) copecIdx.push(i);
+  });
+  if (col.rut === undefined || col.nombre === undefined) {
+    throw new Error('La tabla no está donde el script espera: en la fila ' + CONFIG.FILA_ENCABEZADO +
+      ' deberían ir ' + COLUMNAS.join(', ') + ' desde la columna ' + String.fromCharCode(64 + CONFIG.COL_INICIO) +
+      '. Encontré: ' + titulos.join(' | ') + '. Revise FILA_ENCABEZADO y COL_INICIO en la configuración.');
+  }
+  // Las columnas de Copec van hasta la última que tenga título o algún dato
+  while (copecIdx.length) {
+    const i = copecIdx[copecIdx.length - 1];
+    if (titulos[i] !== '' || valores.some(v => v[i] !== '')) break;
+    copecIdx.pop();
+  }
+
   const filas = [];
   valores.forEach(function (v) {
-    const rut = limpiarRut(v[2]);
+    const rut = limpiarRut(v[col.rut]);
     if (!rut) return;
-    // Lo que va después de Modalidad, sin las celdas vacías del final
-    const copec = v.slice(6);
-    while (copec.length && copec[copec.length - 1] === '') copec.pop();
-    filas.push({ rut: rut, fecha: v[1] || null, nombre: String(v[3] || ''), apellido: String(v[4] || ''), copec: copec });
+    filas.push({
+      rut: rut,
+      fecha: col.fecha !== undefined ? v[col.fecha] || null : null,
+      nombre: String(v[col.nombre] || ''),
+      apellido: col.apellido !== undefined ? String(v[col.apellido] || '') : '',
+      copec: copecIdx.map(i => v[i]),
+    });
   });
-  return filas;
+  return { filas: filas, titulosCopec: copecIdx.map(i => titulos[i]), ancho: ancho };
 }
 
-/** Escribe la tabla y borra lo que sobra de la corrida anterior. */
-function escribirTabla(hoja, filas, cuantasHabia, ancho) {
+/** Escribe títulos y tabla, y borra lo que sobra de la corrida anterior. */
+function escribirTabla(hoja, titulos, filas, cuantasHabia, anchoAntes) {
+  const ancho = titulos.length;
+  const limpiar = Math.max(ancho, anchoAntes);
+  hoja.getRange(CONFIG.FILA_ENCABEZADO, CONFIG.COL_INICIO, 1, limpiar).clearContent();
+  hoja.getRange(CONFIG.FILA_ENCABEZADO, CONFIG.COL_INICIO, 1, ancho).setValues([titulos]);
   const alto = Math.max(filas.length, cuantasHabia);
   if (alto > 0) {
-    hoja.getRange(CONFIG.PRIMERA_FILA, CONFIG.COL_INICIO, alto, ancho)
+    hoja.getRange(CONFIG.PRIMERA_FILA, CONFIG.COL_INICIO, alto, limpiar)
       .clearContent();
   }
   if (filas.length) {
@@ -279,6 +324,8 @@ function enviarCorreo(altas, bajas, total) {
     '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.5">' +
     '<p>Se actualizó la nómina de conductores de GoCab con <b>descuento del 15%</b>.</p>' +
     '<p><b>Conductores agregados (' + altas.length + ')</b></p>' + lista(altas) +
+    (altas.length ? '<p style="margin-top:-8px">En la planilla aparecen con fecha de ingreso ' +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd-MM-yyyy') + '.</p>' : '') +
     '<p><b>Conductores dados de baja (' + bajas.length + ')</b></p>' + lista(bajas) +
     '<p>La planilla queda con <b>' + total + '</b> conductores activos.</p>' +
     '<p><a href="' + url + '">Abrir ' + escapar(nombrePlanilla) + '</a></p>' +
