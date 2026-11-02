@@ -2,7 +2,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLang } from '@/lib/i18n/useLang';
 import { leerPasadas } from '@/lib/peajes/gps';
-import { estadoDe } from '@/lib/peajes/comparar';
+import { estadoDe, bloqueDe } from '@/lib/peajes/comparar';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const NUM = new Intl.NumberFormat('es-CL');
@@ -175,12 +175,10 @@ export default function PeajesGps() {
             </section>
           )}
 
+          <CalendarioSemanas bloques={datos.bloques} sinBills={sinBills} elegido={bloque} t={t}
+            onElegir={(b) => { setBloque(b); setAbierta(null); }} />
+
           <section className="flex flex-wrap gap-2">
-            <select value={bloque || 'todo'} onChange={(e) => { setBloque(e.target.value); setAbierta(null); }}
-              className="rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-sm" aria-label={t('pg_semana')}>
-              {datos.bloques.map((b) => <option key={b.bloque} value={b.bloque}>{t('pg_bloque')(ddmm(b.bloque), ddmm(b.lunes), ddmm(b.domingo), b.completo)}</option>)}
-              <option value="todo">{t('pg_todo')}</option>
-            </select>
             <select value={encargado} onChange={(e) => setEncargado(e.target.value)} className="rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-sm">
               <option value="">{t('ma_todos_encargados')}</option>
               {encargados.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -253,6 +251,56 @@ export default function PeajesGps() {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Semanas de cobro como calendario: una fila por mes (el del lunes de la
+ * semana), de la más vieja a la más nueva. Cada semana muestra lo no cargado y
+ * se marca si tuvo un día en que Fleet no emitió bills.
+ */
+function CalendarioSemanas({ bloques, sinBills, elegido, t, onElegir }) {
+  const meses = useMemo(() => {
+    const conDiaSinBill = new Set(sinBills.map((d) => bloqueDe(d.dia)));
+    const por = new Map();
+    for (const b of [...bloques].sort((x, y) => x.bloque.localeCompare(y.bloque))) {
+      const mes = b.lunes.slice(0, 7);
+      if (!por.has(mes)) por.set(mes, []);
+      por.get(mes).push({ ...b, sinBill: conDiaSinBill.has(b.bloque) });
+    }
+    return [...por.entries()];
+  }, [bloques, sinBills]);
+
+  return (
+    <section className="space-y-2 rounded-xl border border-gray-800 bg-gray-900/40 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] text-gray-500">{t('pg_semana_ayuda')}</p>
+        <button type="button" onClick={() => onElegir('todo')}
+          className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1 text-xs ${elegido === 'todo' ? 'border-sky-400 bg-sky-500/15 text-white' : 'border-gray-700 text-gray-300 hover:bg-gray-800'}`}>
+          {t('pg_todo')}
+        </button>
+      </div>
+      {meses.map(([mes, semanas]) => (
+        <div key={mes} className="flex gap-2">
+          <p className="w-10 shrink-0 pt-2 text-xs font-semibold text-gray-400">{t('pg_meses')[Number(mes.slice(5, 7)) - 1]}</p>
+          <div className="flex flex-1 flex-wrap gap-2">
+          {semanas.map((b) => {
+            const activa = elegido === b.bloque;
+            return (
+              <button key={b.bloque} type="button" onClick={() => onElegir(b.bloque)} title={t('pg_bloque')(ddmm(b.bloque), ddmm(b.lunes), ddmm(b.domingo), b.completo)}
+                className={`min-w-[7.5rem] rounded-lg border px-2.5 py-1.5 text-left text-xs ${activa ? 'border-sky-400 bg-sky-500/15' : b.sinBill ? 'border-red-500/40 bg-red-500/5 hover:bg-red-500/10' : 'border-gray-800 bg-gray-900 hover:bg-gray-800'}`}>
+                <span className="block text-gray-200">{ddmm(b.lunes)} – {ddmm(b.domingo)}</span>
+                <span className="block text-[10px] text-gray-500">{t('pg_cobro_mie')(ddmm(b.bloque))}{b.completo ? '' : ` · ${t('pg_en_curso')}`}</span>
+                <span className={`block text-[11px] font-semibold ${b.falta > 0 ? 'text-red-300' : 'text-emerald-300'}`}>
+                  {b.falta > 0 ? `+${CLP.format(b.falta)}` : t('pg_estado_ok')}
+                </span>
+              </button>
+            );
+          })}
+          </div>
+        </div>
+      ))}
+    </section>
   );
 }
 
