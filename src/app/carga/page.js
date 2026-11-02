@@ -5,6 +5,7 @@ import SeccionNueva from '@/components/SeccionNueva';
 import CargaDatos from '@/components/carga/CargaDatos';
 import Maestra from '@/components/carga/Maestra';
 import PestanasCarga from '@/components/carga/PestanasCarga';
+import PeajesGps from '@/components/carga/PeajesGps';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,11 +13,11 @@ export default async function Carga({ searchParams }) {
   const session = await getAppSession();
   if (!session) redirect('/');
   if (!puedeVerSeccion(session.user.role, 'carga')) redirect('/dashboard');
-  const vista = searchParams?.vista === 'maestra' ? 'maestra' : 'archivos';
+  const vista = ['maestra', 'peajes'].includes(searchParams?.vista) ? searchParams.vista : 'archivos';
   return (
     <SeccionNueva tituloClave="carga_title" color="sky">
       <PestanasCarga vista={vista} />
-      {vista === 'maestra' ? <Maestra /> : <CargaDatos />}
+      {vista === 'maestra' ? <Maestra /> : vista === 'peajes' ? <PeajesGps /> : <CargaDatos />}
     </SeccionNueva>
   );
 }

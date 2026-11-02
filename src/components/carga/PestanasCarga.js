@@ -2,10 +2,10 @@
 import Link from 'next/link';
 import { useLang } from '@/lib/i18n/useLang';
 
-/** Carga de datos: subir exports | la maestra que se arma con ellos. */
+/** Carga de datos: subir exports | la maestra que se arma con ellos | peajes del GPS contra Fleet. */
 export default function PestanasCarga({ vista }) {
   const { t } = useLang();
-  const pestanas = [['archivos', '/carga', 'carga_pestana_archivos'], ['maestra', '/carga?vista=maestra', 'carga_pestana_maestra']];
+  const pestanas = [['archivos', '/carga', 'carga_pestana_archivos'], ['maestra', '/carga?vista=maestra', 'carga_pestana_maestra'], ['peajes', '/carga?vista=peajes', 'carga_pestana_peajes']];
   return (
     <nav className="mb-6 flex gap-1 border-b border-gray-800 text-sm">
       {pestanas.map(([k, href, clave]) => (
