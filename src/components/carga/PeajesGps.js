@@ -6,6 +6,8 @@ import { estadoDe, bloqueDe } from '@/lib/peajes/comparar';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const NUM = new Intl.NumberFormat('es-CL');
+/** −$8.414 / +$8.414: el signo adelante, no $-8.414. */
+const firmado = (n) => `${n < 0 ? '−' : n > 0 ? '+' : ''}${CLP.format(Math.abs(n))}`;
 const LOTE = 4000;
 
 async function pedir(url, cuerpo) {
@@ -233,7 +235,7 @@ export default function PeajesGps() {
                         <td className="px-3 py-1.5 text-right whitespace-nowrap">{CLP.format(f.gps)}<span className="block text-[10px] text-gray-500">{t('pg_pasadas')(f.pasadas)}</span></td>
                         <td className="px-3 py-1.5 text-right whitespace-nowrap">{CLP.format(f.fleet)}<span className="block text-[10px] text-gray-500">{t('pg_pasadas')(f.cruces)}</span></td>
                         <td className={`px-3 py-1.5 text-right font-semibold whitespace-nowrap ${f.estado === 'falta' ? 'text-red-300' : f.estado === 'demas' ? 'text-amber-300' : 'text-gray-400'}`}>
-                          {f.dif > 0 ? '+' : ''}{CLP.format(f.dif)}
+                          {firmado(f.dif)}
                         </td>
                         <td className="px-3 py-1.5"><span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] ${COLOR_ESTADO[f.estado]}`}>{t(`pg_estado_${f.estado}`)}</span></td>
                       </tr>
@@ -255,51 +257,56 @@ export default function PeajesGps() {
 }
 
 /**
- * Semanas de cobro como calendario: una fila por mes (el del lunes de la
- * semana), de la más vieja a la más nueva. Cada semana muestra lo no cargado y
- * se marca si tuvo un día en que Fleet no emitió bills.
+ * Elegir la semana de cobro: una barra por semana, de la más vieja a la más
+ * nueva, alta según lo que Fleet no cargó. El punto marca las semanas con un día
+ * en que Fleet no emitió bills. El monto se ve en la elegida y al pasar el mouse.
  */
 function CalendarioSemanas({ bloques, sinBills, elegido, t, onElegir }) {
-  const meses = useMemo(() => {
+  const semanas = useMemo(() => {
     const conDiaSinBill = new Set(sinBills.map((d) => bloqueDe(d.dia)));
-    const por = new Map();
-    for (const b of [...bloques].sort((x, y) => x.bloque.localeCompare(y.bloque))) {
-      const mes = b.lunes.slice(0, 7);
-      if (!por.has(mes)) por.set(mes, []);
-      por.get(mes).push({ ...b, sinBill: conDiaSinBill.has(b.bloque) });
-    }
-    return [...por.entries()];
+    return [...bloques].sort((x, y) => x.bloque.localeCompare(y.bloque))
+      .map((b, i, xs) => ({ ...b, sinBill: conDiaSinBill.has(b.bloque), mes: i === 0 || xs[i - 1].lunes.slice(5, 7) !== b.lunes.slice(5, 7) }));
   }, [bloques, sinBills]);
+  const tope = Math.max(1, ...semanas.map((b) => b.falta));
+  const actual = semanas.find((b) => b.bloque === elegido);
+  const miles = (n) => (n >= 1000 ? `$${Math.round(n / 1000)}K` : CLP.format(n));
 
   return (
-    <section className="space-y-2 rounded-xl border border-gray-800 bg-gray-900/40 p-3">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] text-gray-500">{t('pg_semana_ayuda')}</p>
+    <section className="space-y-3 rounded-xl border border-gray-800 bg-gray-900/40 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] text-gray-500">{t('pg_semana')}</p>
+          <p className="text-sm text-gray-100">
+            {actual ? `${ddmm(actual.lunes)} – ${ddmm(actual.domingo)}` : t('pg_todo')}
+            {actual && <span className="text-gray-500"> · {t('pg_cobro_mie')(ddmm(actual.bloque))}{actual.completo ? '' : ` · ${t('pg_en_curso')}`}</span>}
+          </p>
+        </div>
         <button type="button" onClick={() => onElegir('todo')}
-          className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1 text-xs ${elegido === 'todo' ? 'border-sky-400 bg-sky-500/15 text-white' : 'border-gray-700 text-gray-300 hover:bg-gray-800'}`}>
+          className={`whitespace-nowrap rounded-lg border px-3 py-1 text-xs ${elegido === 'todo' ? 'border-sky-400 text-white' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>
           {t('pg_todo')}
         </button>
       </div>
-      {meses.map(([mes, semanas]) => (
-        <div key={mes} className="flex gap-2">
-          <p className="w-10 shrink-0 pt-2 text-xs font-semibold text-gray-400">{t('pg_meses')[Number(mes.slice(5, 7)) - 1]}</p>
-          <div className="flex flex-1 flex-wrap gap-2">
-          {semanas.map((b) => {
-            const activa = elegido === b.bloque;
-            return (
-              <button key={b.bloque} type="button" onClick={() => onElegir(b.bloque)} title={t('pg_bloque')(ddmm(b.bloque), ddmm(b.lunes), ddmm(b.domingo), b.completo)}
-                className={`min-w-[7.5rem] rounded-lg border px-2.5 py-1.5 text-left text-xs ${activa ? 'border-sky-400 bg-sky-500/15' : b.sinBill ? 'border-red-500/40 bg-red-500/5 hover:bg-red-500/10' : 'border-gray-800 bg-gray-900 hover:bg-gray-800'}`}>
-                <span className="block text-gray-200">{ddmm(b.lunes)} – {ddmm(b.domingo)}</span>
-                <span className="block text-[10px] text-gray-500">{t('pg_cobro_mie')(ddmm(b.bloque))}{b.completo ? '' : ` · ${t('pg_en_curso')}`}</span>
-                <span className={`block text-[11px] font-semibold ${b.falta > 0 ? 'text-red-300' : 'text-emerald-300'}`}>
-                  {b.falta > 0 ? `+${CLP.format(b.falta)}` : t('pg_estado_ok')}
-                </span>
-              </button>
-            );
-          })}
-          </div>
-        </div>
-      ))}
+
+      <div className="flex items-end gap-1">
+        {semanas.map((b) => {
+          const activa = elegido === b.bloque;
+          return (
+            <button key={b.bloque} type="button" onClick={() => onElegir(b.bloque)}
+              title={`${t('pg_bloque')(ddmm(b.bloque), ddmm(b.lunes), ddmm(b.domingo), b.completo)} · ${t('pg_card_falta')}: ${CLP.format(b.falta)}`}
+              aria-pressed={activa} className="group flex min-w-0 flex-1 flex-col items-center">
+              <span className="flex h-20 w-full flex-col items-center justify-end">
+                <span className={`mb-0.5 text-[10px] ${activa ? 'text-gray-100' : 'invisible text-gray-300 group-hover:visible'}`}>{miles(b.falta)}</span>
+                <span className={`w-full max-w-[1.5rem] rounded-t ${activa ? 'bg-sky-400' : 'bg-gray-600 group-hover:bg-gray-400'}`}
+                  style={{ height: `${Math.max(2, Math.round((b.falta / tope) * 64))}px` }} />
+              </span>
+              <span className={`mt-1 h-1.5 w-1.5 rounded-full ${b.sinBill ? 'bg-red-400' : ''}`} />
+              <span className={`mt-1 text-[10px] ${activa ? 'text-gray-100' : 'text-gray-500'}`}>{ddmm(b.lunes)}</span>
+              <span className="h-3.5 text-[10px] font-semibold text-gray-400">{b.mes ? t('pg_meses')[Number(b.lunes.slice(5, 7)) - 1] : ''}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-gray-500">{t('pg_semana_ayuda')}</p>
     </section>
   );
 }
@@ -327,7 +334,7 @@ function DetalleDias({ dias, t }) {
               <td className="px-2 py-0.5 font-mono">{d.patente}</td>
               <td className="px-2 py-0.5 text-right whitespace-nowrap">{CLP.format(d.gps)} <span className="text-gray-500">({d.pasadas})</span></td>
               <td className="px-2 py-0.5 text-right whitespace-nowrap">{CLP.format(d.fleet)} <span className="text-gray-500">({d.cruces})</span></td>
-              <td className={`px-2 py-0.5 text-right whitespace-nowrap ${fuera ? (dif > 0 ? 'text-red-300' : 'text-amber-300') : ''}`}>{dif > 0 ? '+' : ''}{CLP.format(dif)}</td>
+              <td className={`px-2 py-0.5 text-right whitespace-nowrap ${fuera ? (dif > 0 ? 'text-red-300' : 'text-amber-300') : ''}`}>{firmado(dif)}</td>
               <td className="px-2 py-0.5">{d.nota ? t(`pg_nota_${d.nota}`) : <span className="text-gray-600">{d.bills.join(', ')}</span>}</td>
             </tr>
           );

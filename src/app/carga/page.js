@@ -5,7 +5,7 @@ import SeccionNueva from '@/components/SeccionNueva';
 import CargaDatos from '@/components/carga/CargaDatos';
 import Maestra from '@/components/carga/Maestra';
 import PestanasCarga from '@/components/carga/PestanasCarga';
-import PeajesGps from '@/components/carga/PeajesGps';
+import Peajes from '@/components/carga/Peajes';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ export default async function Carga({ searchParams }) {
   return (
     <SeccionNueva tituloClave="carga_title" color="sky">
       <PestanasCarga vista={vista} />
-      {vista === 'maestra' ? <Maestra /> : vista === 'peajes' ? <PeajesGps /> : <CargaDatos />}
+      {vista === 'maestra' ? <Maestra /> : vista === 'peajes' ? <Peajes /> : <CargaDatos />}
     </SeccionNueva>
   );
 }
