@@ -51,8 +51,12 @@ export function aplicarArchivos(estado, archivos, versiones) {
       const newType = v.tipo || '';
 
       if (prev) {
+        // Si el pagado baja, Fleet revirtió un pago (el 30-10-2026 deshizo $1M de
+        // pagos al recuperar renta): va como pago negativo. Sin esto la suma de
+        // los pagos quedaba sobre lo pagado y el saldo semanal del reporte bajo
+        // la deuda real.
         const delta = newPaid - prev.paidAmount;
-        if (delta > 0) {
+        if (delta !== 0) {
           paymentEvents.push({
             reference: v.referencia,
             driver: newDriver || prev.driver,
@@ -60,6 +64,7 @@ export function aplicarArchivos(estado, archivos, versiones) {
             amount: delta,
             date: fecha,
             type: newType || prev.type,
+            ...(delta < 0 ? { revertido: true } : {}),
           });
         }
       } else if (newPaid > 0 && String(v.creado_texto || '').trim()) {

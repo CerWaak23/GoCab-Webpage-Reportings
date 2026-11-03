@@ -225,8 +225,10 @@ async function desdeDrive(request) {
         // Fix: emit a synthetic event dated at the bill's own createdAt so the
         // payment lands in the correct week in the evolution table.
         if (prev) {
+          // Un pagado que baja es un pago que Fleet revirtió: va como pago negativo
+          // (igual que en lib/bills/desdeVersiones.js).
           const delta = newPaid - prev.paidAmount;
-          if (delta > 0) {
+          if (delta !== 0) {
             paymentEvents.push({
               reference: ref,
               driver: newDriver || prev.driver,
@@ -234,6 +236,7 @@ async function desdeDrive(request) {
               amount: delta,
               date: file.modifiedTime,
               type: newType || prev.type,
+              ...(delta < 0 ? { revertido: true } : {}),
             });
           }
         } else if (newPaid > 0) {

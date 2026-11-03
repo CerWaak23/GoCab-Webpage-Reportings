@@ -224,6 +224,19 @@ export function reporteMultas(archivos) {
             type: tipo,
           });
         }
+        // Si el pagado baja, el pago se revirtió: va negativo, como en los bills
+        const bajaPago = Math.max(0, prev._pagoArchivo - pagoArchivo);
+        if (bajaPago > 0) {
+          paymentEvents.push({
+            reference: key,
+            driver: driver || prev.driver,
+            vehicle: vehicle || prev.vehicle,
+            amount: -bajaPago,
+            date: file.modifiedTime,
+            type: tipo,
+            revertido: true,
+          });
+        }
       } else if (pagoArchivo > 0) {
         // Ya venía pagada la primera vez que la vemos: no hay con qué comparar.
         // Se fecha en la creación de la multa, no en la subida del archivo, para

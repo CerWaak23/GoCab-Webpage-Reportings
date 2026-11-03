@@ -55,6 +55,15 @@ describe('reporte de Bills desde la historia en Supabase', () => {
     expect(r.snapshots.map((s) => s.totalPaid)).toEqual([0, 600]);
   });
 
+  it('un pagado que baja es un pago revertido: va negativo y los pagos suman lo pagado', () => {
+    // 30-10-2026: Fleet dejó impagas bills que el día anterior figuraban pagadas
+    const r = reporteDesdeVersiones(archivos.slice(0, 3), [v('B1', 1, 0), v('B2', 1, 0), v('B1', 2, 1000), v('B1', 3, 0)]);
+    expect(r.paymentEvents.map((e) => e.amount)).toEqual([1000, -1000]);
+    expect(r.paymentEvents[1]).toMatchObject({ revertido: true, date: '2026-10-03T15:00:00.000Z' });
+    const pagado = r.bills.reduce((s, b) => s + b.paidAmount, 0);
+    expect(r.paymentEvents.reduce((s, e) => s + e.amount, 0)).toBe(pagado);
+  });
+
   it('una bill que aparece ya pagada se cobra en su Created At', () => {
     const r = reporteDesdeVersiones(archivos.slice(0, 1), [v('B1', 1, 1000)]);
     expect(r.paymentEvents[0]).toMatchObject({ amount: 1000, date: '2026-09-30 10:00:00' });

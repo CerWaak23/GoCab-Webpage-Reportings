@@ -518,6 +518,7 @@ body{background:#0a0d14;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
         <div class="section-title" id="evolTitle" style="margin-bottom:1px">Evolución semanal de pagos</div>
         <div style="font-size:10px;color:#4b5563" data-i18n="evol_sub">Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado</div>
         <div id="avisoPeajes" style="display:none;font-size:10px;color:#fbbf24;margin-top:3px"></div>
+        <div id="avisoCuadre" style="display:none;font-size:10px;color:#f87171;margin-top:3px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="sw-group">
@@ -791,7 +792,7 @@ var T = {
       chart_charges_title:'Cobros, pagos y saldo neto',chart_charges_sub:'Conductores activos · cobros (rojo) y pagos (verde) · línea = saldo acumulado',
       period_weekly:'Semanal',period_daily:'Diario',
       peaje_pend_a:'peajes esperando el miércoles:',peaje_pend_b:'aparecen el',peaje_nota:'El peaje cuenta el miércoles que cierra su tramo jueves→miércoles, no el día que se cargó.',
-      evol_title:'Evolución Semanal de Pagos',evol_sub:'Rojo +X = cobros agregados · Verde −X = pagos registrados · Negrita = saldo pendiente acumulado',
+      evol_title:'Evolución Semanal de Pagos',evol_sub:'Rojo +X = cobros agregados · Verde −X = pagos registrados · Naranjo ↩ = pagos que Fleet revirtió · Negrita = saldo pendiente acumulado',cuadre_aviso:function(n){return n+' conductores con saldo de la última semana distinto a PENDIENTE ACTUAL (saldo / pendiente):';},evol_revertido_tip:'Pago que Fleet revirtió: la bill volvió a quedar impaga',
       sem_col:'PAGÓ SU SEMANA',sem_tooltip:'Cubierto / cargado de su semana:',sem_a_deuda:'a deuda anterior',sem_sin_deuda:'sin deuda que cubrir',sem_tip_pago:'Pagó',sem_tip_semana:'esta semana',sem_tip_cubren:'cubren su semana',sem_tip_a:'a su deuda de la semana',sem_sin_cargos:'No se le cargó nada esa semana',sem_ya_pagado:'ya pagado antes de que cayera el cargo',sem_pago_despues:'cubierto con pagos posteriores',sem_debe:'Según sus boletas debe',sem_adelanto:'adelantado a peajes del',plz_col:'PLAZO',plz_col_sub:'días antes del riesgo',plz_col_tip:'Cuántos días puede seguir sin pagar antes de que su garantía y la renta que ya pagó dejen de cubrir lo que debe si se le quita el auto',plz_dias:'días',plz_dia:'día',plz_dia_corto:'día',plz_riesgo:'En riesgo',plz_faltan:'faltan',plz_en_riesgo:'en riesgo',plz_menos_3:'con menos de 3 días',plz_tip_garantia:'Garantía pagada',plz_tip_balance:'Balance de renta',plz_tip_renta_debe:'Debe de renta',plz_tip_cargo:'incluye el cargo del miércoles',plz_tip_favor:'Renta pagada que aún no usa',plz_tip_usada:'Renta usada esta semana (pospago)',plz_tip_debe:'Debe hoy',plz_tip_tags:'tags',plz_tip_multas:'multas',plz_tip_otros:'otros',plz_tip_margen:'margen',plz_tip_dia:'Suma por día',plz_tip_renta:'renta',gar_col:'GARANTÍA',gar_sem:'sem. atrasadas',gar_sem1:'sem. atrasada',gar_completa:'completa',gar_aldia:'al día',gar_sin_dato:'sin dato',gar_tip_pago:'Pagó',gar_tip_de:'de los',gar_tip_debia:'que debía a hoy',gar_tip_tope:'tope',gar_atrasados:'atrasados',
       orden_semaforo:'🚦 Rojo primero',orden_deuda:'Mayor deuda',
       evol_pending_col:'PENDIENTE ACTUAL',evol_total:'Total',
@@ -863,7 +864,7 @@ var T = {
       chart_charges_title:'Charges, Payments & Balance',chart_charges_sub:'Active drivers · charges (red) & payments (green) · line = running balance',
       period_weekly:'Weekly',period_daily:'Daily',
       peaje_pend_a:'tolls waiting for Wednesday:',peaje_pend_b:'they show up on',peaje_nota:'Tolls count on the Wednesday that closes their Thursday→Wednesday block, not on the day they were charged.',
-      evol_title:'Weekly Payment Evolution',evol_sub:'Red +X = charges added · Green −X = payments logged · Bold = accumulated pending balance',
+      evol_title:'Weekly Payment Evolution',evol_sub:'Red +X = charges added · Green −X = payments logged · Orange ↩ = payments Fleet reversed · Bold = accumulated pending balance',cuadre_aviso:function(n){return n+' drivers whose last-week balance differs from CURRENT PENDING (balance / pending):';},evol_revertido_tip:'Payment reversed by Fleet: the bill is unpaid again',
       sem_col:'PAID THEIR WEEK',sem_tooltip:'Covered / charged for their week:',sem_a_deuda:'to earlier debt',sem_sin_deuda:'no earlier debt to cover',sem_tip_pago:'Paid',sem_tip_semana:'this week',sem_tip_cubren:'cover their own week',sem_tip_a:'to their debt from the week of',sem_sin_cargos:'Nothing was charged to them that week',sem_ya_pagado:'already paid before the charge landed',sem_pago_despues:'covered by later payments',sem_debe:'Their bills say they owe',sem_adelanto:'prepaid for tolls due',plz_col:'GRACE',plz_col_sub:'days before at risk',plz_col_tip:'How many days they can go without paying before their deposit and prepaid rent stop covering what they owe if the car is taken back',plz_dias:'days',plz_dia:'day',plz_dia_corto:'day',plz_riesgo:'At risk',plz_faltan:'short',plz_en_riesgo:'at risk',plz_menos_3:'under 3 days',plz_tip_garantia:'Deposit paid',plz_tip_balance:'Rent balance',plz_tip_renta_debe:'Owes rent',plz_tip_cargo:'includes Wednesday’s charge',plz_tip_favor:'Prepaid rent not used yet',plz_tip_usada:'Rent used this week (postpaid)',plz_tip_debe:'Owes today',plz_tip_tags:'tolls',plz_tip_multas:'fines',plz_tip_otros:'other',plz_tip_margen:'margin',plz_tip_dia:'Adds per day',plz_tip_renta:'rent',gar_col:'DEPOSIT',gar_sem:'weeks behind',gar_sem1:'week behind',gar_completa:'complete',gar_aldia:'up to date',gar_sin_dato:'no data',gar_tip_pago:'Paid',gar_tip_de:'of the',gar_tip_debia:'due by today',gar_tip_tope:'cap',gar_atrasados:'behind',
       orden_semaforo:'🚦 Red first',orden_deuda:'Largest debt',
       evol_pending_col:'CURRENT PENDING',evol_total:'Total',
@@ -935,7 +936,7 @@ var T = {
       chart_charges_title:'Начисления, платежи и сальдо',chart_charges_sub:'Активные водители · начисления (красный) и платежи (зелёный) · линия = сальдо',
       period_weekly:'Недельно',period_daily:'Дневно',
       peaje_pend_a:'пошлины ждут среды:',peaje_pend_b:'появятся',peaje_nota:'Пошлина учитывается в среду, закрывающую отрезок четверг→среда, а не в день начисления.',
-      evol_title:'Еженедельная динамика платежей',evol_sub:'Красный +X = начисления · Зелёный −X = платежи · Жирный = накопленный долг',
+      evol_title:'Еженедельная динамика платежей',evol_sub:'Красный +X = начисления · Зелёный −X = платежи · Оранжевый ↩ = платежи, отменённые Fleet · Жирный = накопленный долг',cuadre_aviso:function(n){return 'Водителей с остатком последней недели, отличным от ТЕКУЩЕГО ДОЛГА: '+n+' (остаток / долг):';},evol_revertido_tip:'Платёж отменён в Fleet: счёт снова не оплачен',
       sem_col:'ОПЛАТИЛ НЕДЕЛЮ',sem_tooltip:'Покрыто / начислено за его неделю:',sem_a_deuda:'на прежний долг',sem_sin_deuda:'нет долга для погашения',sem_tip_pago:'Оплатил',sem_tip_semana:'на этой неделе',sem_tip_cubren:'покрывают его неделю',sem_tip_a:'на его долг недели',sem_sin_cargos:'За ту неделю ему ничего не начислили',sem_ya_pagado:'оплачено ещё до появления начисления',sem_pago_despues:'покрыто более поздними платежами',sem_debe:'По его счетам он должен',sem_adelanto:'аванс за дороги к',plz_col:'СРОК',plz_col_sub:'дней до риска',plz_col_tip:'Сколько дней можно не платить, пока залог и предоплаченная аренда покрывают долг, если забрать машину',plz_dias:'дн.',plz_dia:'дн.',plz_dia_corto:'дн.',plz_riesgo:'Риск',plz_faltan:'не хватает',plz_en_riesgo:'в риске',plz_menos_3:'меньше 3 дней',plz_tip_garantia:'Внесённый залог',plz_tip_balance:'Баланс аренды',plz_tip_renta_debe:'Долг по аренде',plz_tip_cargo:'с начислением среды',plz_tip_favor:'Предоплаченная аренда, ещё не использованная',plz_tip_usada:'Аренда за эту неделю (постоплата)',plz_tip_debe:'Долг сегодня',plz_tip_tags:'дороги',plz_tip_multas:'штрафы',plz_tip_otros:'прочее',plz_tip_margen:'запас',plz_tip_dia:'В день',plz_tip_renta:'аренда',gar_col:'ЗАЛОГ',gar_sem:'нед. просрочки',gar_sem1:'нед. просрочки',gar_completa:'внесён',gar_aldia:'в срок',gar_sin_dato:'нет данных',gar_tip_pago:'Внёс',gar_tip_de:'из',gar_tip_debia:'положенных на сегодня',gar_tip_tope:'максимум',gar_atrasados:'с просрочкой',
       orden_semaforo:'🚦 Сначала красные',orden_deuda:'Больший долг',
       evol_pending_col:'ТЕКУЩИЙ ДОЛГ',evol_total:'Итого',
@@ -1349,6 +1350,7 @@ async function loadData(){
     detectarCoordEnConflicto();
     _coordCache={};
     recuperarConductorPorPatente(); // completa los nombres antes de agrupar
+    alinearPagosConBills();         // y los pagos siguen a su bill
     applyScope(); // depende de FLEET_ROWS: debe correr despues de cargar la planilla
     console.log('[Fleet] Conductores activos en sheet ('+FLEET_NAMES.length+'):', FLEET_NAMES.join(' | '));
     // Render data-quality warnings if any files had suspicious data
@@ -1613,6 +1615,47 @@ function consolidarPeajes(){
     b.createdAt=cierre.toISOString().slice(0,10);
     return true;
   });
+}
+
+/* ── CADA PAGO VA CON SU BILL ──────────────────────────────────────────────
+   Un pago se anota con el conductor que tenía la bill el día que se pagó. Si
+   Fleet después reasigna la bill (o el reporte deduce el conductor por la
+   patente), el pago se va con ella: si no, la deuda queda en un nombre y el pago
+   en otro. Y el pago de una bill que ya no viene en el export se descarta, porque
+   su cargo tampoco está. Sin esto el saldo semanal no cuadraba con PENDIENTE
+   ACTUAL (auditoría del 03-11-2026). */
+var BILL_SIN_FECHA={}; // referencias de bills sin fecha: no cuentan ni su cargo ni sus pagos en la evolución
+function alinearPagosConBills(){
+  var porRef={};BILL_SIN_FECHA={};
+  ALL_BILLS.forEach(function(b){
+    if(!b.reference)return;
+    porRef[b.reference]=b;
+    if(!parseDate(b.createdAt))BILL_SIN_FECHA[b.reference]=true;
+  });
+  ALL_PAYMENT_EVENTS=ALL_PAYMENT_EVENTS.filter(function(p){
+    var b=porRef[p.reference];
+    if(!b)return !!CIERRE_DE_PEAJE[p.reference]; // un peaje que todavía no se cobra sigue: lo usa PAGÓ SU SEMANA
+    return true;
+  }).map(function(p){
+    var b=porRef[p.reference];
+    return b&&b.driver&&normalizeName(b.driver)!==normalizeName(p.driver)?Object.assign({},p,{driver:b.driver}):p;
+  });
+}
+
+/* Fecha con que un pago entra en la tabla de evolución y en el gráfico. Fleet
+   deja pagar un peaje el mismo día que lo emite, pero el cargo cuenta recién el
+   miércoles que cierra su bloque: ese pago va en ese miércoles, junto con su
+   cargo, y si ese miércoles todavía no llega no entra (el cargo tampoco). Antes
+   el pago entraba al tiro y el saldo semanal quedaba bajo la deuda real. */
+function fechaDelPago(p){
+  if(BILL_SIN_FECHA[p.reference])return null;
+  var d=parseDate(p.date);if(!d||isNaN(d))return null;
+  var c=CIERRE_DE_PEAJE[p.reference];
+  if(c){
+    if(c.getTime()>hoyChile().getTime())return null;
+    if(c>d)return c;
+  }
+  return d;
 }
 
 // Peaje que todavía no cierra: se avisa para que nadie lo lea como una caída
@@ -2033,7 +2076,7 @@ function renderMixedChart(){
   PAYMENT_EVENTS.forEach(function(p){
     var drvKey=normalizeName(p.driver);
     if(!activeSet[drvKey])return;
-    var d=parseDate(p.date);if(!d||isNaN(d))return;
+    var d=fechaDelPago(p);if(!d)return;
     var label;
     if(_mcPeriod==='daily'){
       label=d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',timeZone:'UTC'});
@@ -2428,14 +2471,22 @@ function renderEvolTable(){
     chargeMap[wk][drv]=(chargeMap[wk][drv]||0)+parseAmt(b.amount);
   });
 
+  // Los pagos que Fleet revirtió (negativos) van aparte: suman a la deuda y se
+  // muestran como "↩", para que no se lean como un cargo nuevo.
+  var revMap={};
   srcPayments.forEach(function(p){
     var drv=normalizeName(p.driver);
     if(!activeSet[drv])return;
-    var d=parseDate(p.date);if(!d||isNaN(d))return; // parseDate handles dd/mm/yyyy and ISO
+    var d=fechaDelPago(p);if(!d)return;
     var wk=evolLabel(d);if(!wk)return;
-    if(!payMap[wk])payMap[wk]={};
     if(!weekDates[wk])weekDates[wk]=d;
-    payMap[wk][drv]=(payMap[wk][drv]||0)+p.amount;
+    if(p.amount<0){
+      if(!revMap[wk])revMap[wk]={};
+      revMap[wk][drv]=(revMap[wk][drv]||0)-p.amount;
+    } else {
+      if(!payMap[wk])payMap[wk]={};
+      payMap[wk][drv]=(payMap[wk][drv]||0)+p.amount;
+    }
     driverSet[drv]=true;
   });
 
@@ -2445,6 +2496,7 @@ function renderEvolTable(){
   var allWeekSet={};
   Object.keys(chargeMap).forEach(function(w){allWeekSet[w]=true;});
   Object.keys(payMap).forEach(function(w){allWeekSet[w]=true;});
+  Object.keys(revMap).forEach(function(w){allWeekSet[w]=true;});
   SNAPSHOTS.forEach(function(snap){
     var d=parseDate(snap.date);if(!d||isNaN(d))return;
     var wk=evolLabel(d);if(!wk)return;
@@ -2473,9 +2525,20 @@ function renderEvolTable(){
   var driverFinalRunning={};
   allDrivers.forEach(function(drv){
     var r=0;
-    allWeeks.forEach(function(w){r+=(chargeMap[w]&&chargeMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);});
+    allWeeks.forEach(function(w){r+=(chargeMap[w]&&chargeMap[w][drv]||0)+(revMap[w]&&revMap[w][drv]||0)-(payMap[w]&&payMap[w][drv]||0);});
     driverFinalRunning[drv]=Math.max(0,r);
   });
+  // Control: el saldo de la última semana tiene que ser PENDIENTE ACTUAL. Si no,
+  // se avisa arriba de la tabla con los nombres, en vez de que lo encuentre un
+  // coordinador.
+  var descuadre=allDrivers.filter(function(drv){return Math.abs(driverFinalRunning[drv]-(driverPending[drv]||0))>1;});
+  var avC=document.getElementById('avisoCuadre');
+  if(avC){
+    avC.style.display=descuadre.length?'':'none';
+    avC.textContent=descuadre.length?'⚠ '+t('cuadre_aviso')(descuadre.length)+' '+descuadre.slice(0,8).map(function(d){
+      return d+' ('+fmtShort(driverFinalRunning[d])+' / '+fmtShort(driverPending[d]||0)+')';}).join(' · ')+(descuadre.length>8?' …':''):'';
+    if(descuadre.length)console.warn('[Evolución] no cuadran con PENDIENTE ACTUAL:',descuadre.map(function(d){return [d,driverFinalRunning[d],driverPending[d]||0];}));
+  }
   var SEM=semaforoSemana();
   var pesoSem=function(drv){
     var s=SEM.porConductor[drv];
@@ -2530,8 +2593,9 @@ function renderEvolTable(){
     allWeeks.forEach(function(w){
       var charge=chargeMap[w]&&chargeMap[w][drv]||0;
       var pay=payMap[w]&&payMap[w][drv]||0;
-      running+=charge-pay;
-      var hasActivity=charge>0||pay>0;
+      var rev=revMap[w]&&revMap[w][drv]||0;
+      running+=charge+rev-pay;
+      var hasActivity=charge>0||pay>0||rev>0;
       var accHtml='<div class="evol-cell-acc">'+fmtShort(Math.max(0,running))+'</div>';
       if(!hasActivity){
         html+='<td class="cell-zero'+(abreSemana(w)?' sem-ini':'')+'" style="text-align:right"><div style="color:#374151;font-size:10px">—</div>'+accHtml+'</td>';
@@ -2542,6 +2606,7 @@ function renderEvolTable(){
       html+='<td class="'+bgCls+(abreSemana(w)?' sem-ini':'')+'" style="text-align:right;background:'+(pay>0&&charge===0?'#0a1f12':'')+'">';
       if(charge>0)html+='<div class="evol-cell-new">+'+fmtShort(charge)+'</div>';
       if(pay>0)html+='<div style="font-size:10px;color:#34d399;font-weight:500;line-height:1.3">−'+fmtShort(pay)+'</div>';
+      if(rev>0)html+='<div style="font-size:10px;color:#fb923c;font-weight:500;line-height:1.3" title="'+esc(t('evol_revertido_tip'))+'">↩ +'+fmtShort(rev)+'</div>';
       html+=accHtml+'</td>';
     });
     // PENDIENTE ACTUAL = current bill state (amount - paidAmount), not accumulated events
@@ -2562,12 +2627,13 @@ function renderEvolTable(){
   var grandTotalPending=topDrivers.reduce(function(s,drv){return s+(driverPending[drv]||0);},0);
   var grandRunning=0;
   allWeeks.forEach(function(w){
-    var c=0,p=0;
-    topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);});
-    grandRunning+=c-p;
+    var c=0,p=0,rv=0;
+    topDrivers.forEach(function(drv){c+=(chargeMap[w]&&chargeMap[w][drv]||0);p+=(payMap[w]&&payMap[w][drv]||0);rv+=(revMap[w]&&revMap[w][drv]||0);});
+    grandRunning+=c+rv-p;
     html+='<td'+(abreSemana(w)?' class="sem-ini"':'')+' style="text-align:right">';
     if(c>0)html+='<div class="evol-cell-new" style="color:#fbbf24">+'+fmtShort(c)+'</div>';
     if(p>0)html+='<div style="font-size:10px;color:#34d399;font-weight:600;line-height:1.3">−'+fmtShort(p)+'</div>';
+    if(rv>0)html+='<div style="font-size:10px;color:#fb923c;font-weight:600;line-height:1.3">↩ +'+fmtShort(rv)+'</div>';
     html+='<div class="evol-cell-acc">'+fmtShort(Math.max(0,grandRunning))+'</div></td>';
   });
   html+='<td style="text-align:right;font-weight:700;color:#fbbf24">'+fmtShort(grandTotalPending)+'</td>';
@@ -2699,6 +2765,33 @@ function applyI18n(){
    Consecuencia: una semana pasada puede subir después, cuando alguien se pone al
    día con ella. La cascada corre sobre toda la historia, no solo sobre las
    semanas que se ven, para que la deuda vieja reciba lo que le toca. */
+/* Pagos sin los que Fleet revirtió: un pago negativo descuenta los pagos
+   anteriores de la misma bill, el más reciente primero, como si nunca se
+   hubieran hecho (la bill volvió a quedar impaga). Lo usa PAGÓ SU SEMANA: ahí un
+   pago revertido tiene que descubrir la semana que había cubierto, no restarle a
+   la semana en que se revirtió. La tabla de evolución sí muestra la reversión en
+   su semana, como un hecho más. */
+function pagosNetos(eventos){
+  var porRef={},sueltos=[];
+  eventos.forEach(function(p){
+    var d=parseDate(p.date);
+    if(!p.reference||!d||isNaN(d)){sueltos.push(p);return;}
+    (porRef[p.reference]=porRef[p.reference]||[]).push({p:p,t:d.getTime()});
+  });
+  var out=sueltos.slice();
+  Object.keys(porRef).forEach(function(ref){
+    var lista=porRef[ref].sort(function(a,b){return a.t-b.t;}),pila=[];
+    lista.forEach(function(x){
+      if(x.p.amount>=0){pila.push(Object.assign({},x.p));return;}
+      var resta=-x.p.amount;
+      for(var i=pila.length-1;i>=0&&resta>0;i--){var q=Math.min(resta,pila[i].amount);pila[i].amount-=q;resta-=q;}
+      if(resta>0)pila.push(Object.assign({},x.p,{amount:-resta}));
+    });
+    pila.forEach(function(p){if(p.amount!==0)out.push(p);});
+  });
+  return out;
+}
+
 function semanasPorConductor(){
   var activos={};
   DRIVERS.filter(function(d){return d.isActive;}).forEach(function(d){activos[d.driver]=true;});
@@ -2717,7 +2810,7 @@ function semanasPorConductor(){
     var c=casilla(sabadoDeSemana(d),drv);if(c)c.cargado+=parseAmt(b.amount);
   });
   var hoyT=hoyChile().getTime();
-  PAYMENT_EVENTS.forEach(function(p){
+  pagosNetos(PAYMENT_EVENTS).forEach(function(p){
     var drv=normalizeName(p.driver);if(!activos[drv])return;
     var d=parseDate(p.date);if(!d||isNaN(d))return;
     var sab=sabadoDeSemana(d);
