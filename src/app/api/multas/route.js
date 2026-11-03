@@ -5,7 +5,7 @@ import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import { leerFilas } from '@/lib/bills/archivo';
 import { multasDeFilas, reporteMultas } from '@/lib/multas/reporte';
-import { reporteDesdeSupabase } from '@/lib/multas/supabase';
+import { reporteDesdeSupabase, multasExcluidas } from '@/lib/multas/supabase';
 import { supabaseServidor } from '@/lib/supabase/server';
 
 const FINES_FOLDER_ID = '1O5GblTXWQI_6RBn7072am1nprtZYcvJ7';
@@ -102,7 +102,7 @@ async function desdeDrive() {
 
     return NextResponse.json(
       {
-        ...reporteMultas(archivos),
+        ...reporteMultas(archivos, { excluidas: await multasExcluidas().catch(() => []) }),
         fuente: 'drive',
         _fetchedAt: new Date().toISOString(),
       },

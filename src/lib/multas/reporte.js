@@ -170,8 +170,9 @@ export function multasDeFilas(rows) {
  * @param archivos [{ name, modifiedTime, formatoDesconocido, encabezado, filas }]
  *   filas: las de multasDeFilas; pueden ser solo las que cambiaron respecto del
  *   archivo anterior: una fila igual a la anterior no cambia nada.
+ * @param opciones.excluidas [{ clave, motivo, por, fecha }] multas que no son deuda (configuracion multas_excluidas)
  */
-export function reporteMultas(archivos) {
+export function reporteMultas(archivos, opciones = {}) {
   const finesMap = new Map(); // key → estado más reciente de la multa
   const paymentEvents = []; // pagos detectados al pasar de pending a completed
   const formatosRaros = []; // archivos cuyas columnas no reconocimos
@@ -267,7 +268,22 @@ export function reporteMultas(archivos) {
     }
   }
 
-  const fines = Array.from(finesMap.values());
+  /* No son deuda (03-11-2026):
+     · las anuladas en Fleet (estado Cancelled): el sistema de multas las deja en
+       el export con su monto, y sumaban como impagas;
+     · las excluidas a mano en GoBills (configuracion → multas_excluidas), cada
+       una con su motivo: por ejemplo una que Fleet le cargó al conductor
+       equivocado y después sacó del export.
+     Se van con sus pagos, para que la tabla de evolución siga cuadrando. */
+  const excluidas = new Set((opciones.excluidas || []).map((e) => e.clave));
+  const fuera = new Set();
+  for (const f of finesMap.values()) {
+    if (/cancel|anulad/i.test(f.status || '') || excluidas.has(f.reference)) fuera.add(f.reference);
+  }
+  const fines = Array.from(finesMap.values()).filter((f) => !fuera.has(f.reference));
+  const pagosValidos = paymentEvents.filter((p) => !fuera.has(p.reference));
+  paymentEvents.length = 0;
+  paymentEvents.push(...pagosValidos);
 
   // Una multa sin conductor ni patente no se puede imputar a nadie: entra en el
   // total facturado pero desaparece de la deuda por conductor, de la tabla de

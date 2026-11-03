@@ -18,9 +18,10 @@ export async function reporteDesdeSupabase() {
       if (data.length < 1000) return out;
     }
   };
-  const [archivos, versiones] = await Promise.all([
+  const [archivos, versiones, excluidas] = await Promise.all([
     todas('multas_archivos', 'id, archivo, subido, formato_desconocido, encabezado'),
     todas('multas_versiones', 'id, archivo_id, clave, base, referencia, fecha_contravencion, cargo, pago, estado, conductor, vehiculo, creado, descripcion'),
+    multasExcluidas(sb),
   ]);
   if (archivos.length === 0) throw new Error('Supabase no tiene exports de multas');
   const porArchivo = new Map();
@@ -38,5 +39,12 @@ export async function reporteDesdeSupabase() {
     formatoDesconocido: a.formato_desconocido,
     encabezado: a.encabezado || [],
     filas: porArchivo.get(a.id) || [],
-  })));
+  })), { excluidas });
+}
+
+/** Multas que no son deuda, marcadas a mano: configuracion → multas_excluidas. */
+export async function multasExcluidas(sb = supabaseServidor()) {
+  const { data, error } = await sb.from('configuracion').select('valor').eq('clave', 'multas_excluidas').maybeSingle();
+  if (error) throw new Error(error.message);
+  return Array.isArray(data?.valor) ? data.valor : [];
 }
