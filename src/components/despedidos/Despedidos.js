@@ -5,14 +5,25 @@ import { useLang } from '@/lib/i18n/useLang';
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const plata = (n) => CLP.format(Math.round(n || 0));
 const fechaCorta = (iso) => (iso ? new Date(String(iso).length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—');
-const CONCEPTOS = ['tags', 'multas', 'renta', 'danos', 'otro'];
+const quien = (email) => String(email || '').split('@')[0];
+const CASILLAS = ['renta', 'tags', 'multas', 'otros', 'ajustes', 'garantia'];
 
 async function pedir(url, cuerpo) {
   const r = await fetch(url, cuerpo ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) } : { cache: 'no-store' });
   return r.json().catch(() => ({ error: 'red' }));
 }
 
-/** Liquidación de los conductores despedidos: lo que deben, lo que cubre la garantía y el anexo de DICOM. */
+/** Qué falta hacer con un despedido según su resultado: devolver garantía, cobrar (DICOM) o nada. */
+const tipoDe = (f) => (f.liquidacion.nosDebe > 0 ? 'dicom' : f.liquidacion.devolver > 0 || f.gestion.cerradoTipo === 'devuelto' ? 'devuelto' : null);
+const nPendientes = (f) => Object.values(f.pendientes || {}).reduce((s, xs) => s + xs.length, 0);
+const porRevisar = (f) => nPendientes(f) > 0 || (f.gestion.listo && !f.gestion.cerrado);
+
+/**
+ * Liquidación de los conductores despedidos. Las casillas se corrigen ahí mismo:
+ * lo que corrige gerencia queda al tiro, lo de un coordinador queda pendiente de
+ * aprobación. El coordinador marca "Listo" y gerencia confirma que se devolvió o
+ * se publicó en DICOM.
+ */
 export default function Despedidos() {
   const { t } = useLang();
   const [datos, setDatos] = useState(null);
@@ -27,9 +38,10 @@ export default function Despedidos() {
     const q = buscar.trim().toLowerCase();
     return (datos?.filas || []).filter((f) => {
       if (q && !`${f.nombre} ${f.nombreFleet}`.toLowerCase().includes(q)) return false;
-      if (filtro === 'deben') return f.liquidacion.nosDebe > 0;
+      if (filtro === 'deben') return f.liquidacion.nosDebe > 0 && !f.gestion.cerrado;
       if (filtro === 'devolver') return f.liquidacion.devolver > 0;
-      if (filtro === 'sin_anexo') return !f.gestion.anexoDicom;
+      if (filtro === 'por_revisar') return porRevisar(f);
+      if (filtro === 'cerrados') return f.gestion.cerrado;
       return true;
     });
   }, [datos, filtro, buscar]);
@@ -57,9 +69,15 @@ export default function Despedidos() {
   }
 
   const todas = datos.filas;
-  const deben = todas.filter((f) => f.liquidacion.nosDebe > 0);
+  const deben = todas.filter((f) => f.liquidacion.nosDebe > 0 && !f.gestion.cerrado);
   const devolver = todas.filter((f) => f.liquidacion.devolver > 0);
-  const anexos = todas.filter((f) => f.gestion.anexoDicom).length;
+  const revisar = todas.filter(porRevisar);
+  const accion = async (clave, cuerpo) => {
+    const r = await pedir('/api/despedidos/gestion', { clave, ...cuerpo });
+    if (r.error) { alert(t('dp_error_guardar')); return false; }
+    await cargar();
+    return true;
+  };
 
   return (
     <div className="space-y-5">
@@ -77,12 +95,14 @@ export default function Despedidos() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Tarjeta titulo={t('dp_nos_deben')} valor={plata(deben.reduce((s, f) => s + f.liquidacion.nosDebe, 0))} pie={t('dp_personas')(deben.length)} color="text-red-400" />
         <Tarjeta titulo={t('dp_devolver')} valor={plata(devolver.reduce((s, f) => s + f.liquidacion.devolver, 0))}
-          pie={`${t('dp_personas')(devolver.length)} · ${t('dp_ya_devueltas')(todas.filter((f) => f.devolucionEnviada > 0).length)}`} color="text-emerald-400" />
-        <Tarjeta titulo={t('dp_anexos')} valor={`${anexos} / ${todas.length}`} pie="" color="text-sky-300" />
+          pie={`${t('dp_personas')(devolver.length)} · ${t('dp_ya_devueltas')(todas.filter((f) => f.devolucionEnviada > 0 || f.gestion.cerradoTipo === 'devuelto').length)}`} color="text-emerald-400" />
+        <Tarjeta titulo={t('dp_por_revisar')} valor={String(revisar.length)}
+          pie={t('dp_por_revisar_pie')(todas.reduce((s, f) => s + nPendientes(f), 0), todas.filter((f) => f.gestion.listo && !f.gestion.cerrado).length)}
+          color={revisar.length ? 'text-amber-300' : 'text-gray-400'} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {['todos', 'deben', 'devolver', 'sin_anexo'].map((f) => (
+        {['todos', 'por_revisar', 'deben', 'devolver', 'cerrados'].map((f) => (
           <button key={f} type="button" onClick={() => setFiltro(f)}
             className={`rounded-full border px-3 py-1 text-xs ${filtro === f ? 'border-sky-400 bg-sky-500/15 text-sky-200' : 'border-gray-700 text-gray-400 hover:border-gray-500'}`}>
             {t(`dp_f_${f}`)}
@@ -91,28 +111,38 @@ export default function Despedidos() {
         <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder={t('dp_buscar')}
           className="ml-auto w-full sm:w-56 rounded-lg bg-gray-900 border border-gray-700 px-3 py-1.5 text-sm outline-none focus:border-sky-500" />
       </div>
+      <p className="text-[11px] text-gray-500">{datos.puedeAprobar ? t('dp_ayuda_gerencia') : t('dp_ayuda_coordinador')}</p>
 
       <div className="overflow-x-auto rounded-xl border border-gray-800">
         <table className="w-full text-sm">
           <thead className="bg-gray-900 text-[11px] uppercase tracking-wide text-gray-500">
             <tr>
               <th className="text-left px-3 py-2">{t('dp_col_nombre')}</th>
-              <th className="text-right px-3 py-2">{t('dp_col_renta')}</th>
-              <th className="text-right px-3 py-2">{t('dp_col_tags')}</th>
-              <th className="text-right px-3 py-2">{t('dp_col_multas')}</th>
-              <th className="text-right px-3 py-2">{t('dp_col_otros')}</th>
-              <th className="text-right px-3 py-2">{t('dp_col_ajustes')}</th>
-              <th className="text-right px-3 py-2">{t('dp_col_garantia')}</th>
+              {CASILLAS.map((c) => <th key={c} className="text-right px-3 py-2">{t(`dp_col_${c}`)}</th>)}
               <th className="text-right px-3 py-2">{t('dp_col_saldo')}</th>
-              <th className="text-center px-3 py-2">{t('dp_col_anexo')}</th>
+              <th className="text-center px-3 py-2">{t('dp_col_listo')}</th>
+              <th className="text-center px-3 py-2">{t('dp_col_cerrado')}</th>
             </tr>
           </thead>
           <tbody>
             {filas.map((f) => (
               <Fragment key={f.clave}>
-                <Fila f={f} t={t} abierto={abierto === f.clave} onAbrir={() => setAbierto(abierto === f.clave ? null : f.clave)} onCambio={cargar} />
+                <tr className={`border-t border-gray-800 align-top hover:bg-gray-900/50 ${abierto === f.clave ? 'bg-gray-900/70' : ''}`}>
+                  <td className="px-3 py-2 cursor-pointer" onClick={() => setAbierto(abierto === f.clave ? null : f.clave)}>
+                    <p className="font-medium">{f.nombre}</p>
+                    <p className="text-[11px] text-gray-500">{t('dp_despedido')} {fechaCorta(f.despido)}</p>
+                  </td>
+                  {CASILLAS.map((c) => (
+                    <td key={c} className="px-3 py-2 text-right whitespace-nowrap">
+                      <Casilla f={f} campo={c} t={t} puedeAprobar={datos.puedeAprobar} onAccion={(cuerpo) => accion(f.clave, cuerpo)} />
+                    </td>
+                  ))}
+                  <td className="px-3 py-2 text-right whitespace-nowrap cursor-pointer" onClick={() => setAbierto(abierto === f.clave ? null : f.clave)}><Resultado f={f} t={t} /></td>
+                  <td className="px-3 py-2 text-center"><Listo f={f} t={t} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td>
+                  <td className="px-3 py-2 text-center"><Cerrado f={f} t={t} puede={datos.puedeAprobar} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td>
+                </tr>
                 {abierto === f.clave && (
-                  <tr className="bg-gray-900/70"><td colSpan={9} className="px-4 py-4"><Detalle f={f} t={t} onCambio={cargar} /></td></tr>
+                  <tr className="bg-gray-900/70"><td colSpan={10} className="px-4 py-4"><Detalle f={f} t={t} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td></tr>
                 )}
               </Fragment>
             ))}
@@ -133,13 +163,86 @@ function Tarjeta({ titulo, valor, pie, color }) {
   );
 }
 
-const montoCelda = (n) => (n > 0 ? plata(n) : <span className="text-gray-600">—</span>);
+/** Lo que se ve en una casilla: la renta puede ser a favor (negativa). */
+function Monto({ campo, v, t }) {
+  if (campo === 'renta' && v < 0) return <span className="text-emerald-400">{plata(-v)} <span className="text-[10px]">{t('dp_a_favor')}</span></span>;
+  if (!v) return <span className="text-gray-600">—</span>;
+  return <span className={campo === 'ajustes' && v < 0 ? 'text-emerald-400' : ''}>{plata(v)}</span>;
+}
+
+/**
+ * Una casilla corregible: clic para editar, Enter para guardar. Muestra si se
+ * corrigió a mano (y cuánto decía antes) y las propuestas de coordinadores que
+ * esperan aprobación.
+ */
+function Casilla({ f, campo, t, puedeAprobar, onAccion }) {
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const v = f.valores[campo];
+  const corr = f.corregido?.[campo];
+  const pend = f.pendientes?.[campo] || [];
+
+  const guardar = async () => {
+    const n = Number(String(valor).replace(/[^\d-]/g, ''));
+    if (!Number.isFinite(n) || String(valor).trim() === '') return;
+    setOcupado(true);
+    const ok = await onAccion({ accion: 'cambio', campo, valor: n, anterior: v });
+    setOcupado(false);
+    if (ok) setEditando(false);
+  };
+  const revisar = async (id, aprobar) => { setOcupado(true); await onAccion({ accion: 'revisar', id, aprobar }); setOcupado(false); };
+
+  if (editando) {
+    return (
+      <input autoFocus value={valor} disabled={ocupado} onChange={(e) => setValor(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') guardar(); if (e.key === 'Escape') setEditando(false); }} onBlur={() => !ocupado && setEditando(false)}
+        className="w-24 rounded border border-sky-500/60 bg-gray-950 px-2 py-0.5 text-right text-sm" />
+    );
+  }
+  const tip = corr
+    ? t('dp_corregido_por')(quien(corr.propuesto_por), fechaCorta(corr.propuesto_en), plata(f.base[campo]))
+    : campo === 'renta' ? tipRenta(f.renta, t) : t('dp_clic_corregir');
+  return (
+    <div>
+      <button type="button" onClick={() => { setValor(String(v ?? 0)); setEditando(true); }} title={tip}
+        className={`hover:text-sky-300 ${corr ? 'text-amber-200' : ''}`}>
+        <Monto campo={campo} v={v} t={t} />{corr && <span className="ml-1 text-amber-400">●</span>}
+      </button>
+      {pend.map((p) => (
+        <div key={p.id} className="text-[10px] text-amber-300" title={p.nota || ''}>
+          {t('dp_propuesto')(plata(p.valor), quien(p.propuesto_por))}
+          {puedeAprobar && (
+            <>
+              <button type="button" disabled={ocupado} onClick={() => revisar(p.id, true)} className="ml-1 text-emerald-400 hover:text-emerald-300" aria-label={t('dp_aprobar')}>✓</button>
+              <button type="button" disabled={ocupado} onClick={() => revisar(p.id, false)} className="ml-1 text-red-400 hover:text-red-300" aria-label={t('dp_rechazar')}>✕</button>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function tipRenta(r, t) {
+  if (!r) return '';
+  if (r.sinHistorial) return t('dp_renta_sin_historial');
+  return t('dp_renta_tip')(plata(r.ultimoBalance), fechaCorta(r.ultimoFecha), r.cargos, plata(r.semanal || 0), r.diasNoUsados, plata(r.noUsada));
+}
 
 function Resultado({ f, t }) {
   const l = f.liquidacion;
+  const g = f.gestion;
   const pendCF = f.devolucionPendiente > 0
     ? <div className="text-[10px] text-amber-400 font-normal">{t('dp_pendiente_cf')} {plata(f.devolucionPendiente)}</div> : null;
-  if (l.nosDebe > 0) return <span className="font-semibold text-red-400">{t('dp_saldo_debe')} {plata(l.nosDebe)}{pendCF}</span>;
+  if (l.nosDebe > 0) {
+    return (
+      <span className="font-semibold text-red-400">{t('dp_saldo_debe')} {plata(l.nosDebe)}
+        {g.cerradoTipo === 'dicom' && <div className="text-[10px] font-normal text-gray-400">✓ {t('dp_publicado')}</div>}{pendCF}
+      </span>
+    );
+  }
+  if (g.cerradoTipo === 'devuelto') return <span className="text-gray-400">✓ {t('dp_devuelta')} {plata(g.cerradoMonto)}</span>;
   if (f.devolucionEnviada > 0) {
     return <span className="text-gray-400">✓ {t('dp_devuelta')} {plata(f.devolucionEnviada)}<div className="text-[10px] text-gray-600">{t('dp_en_cf')}</div></span>;
   }
@@ -148,57 +251,46 @@ function Resultado({ f, t }) {
   return <span className="text-gray-400">✓ {t('dp_saldo_cero')}</span>;
 }
 
-function Fila({ f, t, abierto, onAbrir, onCambio }) {
-  const l = f.liquidacion;
-  const [guardando, setGuardando] = useState(false);
-  async function anexo(valor) {
-    setGuardando(true);
-    const r = await pedir('/api/despedidos/gestion', { clave: f.clave, accion: 'anexo', valor });
-    setGuardando(false);
-    if (r.error) alert(t('dp_error_guardar')); else onCambio();
-  }
+/** El coordinador avisa que está listo para devolver o para publicar en DICOM. */
+function Listo({ f, t, onAccion }) {
+  const [ocupado, setOcupado] = useState(false);
+  const tipo = tipoDe(f);
+  const g = f.gestion;
+  if (!tipo && !g.listo) return <span className="text-gray-700">—</span>;
   return (
-    <tr className={`border-t border-gray-800 hover:bg-gray-900/50 ${abierto ? 'bg-gray-900/70' : ''}`}>
-      <td className="px-3 py-2 cursor-pointer" onClick={onAbrir}>
-        <p className="font-medium">{f.nombre}</p>
-        <p className="text-[11px] text-gray-500">{t('dp_despedido')} {fechaCorta(f.despido)}</p>
-      </td>
-      <td className="px-3 py-2 text-right">
-        {l.rentaAdeudada > 0 ? plata(l.rentaAdeudada)
-          : l.rentaAFavor > 0 ? <span className="text-emerald-400">{plata(l.rentaAFavor)} <span className="text-[10px]">{t('dp_a_favor')}</span></span>
-          : <span className="text-gray-600">—</span>}
-      </td>
-      <td className="px-3 py-2 text-right">{montoCelda(l.tags)}</td>
-      <td className="px-3 py-2 text-right">{montoCelda(l.multas)}</td>
-      <td className="px-3 py-2 text-right">{montoCelda(l.otros)}</td>
-      <td className="px-3 py-2 text-right">{l.ajustes ? plata(l.ajustes) : <span className="text-gray-600">—</span>}</td>
-      <td className="px-3 py-2 text-right">{montoCelda(f.garantia)}</td>
-      <td className="px-3 py-2 text-right whitespace-nowrap cursor-pointer" onClick={onAbrir}><Resultado f={f} t={t} /></td>
-      <td className="px-3 py-2 text-center">
-        <input type="checkbox" checked={f.gestion.anexoDicom} disabled={guardando} onChange={(e) => anexo(e.target.checked)}
-          title={f.gestion.anexoDicom && f.gestion.anexoPor ? t('dp_anexo_por')(f.gestion.anexoPor, fechaCorta(f.gestion.anexoFecha)) : ''}
-          className="w-4 h-4 accent-sky-500 cursor-pointer" />
-      </td>
-    </tr>
+    <label className="inline-flex flex-col items-center gap-0.5 text-[10px] text-gray-400 cursor-pointer"
+      title={g.listo ? t('dp_marcado_por')(quien(g.listoPor), fechaCorta(g.listoEn)) : ''}>
+      <input type="checkbox" checked={g.listo} disabled={ocupado || g.cerrado}
+        onChange={async (e) => { setOcupado(true); await onAccion({ accion: 'listo', valor: e.target.checked }); setOcupado(false); }}
+        className="w-4 h-4 accent-amber-400" />
+      {t(tipo === 'dicom' ? 'dp_listo_dicom' : 'dp_listo_devolver')}
+    </label>
   );
 }
 
-function Detalle({ f, t, onCambio }) {
+/** Gerencia confirma que ya se devolvió o que se publicó en DICOM. */
+function Cerrado({ f, t, puede, onAccion }) {
+  const [ocupado, setOcupado] = useState(false);
+  const g = f.gestion;
+  const tipo = g.cerradoTipo || tipoDe(f);
+  if (!tipo) return <span className="text-gray-700">—</span>;
+  const monto = tipo === 'dicom' ? f.liquidacion.nosDebe : f.liquidacion.devolver;
+  return (
+    <label className={`inline-flex flex-col items-center gap-0.5 text-[10px] ${g.cerrado ? 'text-emerald-300' : 'text-gray-400'} ${puede ? 'cursor-pointer' : ''}`}
+      title={g.cerrado ? t('dp_marcado_por')(quien(g.cerradoPor), fechaCorta(g.cerradoEn)) : puede ? '' : t('dp_solo_gerencia_cierra')}>
+      <input type="checkbox" checked={g.cerrado} disabled={!puede || ocupado}
+        onChange={async (e) => { setOcupado(true); await onAccion({ accion: 'cerrado', valor: e.target.checked, tipo, monto }); setOcupado(false); }}
+        className="w-4 h-4 accent-emerald-500" />
+      {t(tipo === 'dicom' ? 'dp_cerrado_dicom' : 'dp_cerrado_devuelto')}
+    </label>
+  );
+}
+
+function Detalle({ f, t, onAccion }) {
   const l = f.liquidacion;
   const g = f.gestion;
-  const [ajuste, setAjuste] = useState({ monto: '', concepto: 'multas', nota: '' });
-  const [devuelto, setDevuelto] = useState({ monto: g.devuelto || '', fecha: g.devueltoFecha || '' });
   const [nota, setNota] = useState(g.nota || '');
   const [ocupado, setOcupado] = useState(false);
-
-  async function enviar(cuerpo, despues) {
-    setOcupado(true);
-    const r = await pedir('/api/despedidos/gestion', { clave: f.clave, ...cuerpo });
-    setOcupado(false);
-    if (r.error) { alert(t('dp_error_guardar')); return; }
-    despues?.();
-    onCambio();
-  }
   const campo = 'rounded-lg bg-gray-950 border border-gray-700 px-2 py-1.5 text-sm outline-none focus:border-sky-500';
   const boton = 'rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-gray-950 font-semibold text-xs px-3 py-1.5';
 
@@ -216,10 +308,11 @@ function Detalle({ f, t, onCambio }) {
           {l.conRenta > 0 && <Linea k={t('dp_det_renta_favor')} v={-l.conRenta} verde />}
           {l.conGarantia > 0 && <Linea k={t('dp_det_garantia')} v={-l.conGarantia} verde />}
           {l.nosDebe > 0 && <Linea k={t('dp_det_queda')} v={l.nosDebe} fuerte rojo />}
-          {f.garantia - l.conGarantia > 0 && <Linea k={t('dp_det_sobra')} v={f.garantia - l.conGarantia} />}
-          {l.devuelto > 0 && <Linea k={`${t('dp_det_ya_devuelto')}${g.devueltoFecha ? ' · ' + fechaCorta(g.devueltoFecha) : ''}`} v={-l.devuelto} />}
+          {f.valores.garantia - l.conGarantia > 0 && <Linea k={t('dp_det_sobra')} v={f.valores.garantia - l.conGarantia} />}
+          {l.devuelto > 0 && <Linea k={t('dp_det_ya_devuelto')} v={-l.devuelto} />}
           {l.devolver > 0 && <Linea k={t('dp_saldo_devolver')} v={l.devolver} fuerte verde />}
         </dl>
+        <p className="mt-2 text-[11px] text-gray-500">{tipRenta(f.renta, t)}</p>
         {f.devoluciones?.length > 0 && (
           <div className="mt-3">
             <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">{t('dp_dev_titulo')}</p>
@@ -230,9 +323,6 @@ function Detalle({ f, t, onCambio }) {
                 {x.observaciones && <span className="text-gray-500"> · {x.observaciones}</span>}
               </p>
             ))}
-            {f.devolucionEnviada > 0 && l.devolverCalculado > 0 && (
-              <p className="text-[11px] text-gray-500 mt-1">{t('dp_dev_diferencia')(plata(l.devolverCalculado))}</p>
-            )}
           </div>
         )}
         {f.comentario && (
@@ -242,57 +332,27 @@ function Detalle({ f, t, onCambio }) {
 
       <div className="space-y-5">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-gray-500">{t('dp_ajustes_titulo')}</p>
-          <p className="text-xs text-gray-500 mb-2">{t('dp_ajustes_ayuda')}</p>
-          {g.ajustes.length > 0 && (
-            <ul className="text-sm mb-2 divide-y divide-gray-800">
-              {g.ajustes.map((a) => (
-                <li key={a.id} className="py-1 flex items-center gap-2">
-                  <span className={a.monto < 0 ? 'text-emerald-400' : 'text-gray-200'}>{plata(a.monto)}</span>
-                  <span className="text-gray-400">{t(`dp_concepto_${a.concepto}`)}</span>
-                  {a.nota && <span className="text-gray-500 truncate">· {a.nota}</span>}
-                  <span className="ml-auto text-[10px] text-gray-600">{a.por} · {fechaCorta(a.fecha)}</span>
-                  <button type="button" disabled={ocupado} onClick={() => enviar({ accion: 'quitarAjuste', id: a.id })}
-                    className="text-gray-500 hover:text-red-400 text-xs px-1" aria-label="Quitar">✕</button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <input type="number" placeholder={t('dp_ajuste_monto')} value={ajuste.monto} onChange={(e) => setAjuste({ ...ajuste, monto: e.target.value })} className={`${campo} w-28`} />
-            <select value={ajuste.concepto} onChange={(e) => setAjuste({ ...ajuste, concepto: e.target.value })} className={campo}>
-              {CONCEPTOS.map((c) => <option key={c} value={c}>{t(`dp_concepto_${c}`)}</option>)}
-            </select>
-            <input placeholder={t('dp_ajuste_nota')} value={ajuste.nota} onChange={(e) => setAjuste({ ...ajuste, nota: e.target.value })} className={`${campo} flex-1 min-w-[8rem]`} />
-            <button type="button" className={boton} disabled={ocupado || !Number(ajuste.monto)}
-              onClick={() => enviar({ accion: 'ajuste', ...ajuste, monto: Number(ajuste.monto) }, () => setAjuste({ monto: '', concepto: 'multas', nota: '' }))}>
-              {t('dp_ajuste_agregar')}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[11px] uppercase tracking-wider text-gray-500">{t('dp_devuelto_titulo')}</p>
-          <p className="text-xs text-gray-500 mb-2">{t('dp_devuelto_ayuda')}</p>
-          <div className="flex flex-wrap gap-2">
-            <input type="number" min="0" placeholder={t('dp_ajuste_monto')} value={devuelto.monto} onChange={(e) => setDevuelto({ ...devuelto, monto: e.target.value })} className={`${campo} w-28`} />
-            <input type="date" value={devuelto.fecha} onChange={(e) => setDevuelto({ ...devuelto, fecha: e.target.value })} className={campo} aria-label={t('dp_fecha')} />
-            <button type="button" className={boton} disabled={ocupado}
-              onClick={() => enviar({ accion: 'devuelto', monto: Number(devuelto.monto) || 0, fecha: devuelto.fecha })}>
-              {t('dp_guardar')}
-            </button>
-          </div>
-        </div>
-
-        <div>
           <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">{t('dp_nota_titulo')}</p>
           <div className="flex gap-2">
             <textarea rows={2} value={nota} onChange={(e) => setNota(e.target.value)} className={`${campo} flex-1`} />
             <button type="button" className={`${boton} self-start`} disabled={ocupado || nota === (g.nota || '')}
-              onClick={() => enviar({ accion: 'nota', texto: nota })}>{t('dp_guardar')}</button>
+              onClick={async () => { setOcupado(true); await onAccion({ accion: 'nota', texto: nota }); setOcupado(false); }}>{t('dp_guardar')}</button>
           </div>
-          {g.actualizadoPor && <p className="text-[10px] text-gray-600 mt-1">{g.actualizadoPor} · {fechaCorta(g.actualizado)}</p>}
         </div>
+        {f.historial?.length > 0 && (
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">{t('dp_historial')}</p>
+            <ul className="text-xs space-y-0.5">
+              {[...f.historial].reverse().map((h) => (
+                <li key={h.id} className="text-gray-400">
+                  <span className="text-gray-200">{t(`dp_col_${h.campo}`)}</span> {h.anterior != null && `${plata(h.anterior)} → `}{plata(h.valor)}
+                  <span className={h.estado === 'aprobado' ? 'text-emerald-400' : h.estado === 'pendiente' ? 'text-amber-300' : 'text-red-400'}> · {t(`dp_estado_${h.estado}`)}</span>
+                  <span className="text-gray-600"> · {quien(h.por)} {fechaCorta(h.en)}{h.nota ? ` · ${h.nota}` : ''}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

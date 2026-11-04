@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { analizarExport } from '@/lib/fleet';
 import { payloadPara } from '@/lib/carga/payload';
-import { esExportDespedidos, leerDespedidos, liquidar, asignarPorNombre } from '@/lib/fleet/despedidos';
+import { esExportDespedidos, leerDespedidos, liquidar, asignarPorNombre, balancesDeExport, rentaAlDespido, aplicarCambios } from '@/lib/fleet/despedidos';
 
 const fila = (o = {}) => ({
   'Phone Number': '+56911111111', Name: 'JUAN PÉREZ', Gender: '', Balance: '0', 'Bail paid': '0', Fines: '0',
@@ -88,5 +88,64 @@ describe('asignar boletas por nombre', () => {
     const dos = [...ds, { clave: 'c', nombre: 'CARLOS GONZÁLEZ MUÑOZ', nombreFleet: 'CARLOS GONZÁLEZ MUÑOZ' }];
     // Las palabras de los dos despedidos están en la boleta
     expect(asignarPorNombre(dos, 'CARLOS GONZALEZ MUÑOZ PEREZ')).toBeNull();
+  });
+});
+
+describe('renta al despido (como la columna PLAZO)', () => {
+  // Miércoles 28-10-2026 a las 14:00 Fleet carga la semana del jueves 29 al miércoles 04-11
+  it('debía la semana y lo despidieron el viernes: paga solo jueves y viernes', () => {
+    const r = rentaAlDespido({ balance: -242000, fecha: '2026-10-28T20:00:00Z' }, 242000, '2026-10-30');
+    expect(r).toMatchObject({ cargos: 0, balanceAlDespido: -242000, diasNoUsados: 5, noUsada: 172857 });
+    expect(r.neta).toBe(242000 - 172857);
+  });
+
+  it('suma las rentas que Fleet cargó después del último export', () => {
+    // Último export activo el lunes 19-10 al día; despedido el jueves 22-10
+    const r = rentaAlDespido({ balance: 0, fecha: '2026-10-19T15:00:00Z' }, 210000, '2026-10-22');
+    expect(r.cargos).toBe(1);                 // miércoles 21-10
+    expect(r.balanceAlDespido).toBe(-210000);
+    expect(r.diasNoUsados).toBe(6);           // usó solo el jueves 22
+    expect(r.neta).toBe(30000);
+  });
+
+  it('un export del mismo miércoles antes de las 14:00 todavía no tiene la renta', () => {
+    const r = rentaAlDespido({ balance: 0, fecha: '2026-10-21T15:00:00Z' }, 210000, '2026-10-21'); // 12:00 en Chile
+    expect(r.cargos).toBe(1);
+    expect(r.neta).toBe(0);                   // despedido ese mismo miércoles: no usó la semana nueva
+  });
+
+  it('pagado por adelantado queda a favor', () => {
+    const r = rentaAlDespido({ balance: 0, fecha: '2026-10-28T20:00:00Z' }, 210000, '2026-10-30');
+    expect(r.neta).toBe(-150000);
+  });
+
+  it('sin historial ni renta semanal usa el balance tal cual', () => {
+    expect(rentaAlDespido(null, 210000, '2026-10-30').neta).toBe(0);
+    expect(rentaAlDespido({ balance: -50000, fecha: '2026-10-28T20:00:00Z' }, null, '2026-10-30').neta).toBe(50000);
+  });
+});
+
+describe('balances del export de conductores', () => {
+  it('guarda solo los activos, con RUT, patente y balance', () => {
+    const b = balancesDeExport([
+      { Name: 'ANGELA SANTIBAÑEZ', 'ID Number': '11.111.111-1', Vehicles: 'VZSS39', Balance: '-242000', 'Bail paid': '50000', 'Activation Status': 'activated' },
+      { Name: 'OTRO', 'ID Number': '', Vehicles: '', Balance: '0', 'Activation Status': 'fired' },
+    ]);
+    expect(b).toEqual([expect.objectContaining({ rut: '11.111.111-1', patente: 'VZSS39', balance: -242000, garantia: 50000 })]);
+  });
+});
+
+describe('correcciones a mano', () => {
+  const base = { renta: 100, tags: 50, multas: 0, otros: 0, garantia: 75000, ajustes: 0 };
+  it('manda la última aprobada; las pendientes no cuentan', () => {
+    const r = aplicarCambios(base, [
+      { campo: 'tags', valor: 10, estado: 'aprobado', propuesto_en: '2026-11-01' },
+      { campo: 'tags', valor: 20, estado: 'aprobado', propuesto_en: '2026-11-02' },
+      { campo: 'multas', valor: 999, estado: 'pendiente', propuesto_en: '2026-11-03' },
+      { campo: 'renta', valor: 0, estado: 'rechazado', propuesto_en: '2026-11-03' },
+    ]);
+    expect(r.valores).toMatchObject({ tags: 20, multas: 0, renta: 100 });
+    expect(r.pendientes.multas).toHaveLength(1);
+    expect(r.corregido.tags.valor).toBe(20);
   });
 });

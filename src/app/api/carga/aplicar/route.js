@@ -15,6 +15,7 @@ import { sincronizarHoja } from '@/lib/maestra/servidor';
 import { leerFilas, billsDeFilas } from '@/lib/bills/archivo';
 import { multasDeFilas } from '@/lib/multas/reporte';
 import { guardarHistoria } from '@/lib/historia/versiones';
+import { balancesDeExport } from '@/lib/fleet/despedidos';
 
 /**
  * Aplica cargas ya revisadas. Cada una entra completa o no entra
@@ -79,6 +80,16 @@ export async function POST(request) {
       if (e) {
         if (e.message === 'YA_APLICADA') { resultados.push({ ...base, ok: false, motivo: 'ya_aplicada' }); continue; }
         throw new Error(e.message);
+      }
+      // El Balance de cada conductor en este export: Fleet lo deja en 0 al
+      // despedirlo, y Despedidos saca la renta que debía del último en que estaba activo.
+      if (c.tipo === 'drivers') {
+        const vistos = new Set();
+        const balances = balancesDeExport(filas)
+          .filter((b) => !vistos.has(b.clave_nombre) && vistos.add(b.clave_nombre))
+          .map((b) => ({ ...b, carga_id: c.id, fecha: c.creado }));
+        const { error: eb } = await sb.from('conductores_balances').upsert(balances, { onConflict: 'carga_id,clave_nombre', ignoreDuplicates: true });
+        if (eb) console.error('carga/aplicar balances', eb.message);
       }
       // Historia de bills (cuándo se pagó cada una), leída igual que el reporte.
       if (c.tipo === 'bills') {

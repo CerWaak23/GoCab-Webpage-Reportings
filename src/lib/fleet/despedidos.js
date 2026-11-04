@@ -97,6 +97,103 @@ export function liquidar(d, c = {}, g = {}) {
   return { rentaAdeudada, rentaAFavor, tags, multas, otros, ajustes, debe, conRenta, conGarantia, nosDebe, devolver, devuelto };
 }
 
+/**
+ * El Balance de cada conductor activo de un export de conductores, para guardar
+ * su historia (conductores_balances): Fleet deja el Balance en 0 al despedir, y
+ * la renta que debía se saca del último export en que figuraba activo.
+ */
+export function balancesDeExport(filas) {
+  return (filas || [])
+    .filter((r) => texto(r['Name']) && !/^fired$/i.test(texto(r['Activation Status'])))
+    .map((r) => {
+      const nombre = limpiarNombre(r['Name']);
+      return {
+        rut: rutValido(r['ID Number']) ? formatearRut(r['ID Number']) : null,
+        clave_nombre: normalizarNombre(nombre),
+        nombre,
+        patente: texto(r['Vehicles']).split(/[,\s]+/)[0]?.toUpperCase().replace(/[^A-Z0-9]/g, '') || null,
+        balance: monto(r['Balance']),
+        garantia: monto(r['Bail paid']),
+      };
+    });
+}
+
+const DIA = 86400000;
+const diaUTC = (iso) => Date.parse(`${iso}T00:00:00Z`);
+const isoDe = (t) => new Date(t).toISOString().slice(0, 10);
+
+/** Fecha (AAAA-MM-DD) y hora decimal de un instante, en Chile. */
+export function enChile(instante) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(instante)).map((x) => [x.type, x.value]));
+  return { fecha: `${p.year}-${p.month}-${p.day}`, hora: Number(p.hour) + Number(p.minute) / 60 };
+}
+
+/**
+ * Renta al momento del despido, con la misma lógica que la columna PLAZO del
+ * reporte de deudas. Fleet carga la renta de la semana cada miércoles a las
+ * 14:00 y cubre de jueves a miércoles.
+ *
+ *   1. Se parte del último Balance que tuvo como activo (negativo = debe).
+ *   2. Se le restan las rentas que Fleet cargó después de ese export y hasta el
+ *      día del despido (ese día incluido).
+ *   3. Los días de la última semana cargada que no alcanzó a usar se le
+ *      descuentan: paga solo los días que tuvo el auto.
+ *
+ * @param ultimo   { balance, fecha }  fecha = cuándo se subió ese export
+ * @param semanal  renta semanal de su auto (sin ella no se prorratea)
+ * @param despido  'AAAA-MM-DD'
+ * @returns { balanceAlDespido, cargos, diasNoUsados, noUsada, neta }  neta > 0 debe, < 0 a favor
+ */
+export function rentaAlDespido(ultimo, semanal, despido) {
+  const balance = Number(ultimo?.balance) || 0;
+  if (!ultimo || !semanal || !/^\d{4}-\d{2}-\d{2}$/.test(String(despido || ''))) {
+    return { balanceAlDespido: balance, cargos: 0, diasNoUsados: 0, noUsada: 0, neta: 0 - balance || 0 };
+  }
+  const desde = enChile(ultimo.fecha);
+  const fin = diaUTC(despido);
+  let cargos = 0;
+  let ultimoMiercoles = null;
+  // Del miércoles anterior al export hasta el despido: el último cargado puede ser anterior al export
+  for (let t = diaUTC(desde.fecha) - 7 * DIA; t <= fin; t += DIA) {
+    if (new Date(t).getUTCDay() !== 3) continue;
+    const dia = isoDe(t);
+    ultimoMiercoles = t;
+    if (dia > desde.fecha || (dia === desde.fecha && desde.hora < 14)) cargos++;
+  }
+  const balanceAlDespido = balance - cargos * semanal;
+  // Cubre de jueves a miércoles: del despido en adelante no lo usó
+  const diasUsados = ultimoMiercoles === null ? 7 : Math.round((fin - ultimoMiercoles) / DIA);
+  const diasNoUsados = Math.max(0, 7 - diasUsados);
+  const noUsada = Math.round((semanal / 7) * diasNoUsados);
+  return { balanceAlDespido, cargos, diasNoUsados, noUsada, neta: 0 - balanceAlDespido - noUsada || 0 };
+}
+
+/** Casillas que se pueden corregir a mano. */
+export const CAMPOS_CAMBIO = ['renta', 'tags', 'multas', 'otros', 'garantia', 'ajustes'];
+
+/**
+ * Valores de las casillas con las correcciones a mano: manda la última aprobada
+ * de cada casilla. Las pendientes se devuelven aparte: no cuentan hasta que
+ * gerencia las apruebe.
+ *
+ * @param base     { renta, tags, multas, otros, garantia, ajustes } lo calculado
+ * @param cambios  filas de despedidos_cambios de este despedido
+ */
+export function aplicarCambios(base, cambios = []) {
+  const valores = { ...base };
+  const corregido = {};
+  const pendientes = {};
+  const orden = [...cambios].sort((a, b) => String(a.propuesto_en).localeCompare(String(b.propuesto_en)));
+  for (const c of orden) {
+    if (!CAMPOS_CAMBIO.includes(c.campo)) continue;
+    if (c.estado === 'aprobado') { valores[c.campo] = c.valor; corregido[c.campo] = c; }
+    if (c.estado === 'pendiente') (pendientes[c.campo] ||= []).push(c);
+  }
+  return { valores, corregido, pendientes };
+}
+
 const palabras = (s) => normalizarNombre(s).replace(/^(PPD|PDD|DTO) /, '').split(' ').filter(Boolean);
 
 /**

@@ -7,7 +7,8 @@ import { puedeVerSeccion } from '@/lib/i18n/secciones';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { reporteDesdeSupabase as billsDesdeSupabase } from '@/lib/bills/supabase';
 import { reporteDesdeSupabase as multasDesdeSupabase } from '@/lib/multas/supabase';
-import { liquidar, asignarPorNombre } from '@/lib/fleet/despedidos';
+import { liquidar, asignarPorNombre, rentaAlDespido, aplicarCambios, enChile } from '@/lib/fleet/despedidos';
+import { rentaDeAuto } from '@/lib/fleet/renta';
 import { normalizarNombre } from '@/lib/fleet/nombres';
 import { google } from 'googleapis';
 import { leerFilaDevolucion, asignarDevoluciones } from '@/lib/fleet/devoluciones';
@@ -51,11 +52,13 @@ export async function GET() {
   if (!puedeVerSeccion(session.user.role, 'despedidos')) return NextResponse.json({ error: 'sin_permiso' }, { status: 403 });
 
   const sb = supabaseServidor();
-  const [desp, gest, carga] = await Promise.all([
+  const [desp, gest, carga, camb, autos] = await Promise.all([
     sb.from('despedidos').select('clave, rut, nombre, nombre_fleet, telefono, activacion, despido, balance, garantia, comentario, actualizado'),
     sb.from('despedidos_gestion').select('*'),
     sb.from('cargas').select('archivo, creado, usuario_email').eq('tipo', 'despedidos').eq('aplicada', true)
       .order('creado', { ascending: false }).limit(1),
+    sb.from('despedidos_cambios').select('*').order('propuesto_en'),
+    sb.from('autos').select('patente, marca, modelo'),
   ]);
   if (faltaMigracion(desp.error) || faltaMigracion(gest.error)) {
     return NextResponse.json({ error: 'sin_migracion' }, { status: 503, headers: SIN_CACHE });
@@ -63,6 +66,13 @@ export async function GET() {
   if (desp.error || gest.error) return NextResponse.json({ error: 'base' }, { status: 500 });
 
   const despedidos = desp.data.map((d) => ({ ...d, nombreFleet: d.nombre_fleet }));
+  const ultimoActivo = await ultimosBalances(sb, despedidos);
+  const marcas = new Map((autos.data || []).map((a) => [a.patente, a]));
+  const cambiosDe = new Map();
+  for (const c of camb.data || []) {
+    if (!cambiosDe.has(c.clave)) cambiosDe.set(c.clave, []);
+    cambiosDe.get(c.clave).push(c);
+  }
   const cobros = new Map(despedidos.map((d) => [d.clave, { tags: 0, otros: 0, multas: 0, nTags: 0, nOtros: 0, nMultas: 0 }]));
 
   // Mismas fuentes que el reporte de deudas. Si una falla, se muestra igual
@@ -111,7 +121,27 @@ export async function GET() {
     const devs = devPorClave.get(d.clave) || [];
     const enviado = devs.filter((x) => x.devuelta).reduce((s, x) => s + x.monto, 0);
     const pendienteCF = devs.filter((x) => !x.devuelta).reduce((s, x) => s + x.monto, 0);
-    const liq = liquidar(d, c, { ajustes: g.ajustes || [], devuelto: (g.devuelto || 0) + enviado });
+
+    // Renta al despido: del último export en que estaba activo, como PLAZO
+    const ultimo = ultimoActivo.get(d.clave) || null;
+    const auto = ultimo?.patente ? marcas.get(ultimo.patente) : null;
+    const semanal = auto ? rentaDeAuto(auto.marca, auto.modelo)?.monto ?? null : null;
+    const renta = ultimo
+      ? { ...rentaAlDespido(ultimo, semanal, d.despido), ultimoBalance: ultimo.balance, ultimoFecha: ultimo.fecha, patente: ultimo.patente, semanal }
+      : { ...rentaAlDespido({ balance: d.balance, fecha: null }, null, d.despido), sinHistorial: true };
+
+    // Casillas: lo calculado, con las correcciones aprobadas encima
+    const base = {
+      renta: renta.neta, tags: Math.round(c.tags), multas: Math.round(c.multas), otros: Math.round(c.otros),
+      garantia: d.garantia || 0, ajustes: (g.ajustes || []).reduce((a, x) => a + (Number(x.monto) || 0), 0),
+    };
+    const { valores, corregido, pendientes } = aplicarCambios(base, cambiosDe.get(d.clave) || []);
+    const devueltoAhora = g.cerrado && g.cerrado_tipo === 'devuelto' ? g.cerrado_monto || 0 : 0;
+    const liq = liquidar(
+      { balance: -valores.renta, garantia: valores.garantia },
+      { tags: valores.tags, multas: valores.multas, otros: valores.otros },
+      { ajustes: [{ monto: valores.ajustes }], devuelto: (g.devuelto || 0) + enviado + devueltoAhora },
+    );
     // Con la devolución hecha en Control Flota la garantía queda liquidada: se
     // devolvió lo que se calculó en su momento, aunque la cuenta de hoy dé otro
     // número (una multa que llegó después, un tag que se pagó). La diferencia se
@@ -128,6 +158,12 @@ export async function GET() {
       balance: d.balance,
       garantia: d.garantia,
       cobros: c,
+      renta,
+      base,
+      valores,
+      corregido,
+      pendientes,
+      historial: (cambiosDe.get(d.clave) || []).map((x) => ({ id: x.id, campo: x.campo, valor: x.valor, anterior: x.anterior, nota: x.nota, estado: x.estado, por: x.propuesto_por, en: x.propuesto_en, revisadoPor: x.revisado_por })),
       gestion: {
         ajustes: g.ajustes || [],
         devuelto: g.devuelto || 0,
@@ -136,6 +172,14 @@ export async function GET() {
         anexoPor: g.anexo_por || null,
         anexoFecha: g.anexo_fecha || null,
         nota: g.nota || '',
+        listo: !!g.listo,
+        listoPor: g.listo_por || null,
+        listoEn: g.listo_en || null,
+        cerrado: !!g.cerrado,
+        cerradoTipo: g.cerrado_tipo || null,
+        cerradoMonto: g.cerrado_monto || 0,
+        cerradoPor: g.cerrado_por || null,
+        cerradoEn: g.cerrado_en || null,
         actualizadoPor: g.actualizado_por || null,
         actualizado: g.actualizado || null,
       },
@@ -152,5 +196,35 @@ export async function GET() {
     devolucionesSinAsignar: devSinAsignar.map((x) => ({ fila: x.fila, nombre: x.nombre, monto: x.monto, devuelta: x.devuelta })),
     avisos,
     puedeEditar: puedeVerSeccion(session.user.role, 'despedidos'),
+    puedeAprobar: !!session.user.isManager,
   }, { headers: SIN_CACHE });
+}
+
+/**
+ * El último Balance de cada despedido mientras estaba activo: el del último
+ * export de conductores subido hasta el día de su despido (ese día incluido).
+ * Se busca por RUT y, si no tiene, por nombre.
+ */
+async function ultimosBalances(sb, despedidos) {
+  const ruts = despedidos.map((d) => d.rut).filter(Boolean);
+  const nombres = despedidos.filter((d) => !d.rut).flatMap((d) => [d.nombre, d.nombre_fleet]).filter(Boolean).map(normalizarNombre);
+  const filas = [];
+  for (const [col, lista] of [['rut', ruts], ['clave_nombre', nombres]]) {
+    if (!lista.length) continue;
+    for (let desde = 0; ; desde += 1000) {
+      const { data, error } = await sb.from('conductores_balances').select('rut, clave_nombre, patente, balance, fecha')
+        .in(col, lista).order('fecha').order('id').range(desde, desde + 999);
+      if (error) { if (!faltaMigracion(error)) console.error('despedidos balances', error.message); return new Map(); }
+      filas.push(...data);
+      if (data.length < 1000) break;
+    }
+  }
+  const out = new Map();
+  for (const d of despedidos) {
+    const nombresD = new Set([d.nombre, d.nombre_fleet].filter(Boolean).map(normalizarNombre));
+    const suyas = filas.filter((f) => (d.rut ? f.rut === d.rut : nombresD.has(f.clave_nombre)))
+      .filter((f) => !d.despido || enChile(f.fecha).fecha <= d.despido);
+    if (suyas.length) out.set(d.clave, suyas[suyas.length - 1]);
+  }
+  return out;
 }
