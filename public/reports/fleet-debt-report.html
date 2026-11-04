@@ -2073,7 +2073,7 @@ function renderMixedChart(){
 
   // Payments bucketed by actual payment date (file upload date = when paidAmount delta was detected).
   // This is the same approach as the evolution table, so both charts stay in sync.
-  PAYMENT_EVENTS.forEach(function(p){
+  pagosNetos(PAYMENT_EVENTS).forEach(function(p){
     var drvKey=normalizeName(p.driver);
     if(!activeSet[drvKey])return;
     var d=fechaDelPago(p);if(!d)return;
@@ -2428,7 +2428,10 @@ function renderEvolTable(){
 
   // BILLS/PAYMENT_EVENTS ya vienen filtrados por tipo y coordinador desde applyScope()
   var srcBills=BILLS;
-  var srcPayments=PAYMENT_EVENTS;
+  // Un pago que Fleet revirtió se cancela contra el pago original de esa bill: no
+  // se muestra ni el pago ni la reversión (04-11-2026, pedido de Andrés: ver
+  // "−$104K" y "↩ +$104K" en la misma semana confundía).
+  var srcPayments=pagosNetos(PAYMENT_EVENTS);
 
   // chargeMap[wk][drv] = total new charges that week
   // payMap[wk][drv]    = total payments that week
@@ -2767,10 +2770,9 @@ function applyI18n(){
    semanas que se ven, para que la deuda vieja reciba lo que le toca. */
 /* Pagos sin los que Fleet revirtió: un pago negativo descuenta los pagos
    anteriores de la misma bill, el más reciente primero, como si nunca se
-   hubieran hecho (la bill volvió a quedar impaga). Lo usa PAGÓ SU SEMANA: ahí un
-   pago revertido tiene que descubrir la semana que había cubierto, no restarle a
-   la semana en que se revirtió. La tabla de evolución sí muestra la reversión en
-   su semana, como un hecho más. */
+   hubieran hecho (la bill volvió a quedar impaga). Lo usan PAGÓ SU SEMANA, la
+   tabla de evolución y el gráfico: un pago revertido descubre la semana que había
+   cubierto, en vez de restarle a la semana en que se revirtió. */
 function pagosNetos(eventos){
   var porRef={},sueltos=[];
   eventos.forEach(function(p){
