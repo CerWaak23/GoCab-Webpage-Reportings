@@ -1,6 +1,7 @@
 'use client';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLang } from '@/lib/i18n/useLang';
+import { BANCOS, TIPOS_CUENTA } from '@/lib/fleet/despedidos';
 
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const plata = (n) => CLP.format(Math.round(n || 0));
@@ -17,6 +18,7 @@ async function pedir(url, cuerpo) {
 const tipoDe = (f) => (f.liquidacion.nosDebe > 0 ? 'dicom' : f.liquidacion.devolver > 0 || f.gestion.cerradoTipo === 'devuelto' ? 'devuelto' : null);
 const nPendientes = (f) => Object.values(f.pendientes || {}).reduce((s, xs) => s + xs.length, 0);
 const porRevisar = (f) => nPendientes(f) > 0 || (f.gestion.listo && !f.gestion.cerrado);
+const peso = (f) => (f.gestion.listo && !f.gestion.cerrado ? 2 : nPendientes(f) > 0 ? 1 : 0);
 
 /**
  * Liquidación de los conductores despedidos. Las casillas se corrigen ahí mismo:
@@ -43,7 +45,11 @@ export default function Despedidos() {
       if (filtro === 'por_revisar') return porRevisar(f);
       if (filtro === 'cerrados') return f.gestion.cerrado;
       return true;
-    });
+    }).map((f, i) => ({ f, i }))
+      // Arriba lo que espera a gerencia: los listos sin confirmar y después los
+      // que tienen cambios por aprobar; el resto, en el orden de la API (despido más nuevo primero).
+      .sort((a, b) => peso(b.f) - peso(a.f) || a.i - b.i)
+      .map(({ f }) => f);
   }, [datos, filtro, buscar]);
 
   if (!datos) return <p className="text-sm text-gray-400">{t('dp_cargando')}</p>;
@@ -73,6 +79,7 @@ export default function Despedidos() {
   const devolver = todas.filter((f) => f.liquidacion.devolver > 0);
   const revisar = todas.filter(porRevisar);
   const accion = async (clave, cuerpo) => {
+    if (!cuerpo) { await cargar(); return true; } // ya se guardó: solo recargar
     const r = await pedir('/api/despedidos/gestion', { clave, ...cuerpo });
     if (r.error) { alert(t('dp_error_guardar')); return false; }
     await cargar();
@@ -142,7 +149,7 @@ export default function Despedidos() {
                   <td className="px-3 py-2 text-center"><Cerrado f={f} t={t} puede={datos.puedeAprobar} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td>
                 </tr>
                 {abierto === f.clave && (
-                  <tr className="bg-gray-900/70"><td colSpan={10} className="px-4 py-4"><Detalle f={f} t={t} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td></tr>
+                  <tr className="bg-gray-900/70"><td colSpan={10} className="px-4 py-4"><Detalle f={f} t={t} puedeAprobar={datos.puedeAprobar} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td></tr>
                 )}
               </Fragment>
             ))}
@@ -186,6 +193,9 @@ function Casilla({ f, campo, t, puedeAprobar, onAccion }) {
   const guardar = async () => {
     const n = Number(String(valor).replace(/[^\d-]/g, ''));
     if (!Number.isFinite(n) || String(valor).trim() === '') return;
+    if (n === v) { setEditando(false); return; }
+    // Un coordinador confirma antes de mandar: su cambio queda esperando a gerencia
+    if (!puedeAprobar && !window.confirm(t('dp_confirmar_cambio')(t(`dp_col_${campo}`), plata(v), plata(n)))) return;
     setOcupado(true);
     const ok = await onAccion({ accion: 'cambio', campo, valor: n, anterior: v });
     setOcupado(false);
@@ -246,7 +256,13 @@ function Resultado({ f, t }) {
   if (f.devolucionEnviada > 0) {
     return <span className="text-gray-400">✓ {t('dp_devuelta')} {plata(f.devolucionEnviada)}<div className="text-[10px] text-gray-600">{t('dp_en_cf')}</div></span>;
   }
-  if (l.devolver > 0) return <span className="font-semibold text-emerald-400">{t('dp_saldo_devolver')} {plata(l.devolver)}{pendCF}</span>;
+  if (l.devolver > 0) {
+    return (
+      <span className="font-semibold text-emerald-400">{t('dp_saldo_devolver')} {plata(l.devolver)}{pendCF}
+        <div className={`text-[10px] font-normal ${g.cuenta ? 'text-gray-400' : 'text-amber-400'}`}>{g.cuenta ? `🏦 ${t('dp_cuenta_lista')}` : `⚠ ${t('dp_falta_cuenta')}`}</div>
+      </span>
+    );
+  }
   if (l.devuelto > 0) return <span className="text-gray-400">✓ {t('dp_devuelta')}</span>;
   return <span className="text-gray-400">✓ {t('dp_saldo_cero')}</span>;
 }
@@ -257,10 +273,11 @@ function Listo({ f, t, onAccion }) {
   const tipo = tipoDe(f);
   const g = f.gestion;
   if (!tipo && !g.listo) return <span className="text-gray-700">—</span>;
+  const sinCuenta = tipo === 'devuelto' && !g.cuenta && !g.listo;
   return (
     <label className="inline-flex flex-col items-center gap-0.5 text-[10px] text-gray-400 cursor-pointer"
-      title={g.listo ? t('dp_marcado_por')(quien(g.listoPor), fechaCorta(g.listoEn)) : ''}>
-      <input type="checkbox" checked={g.listo} disabled={ocupado || g.cerrado}
+      title={g.listo ? t('dp_marcado_por')(quien(g.listoPor), fechaCorta(g.listoEn)) : sinCuenta ? t('dp_listo_sin_cuenta') : ''}>
+      <input type="checkbox" checked={g.listo} disabled={ocupado || g.cerrado || sinCuenta}
         onChange={async (e) => { setOcupado(true); await onAccion({ accion: 'listo', valor: e.target.checked }); setOcupado(false); }}
         className="w-4 h-4 accent-amber-400" />
       {t(tipo === 'dicom' ? 'dp_listo_dicom' : 'dp_listo_devolver')}
@@ -286,7 +303,7 @@ function Cerrado({ f, t, puede, onAccion }) {
   );
 }
 
-function Detalle({ f, t, onAccion }) {
+function Detalle({ f, t, puedeAprobar, onAccion }) {
   const l = f.liquidacion;
   const g = f.gestion;
   const [nota, setNota] = useState(g.nota || '');
@@ -331,6 +348,7 @@ function Detalle({ f, t, onAccion }) {
       </div>
 
       <div className="space-y-5">
+        {(l.devolver > 0 || g.cuenta || g.cerradoTipo === 'devuelto') && <Cuenta f={f} t={t} puedeAprobar={puedeAprobar} onAccion={onAccion} />}
         <div>
           <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">{t('dp_nota_titulo')}</p>
           <div className="flex gap-2">
@@ -354,6 +372,75 @@ function Detalle({ f, t, onAccion }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Cuenta bancaria para devolverle la garantía. La ingresa el coordinador; la
+ * cuenta completa solo la ve gerencia (al resto la API la manda enmascarada).
+ */
+function Cuenta({ f, t, puedeAprobar, onAccion }) {
+  const g = f.gestion;
+  const vacia = { titular: '', rut: '', banco: '', tipo: '', numero: '', email: '' };
+  const [editando, setEditando] = useState(!g.cuenta);
+  const [c, setC] = useState(g.cuenta && !g.cuenta.enmascarada ? { ...vacia, ...g.cuenta, email: g.cuenta.email || '' } : vacia);
+  const [error, setError] = useState(null);
+  const [ocupado, setOcupado] = useState(false);
+  const campo = 'rounded-lg bg-gray-950 border border-gray-700 px-2 py-1.5 text-sm outline-none focus:border-sky-500';
+  const cambiar = (k) => (e) => setC({ ...c, [k]: e.target.value });
+
+  async function guardar() {
+    if (!puedeAprobar && !window.confirm(t('dp_confirmar_cuenta')(f.nombre))) return;
+    setOcupado(true);
+    const r = await fetch('/api/despedidos/gestion', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clave: f.clave, accion: 'cuenta', cuenta: c }),
+    }).then((x) => x.json()).catch(() => ({ error: 'red' }));
+    setOcupado(false);
+    if (r.error) {
+      const k = `dp_cuenta_error_${r.error}`;
+      setError(t(k) === k ? t('dp_error_guardar') : t(k));
+      return;
+    }
+    setError(null);
+    setEditando(false);
+    await onAccion(null);
+  }
+
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wider text-gray-500">{t('dp_cuenta_titulo')}</p>
+      {!editando && g.cuenta ? (
+        <div className="mt-1 text-sm text-gray-200 space-y-0.5">
+          <p>{g.cuenta.titular}{g.cuenta.rut && <span className="text-gray-400"> · {g.cuenta.rut}</span>}</p>
+          <p>{g.cuenta.banco} · {t(`dp_cuenta_tipo_${g.cuenta.tipo}`)} · <span className="font-mono">{g.cuenta.numero}</span></p>
+          {g.cuenta.email && <p className="text-gray-400">{g.cuenta.email}</p>}
+          <p className="text-[10px] text-gray-600">{t('dp_marcado_por')(quien(g.cuentaPor), fechaCorta(g.cuentaEn))}{g.cuenta.enmascarada && ` · ${t('dp_cuenta_solo_gerencia')}`}</p>
+          <button type="button" onClick={() => { setC(g.cuenta.enmascarada ? vacia : { ...vacia, ...g.cuenta, email: g.cuenta.email || '' }); setEditando(true); }}
+            className="text-xs text-sky-300 hover:text-sky-200">{t('dp_cuenta_editar')}</button>
+        </div>
+      ) : (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <input placeholder={t('dp_cuenta_titular')} value={c.titular} onChange={cambiar('titular')} className={`${campo} col-span-2`} />
+          <input placeholder={t('dp_cuenta_rut')} value={c.rut} onChange={cambiar('rut')} className={campo} />
+          <select value={c.banco} onChange={cambiar('banco')} className={campo}>
+            <option value="">{t('dp_cuenta_banco')}</option>
+            {BANCOS.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <select value={c.tipo} onChange={cambiar('tipo')} className={campo}>
+            <option value="">{t('dp_cuenta_tipo')}</option>
+            {TIPOS_CUENTA.map((x) => <option key={x} value={x}>{t(`dp_cuenta_tipo_${x}`)}</option>)}
+          </select>
+          <input placeholder={t('dp_cuenta_numero')} value={c.numero} onChange={cambiar('numero')} inputMode="numeric" className={campo} />
+          <input placeholder={t('dp_cuenta_email')} value={c.email} onChange={cambiar('email')} type="email" className={`${campo} col-span-2`} />
+          <div className="col-span-2 flex items-center gap-2">
+            <button type="button" disabled={ocupado} onClick={guardar}
+              className="rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-gray-950 font-semibold text-xs px-3 py-1.5">{t('dp_guardar')}</button>
+            {g.cuenta && <button type="button" onClick={() => setEditando(false)} className="text-xs text-gray-400 hover:text-white">{t('ma_cancelar')}</button>}
+            {error && <span className="text-xs text-red-400">{error}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

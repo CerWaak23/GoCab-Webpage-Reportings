@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { getAppSession } from '@/lib/session';
 import { puedeVerSeccion } from '@/lib/i18n/secciones';
 import { supabaseServidor } from '@/lib/supabase/server';
-import { CAMPOS_CAMBIO } from '@/lib/fleet/despedidos';
+import { CAMPOS_CAMBIO, validarCuenta } from '@/lib/fleet/despedidos';
 
 const CONCEPTOS = ['tags', 'multas', 'renta', 'danos', 'otro'];
 const MAXIMO = 50_000_000; // un monto más grande que esto es un error de tipeo
@@ -17,6 +17,7 @@ const MAXIMO = 50_000_000; // un monto más grande que esto es un error de tipeo
  * Acciones:
  *   cambio       { campo, valor, anterior?, nota? }        corrige una casilla (de un coordinador: queda pendiente)
  *   revisar      { id, aprobar }                           gerencia aprueba o rechaza una propuesta
+ *   cuenta       { cuenta: { titular, rut, banco, tipo, numero, email? } } o { borrar: true }
  *   listo        { valor: boolean }                        listo para devolver o para publicar en DICOM
  *   cerrado      { valor, tipo: devuelto|dicom, monto }    gerencia: ya se devolvió o se publicó
  *   anexo        { valor: boolean }                        firmó el anexo de DICOM (ya no se muestra)
@@ -109,6 +110,17 @@ export async function POST(request) {
     cambios.devuelto_fecha = monto > 0 ? fecha : null;
   } else if (body.accion === 'nota') {
     cambios.nota = String(body.texto || '').trim().slice(0, 1000) || null;
+  } else if (body.accion === 'cuenta') {
+    // Cuenta para devolver la garantía. Vacía = borrarla.
+    if (body.borrar) {
+      cambios.cuenta = null;
+    } else {
+      const v = validarCuenta(body.cuenta || {});
+      if (v.error) return NextResponse.json({ error: v.error }, { status: 400 });
+      cambios.cuenta = v.cuenta;
+    }
+    cambios.cuenta_por = por;
+    cambios.cuenta_en = ahora;
   } else if (body.accion === 'listo') {
     // El coordinador avisa que está listo para devolver o para publicar en DICOM
     cambios.listo = !!body.valor;

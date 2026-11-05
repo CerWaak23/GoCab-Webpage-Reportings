@@ -3245,7 +3245,8 @@ async function guardarComentario(){
 
 // Celda de la columna GESTIÓN: solo hay botón si el conductor debe algo
 function celdaGestion(drv,pendiente){
-  if(pendiente<=0)return '<td style="text-align:center"><span style="color:#374151">—</span></td>';
+  // Al día también se puede comentar (05-11-2026, pedido de Andrés): la gestión
+  // no es solo cobranza, y sacar el botón escondía los comentarios ya escritos.
   // Vale el texto, no la existencia del registro: al borrar un comentario queda la
   // entrada con su historial, y tomarla como "tiene comentario" mostraba Ver sobre
   // un comentario vacío.

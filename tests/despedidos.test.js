@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { analizarExport } from '@/lib/fleet';
 import { payloadPara } from '@/lib/carga/payload';
-import { esExportDespedidos, leerDespedidos, liquidar, asignarPorNombre, balancesDeExport, rentaAlDespido, aplicarCambios } from '@/lib/fleet/despedidos';
+import { esExportDespedidos, leerDespedidos, liquidar, asignarPorNombre, balancesDeExport, rentaAlDespido, aplicarCambios, validarCuenta, enmascararCuenta } from '@/lib/fleet/despedidos';
 
 const fila = (o = {}) => ({
   'Phone Number': '+56911111111', Name: 'JUAN PÉREZ', Gender: '', Balance: '0', 'Bail paid': '0', Fines: '0',
@@ -147,5 +147,20 @@ describe('correcciones a mano', () => {
     expect(r.valores).toMatchObject({ tags: 20, multas: 0, renta: 100 });
     expect(r.pendientes.multas).toHaveLength(1);
     expect(r.corregido.tags.valor).toBe(20);
+  });
+});
+
+describe('cuenta para devolver la garantía', () => {
+  const buena = { titular: 'Carlos  Leal', rut: '11111111-1', banco: 'BancoEstado', tipo: 'vista', numero: '1234 5678', email: 'CL@Mail.com' };
+  it('limpia y valida los datos', () => {
+    expect(validarCuenta(buena).cuenta).toEqual({ titular: 'Carlos Leal', rut: '11.111.111-1', banco: 'BancoEstado', tipo: 'vista', numero: '12345678', email: 'cl@mail.com' });
+    expect(validarCuenta({ ...buena, rut: '11111111-2' }).error).toBe('rut');
+    expect(validarCuenta({ ...buena, banco: 'Banco X' }).error).toBe('banco');
+    expect(validarCuenta({ ...buena, numero: '12' }).error).toBe('numero');
+    expect(validarCuenta({ ...buena, email: 'no' }).error).toBe('email');
+  });
+  it('fuera de gerencia el número va enmascarado y sin RUT', () => {
+    const m = enmascararCuenta(validarCuenta(buena).cuenta);
+    expect(m).toEqual({ titular: 'Carlos Leal', banco: 'BancoEstado', tipo: 'vista', numero: '•••5678', enmascarada: true });
   });
 });

@@ -7,7 +7,7 @@ import { puedeVerSeccion } from '@/lib/i18n/secciones';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { reporteDesdeSupabase as billsDesdeSupabase } from '@/lib/bills/supabase';
 import { reporteDesdeSupabase as multasDesdeSupabase } from '@/lib/multas/supabase';
-import { liquidar, asignarPorNombre, rentaAlDespido, aplicarCambios, enChile } from '@/lib/fleet/despedidos';
+import { liquidar, asignarPorNombre, rentaAlDespido, aplicarCambios, enChile, enmascararCuenta } from '@/lib/fleet/despedidos';
 import { rentaDeAuto } from '@/lib/fleet/renta';
 import { normalizarNombre } from '@/lib/fleet/nombres';
 import { google } from 'googleapis';
@@ -180,6 +180,10 @@ export async function GET() {
         cerradoMonto: g.cerrado_monto || 0,
         cerradoPor: g.cerrado_por || null,
         cerradoEn: g.cerrado_en || null,
+        // La cuenta completa solo la ve gerencia, que es quien transfiere
+        cuenta: g.cuenta ? (session.user.isManager ? g.cuenta : enmascararCuenta(g.cuenta)) : null,
+        cuentaPor: g.cuenta_por || null,
+        cuentaEn: g.cuenta_en || null,
         actualizadoPor: g.actualizado_por || null,
         actualizado: g.actualizado || null,
       },

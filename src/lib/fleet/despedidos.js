@@ -194,6 +194,35 @@ export function aplicarCambios(base, cambios = []) {
   return { valores, corregido, pendientes };
 }
 
+export const BANCOS = [
+  'Banco de Chile', 'BancoEstado', 'Santander', 'BCI', 'Scotiabank', 'Itaú', 'BICE', 'Security', 'Banco Falabella',
+  'Banco Ripley', 'Consorcio', 'Banco Internacional', 'Coopeuch', 'Tenpo', 'Mercado Pago', 'MACH', 'Prepago Los Héroes', 'Otro',
+];
+export const TIPOS_CUENTA = ['corriente', 'vista', 'ahorro'];
+
+/**
+ * Cuenta bancaria para devolver la garantía. Valida y deja cada dato en limpio.
+ * @returns { cuenta } o { error }
+ */
+export function validarCuenta(c = {}) {
+  const titular = texto(c.titular).replace(/\s+/g, ' ').slice(0, 120);
+  const numero = texto(c.numero).replace(/[\s.]/g, '');
+  const email = texto(c.email).toLowerCase();
+  if (titular.length < 3) return { error: 'titular' };
+  if (!rutValido(c.rut)) return { error: 'rut' };
+  if (!BANCOS.includes(c.banco)) return { error: 'banco' };
+  if (!TIPOS_CUENTA.includes(c.tipo)) return { error: 'tipo' };
+  if (!/^[0-9-]{4,20}$/.test(numero)) return { error: 'numero' };
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'email' };
+  return { cuenta: { titular, rut: formatearRut(c.rut), banco: c.banco, tipo: c.tipo, numero, email: email || null } };
+}
+
+/** Lo que ve quien no es gerencia: banco y tipo, el número solo con sus 4 últimos. */
+export function enmascararCuenta(c) {
+  if (!c) return null;
+  return { titular: c.titular, banco: c.banco, tipo: c.tipo, numero: `•••${String(c.numero).slice(-4)}`, enmascarada: true };
+}
+
 const palabras = (s) => normalizarNombre(s).replace(/^(PPD|PDD|DTO) /, '').split(' ').filter(Boolean);
 
 /**
