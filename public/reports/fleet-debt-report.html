@@ -2507,17 +2507,22 @@ function renderEvolTable(){
     if(!weekDates[wk])weekDates[wk]=d;
   });
   /* En diario cada columna es un día y todas se ven iguales, así que cuesta ver
-     dónde empieza una semana. La columna del sábado —el primer día del ciclo—
+     dónde empieza una semana. La primera columna de cada semana (sábado a viernes)
      lleva una línea más gruesa a la izquierda. En semanal no hace falta: ahí cada
      columna YA es una semana. */
-  var abreSemana=function(w){
-    if(_evolPeriod!=='daily')return false;
-    var d=weekDates[w];
-    return !!(d&&!isNaN(d)&&d.getUTCDay()===6);
-  };
   var allWeeks=Object.keys(allWeekSet).sort(function(a,b){
     var da=weekDates[a]||new Date(0),db=weekDates[b]||new Date(0);return da-db;
   }); // no slice — show all weeks (horizontal scroll handles overflow)
+  // La línea va en la primera columna de cada semana, no en la del sábado: un
+  // sábado sin pagos ni archivo subido no tiene columna (31-10-2026), y esa
+  // semana quedaba sin separación.
+  var iniciosSemana={};
+  allWeeks.forEach(function(w,i){
+    if(!i)return;
+    var a=sabadoDeSemana(weekDates[allWeeks[i-1]]),b=sabadoDeSemana(weekDates[w]);
+    if(a&&b&&a.getTime()!==b.getTime())iniciosSemana[w]=true;
+  });
+  var abreSemana=function(w){return _evolPeriod==='daily'&&!!iniciosSemana[w];};
 
   var allDrivers=Object.keys(driverSet);
   if(!allWeeks.length||!allDrivers.length){
