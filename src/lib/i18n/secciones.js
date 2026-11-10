@@ -14,6 +14,8 @@ const REGLAS = {
   carga: (rol) => !esTaller(rol),
   // Coordinadores y gerentes: los de taller no ven la plata de los despedidos
   despedidos: (rol) => !esTaller(rol),
+  // Todo el equipo pide sus vacaciones y ve las de los demás
+  vacaciones: () => true,
 };
 
 export function puedeVerSeccion(rol, seccion) {

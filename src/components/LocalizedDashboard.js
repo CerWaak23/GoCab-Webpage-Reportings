@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { LANGS } from './LangSwitcher';
 import { puedeVerSeccion } from '@/lib/i18n/secciones';
 
-export default function LocalizedDashboard({ firstName, role, isManager }) {
+export default function LocalizedDashboard({ firstName, role, isManager, verPagos = false }) {
   const [lang, setLang] = useState('es');
 
   useEffect(() => {
@@ -29,6 +29,31 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
       </p>
 
       <div className="flex flex-col gap-4">
+        {/* Solo para quien está en PAGOS_EMAILS (Andrés): lo decide el servidor */}
+        {verPagos && (
+        <Link
+          href="/reports/pagos"
+          className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-emerald-500/40 hover:bg-gray-900/80 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t.pagos_title}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t.pagos_sub}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-gray-600 group-hover:text-emerald-400 transition"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        )}
+
         <Link
           href="/reports/bills"
           className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-blue-500/40 hover:bg-gray-900/80 transition"
@@ -163,6 +188,30 @@ export default function LocalizedDashboard({ firstName, role, isManager }) {
             </div>
           </div>
           <svg className="w-4 h-4 text-gray-600 group-hover:text-rose-400 transition"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        )}
+
+        {puedeVerSeccion(role, 'vacaciones') && (
+        <Link
+          href="/vacaciones"
+          className="group flex items-center justify-between p-6 rounded-2xl bg-gray-900 border border-gray-800 hover:border-teal-500/40 hover:bg-gray-900/80 transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-teal-500/15 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t.vc_title}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t.vc_sub}</p>
+            </div>
+          </div>
+          <svg className="w-4 h-4 text-gray-600 group-hover:text-teal-400 transition"
             fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
