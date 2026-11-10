@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getAppSession } from '@/lib/session';
 import { puedeVerSeccion } from '@/lib/i18n/secciones';
 import { supabaseServidor } from '@/lib/supabase/server';
-import { validarSolicitud } from '@/lib/vacaciones';
+import { validarSolicitud, visiblesPara } from '@/lib/vacaciones';
 
 const SIN_CACHE = { 'Cache-Control': 'no-store' };
 const hoyChile = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
@@ -21,8 +21,11 @@ export async function GET() {
     .gte('hasta', desde).order('desde');
   if (faltaMigracion(error)) return NextResponse.json({ error: 'sin_migracion' }, { status: 503, headers: SIN_CACHE });
   if (error) return NextResponse.json({ error: 'base' }, { status: 500 });
+  // Hasta que se aprueba, una solicitud la ven solo quien la pidió y gerencia
+  // (pedido de Andrés, 10-11-2026): los demás coordinadores ven solo las aprobadas.
+  const visibles = visiblesPara(data, session.user.email, !!session.user.isManager);
   return NextResponse.json({
-    vacaciones: data, hoy: hoyChile(),
+    vacaciones: visibles, hoy: hoyChile(),
     yo: { email: session.user.email, nombre: session.user.name },
     puedeAprobar: !!session.user.isManager,
   }, { headers: SIN_CACHE });

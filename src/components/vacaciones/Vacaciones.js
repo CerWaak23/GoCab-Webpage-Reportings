@@ -91,7 +91,7 @@ function Solicitar({ t, lista, datos, onAccion }) {
     const e = await onAccion({ accion: 'solicitar', desde, hasta, nota });
     setOcupado(false);
     setError(e);
-    if (!e) { setOk(datos.puedeAprobar ? t('vc_ok_aprobada') : t('vc_ok_solicitada')); setDesde(''); setHasta(''); setNota(''); }
+    if (!e) { setOk(datos.puedeAprobar ? t('vc_ok_aprobada') : `${t('vc_ok_solicitada')}. ${t('vc_solo_gerencia')}`); setDesde(''); setHasta(''); setNota(''); }
   }
 
   return (
@@ -220,6 +220,7 @@ function Proximas({ t, proximas, datos, colorDe, onAccion }) {
                 <span className="text-gray-100">{v.nombre}</span>
                 <span className="text-gray-400">{ddmm(v.desde)} – {ddmm(v.hasta)} · {t('vc_dias_habiles')(v.dias)}</span>
                 <span className={`rounded-full border px-2 text-[11px] ${v.estado === 'aprobada' ? 'border-emerald-500/40 text-emerald-300' : 'border-amber-500/40 text-amber-300'}`}>{t(`vc_estado_${v.estado}`)}</span>
+                {v.estado === 'solicitada' && <span className="text-[11px] text-gray-500">🔒 {t('vc_solo_gerencia')}</span>}
                 {v.nota && <span className="text-xs text-gray-500">{v.nota}</span>}
                 {puedeCancelar && (
                   <button type="button" disabled={ocupado === v.id} onClick={() => cancelar(v)} className="ml-auto text-xs text-gray-500 hover:text-red-400">{t('vc_cancelar')}</button>

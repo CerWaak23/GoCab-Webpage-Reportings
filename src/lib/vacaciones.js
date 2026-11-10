@@ -51,6 +51,17 @@ export function cruces(lista, desde, hasta, email) {
     && v.desde <= hasta && v.hasta >= desde);
 }
 
+/**
+ * Lo que ve cada uno: gerencia ve todo; el resto ve las aprobadas de todos y
+ * sus propias solicitudes. Una solicitud pendiente no la ven los demás
+ * coordinadores hasta que se apruebe.
+ */
+export function visiblesPara(lista, email, esGerencia) {
+  if (esGerencia) return lista;
+  const yo = String(email).toLowerCase();
+  return lista.filter((v) => v.estado === 'aprobada' || String(v.usuario_email).toLowerCase() === yo);
+}
+
 /** Valida una solicitud. @returns { desde, hasta, dias, nota } o { error } */
 export function validarSolicitud({ desde, hasta, nota } = {}, hoy) {
   if (!esFecha(desde) || !esFecha(hasta)) return { error: 'fechas' };

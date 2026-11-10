@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { diasHabiles, diasHabilesEnAnio, cruces, validarSolicitud, semanasDelMes, esHabil } from '@/lib/vacaciones';
+import { diasHabiles, diasHabilesEnAnio, cruces, validarSolicitud, semanasDelMes, esHabil, visiblesPara } from '@/lib/vacaciones';
 
 describe('días hábiles', () => {
   it('no cuenta fines de semana ni feriados', () => {
@@ -47,5 +47,19 @@ describe('calendario del mes', () => {
     const s = semanasDelMes(2026, 11); // noviembre 2026 parte en domingo
     expect(s[0]).toEqual([null, null, null, null, null, null, '2026-11-01']);
     expect(s[s.length - 1][0]).toBe('2026-11-30');
+  });
+});
+
+describe('quién ve qué', () => {
+  const lista = [
+    { id: 1, usuario_email: 'pablogonzalez@gocab.io', estado: 'solicitada' },
+    { id: 2, usuario_email: 'pablogonzalez@gocab.io', estado: 'aprobada' },
+    { id: 3, usuario_email: 'javiera.silva@gocab.io', estado: 'solicitada' },
+    { id: 4, usuario_email: 'javiera.silva@gocab.io', estado: 'rechazada' },
+  ];
+  it('una solicitud pendiente solo la ven quien la pidió y gerencia', () => {
+    expect(visiblesPara(lista, 'Javiera.Silva@gocab.io', false).map((v) => v.id)).toEqual([2, 3, 4]);
+    expect(visiblesPara(lista, 'pablogonzalez@gocab.io', false).map((v) => v.id)).toEqual([1, 2]);
+    expect(visiblesPara(lista, 'andres.cerda@gocab.io', true)).toHaveLength(4);
   });
 });
