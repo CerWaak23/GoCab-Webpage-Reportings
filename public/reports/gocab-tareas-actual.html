@@ -628,6 +628,7 @@
     if(typeof st.seq!=='number') st.seq=1;
     if(!Array.isArray(st.tasks)) st.tasks=freshSeed();
     if(!Array.isArray(st.people)) st.people=[];
+    if(!Array.isArray(st.removedPeople)) st.removedPeople=[]; // personas fijas (PEOPLE) que se eliminaron
     if(!Array.isArray(st.trash)) st.trash=[];
     if(!Array.isArray(st.projects)) st.projects=[];
     st.tasks.forEach(t=>{ if(typeof t.h!=='number') t.h=0; });
@@ -793,7 +794,7 @@
       const tasks=state.tasks.filter(t=>ownerKey(t.r)===pp.name);
       const th=tasks.reduce((s,t)=>s+(t.h||0),0);
       const sub=`${roleLabel(pp,lang)}${th>0?` · ${fmtH(th)}/${lang==='ru'?'нед':lang==='en'?'wk':'sem'}`:''}`;
-      return treeCard(pp.c, pName(pp,lang), sub, tasks, lang, 'ppl', pp.name, pp.custom);
+      return treeCard(pp.c, pName(pp,lang), sub, tasks, lang, 'ppl', pp.name, true);
     }).join('');
 
     fillSelects(lang);
@@ -851,7 +852,10 @@
   /* ---------- Create / delete / reset ---------- */
   /* ---------- People (seed + custom) ---------- */
   const PALETTE=['#4f6bed','#0ea5a5','#f59e0b','#8b5cf6','#e0468f','#22a36b','#ef4444','#12b6b0','#e08706','#7c4de0'];
-  function getPeople(){ return PEOPLE.concat(state.people||[]); }
+  function getPeople(){
+    const fuera=new Set(state.removedPeople||[]);
+    return PEOPLE.filter(p=>!fuera.has(p.name)).concat(state.people||[]);
+  }
   function createPerson(){
     const nEl=document.getElementById('pName'), rEl=document.getElementById('pRole');
     const name=nEl.value.trim(); if(!name){ nEl.focus(); return; }
@@ -869,6 +873,8 @@
       alert(LANG==='ru'?'Сначала переназначьте задачи этого человека другому.':LANG==='en'?'Move this person’s tasks to someone else first.':'Primero reasigna las tareas de esta persona a otra.'); return;
     }
     if(!confirm(LANG==='ru'?`Удалить ${name}?`:LANG==='en'?`Remove ${name}?`:`¿Eliminar a ${name}?`)) return;
+    // las personas fijas (PEOPLE) viven en el código: se recuerdan como eliminadas
+    if(PEOPLE.some(p=>p.name===name) && !state.removedPeople.includes(name)) state.removedPeople.push(name);
     state.people=state.people.filter(p=>p.name!==name);
     save(); render();
   }
@@ -954,7 +960,7 @@
     const i=state.trash.findIndex(x=>x.id===id); if(i<0) return;
     const t=state.trash.splice(i,1)[0];
     delete t.deletedAt;
-    if(!getPeople().some(p=>p.name===ownerKey(t.r))) t.r=PEOPLE[0].name; // safety if that person was removed
+    if(!getPeople().some(p=>p.name===ownerKey(t.r))) t.r=getPeople()[0].name; // safety if that person was removed
     state.tasks.push(t);
     save(); render();
   }

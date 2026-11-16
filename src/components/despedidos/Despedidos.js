@@ -32,6 +32,7 @@ export default function Despedidos() {
   const [filtro, setFiltro] = useState('todos');
   const [buscar, setBuscar] = useState('');
   const [abierto, setAbierto] = useState(null);
+  const [irACuenta, setIrACuenta] = useState(null); // conductor abierto desde "Ingresar cuenta"
 
   const cargar = useCallback(() => pedir('/api/despedidos').then(setDatos), []);
   useEffect(() => { cargar(); }, [cargar]);
@@ -145,11 +146,12 @@ export default function Despedidos() {
                     </td>
                   ))}
                   <td className="px-3 py-2 text-right whitespace-nowrap cursor-pointer" onClick={() => setAbierto(abierto === f.clave ? null : f.clave)}><Resultado f={f} t={t} /></td>
-                  <td className="px-3 py-2 text-center"><Listo f={f} t={t} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td>
+                  <td className="px-3 py-2 text-center"><Listo f={f} t={t} onAccion={(cuerpo) => accion(f.clave, cuerpo)}
+                    onIngresarCuenta={() => { setAbierto(f.clave); setIrACuenta(f.clave); }} /></td>
                   <td className="px-3 py-2 text-center"><Cerrado f={f} t={t} puede={datos.puedeAprobar} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td>
                 </tr>
                 {abierto === f.clave && (
-                  <tr className="bg-gray-900/70"><td colSpan={10} className="px-4 py-4"><Detalle f={f} t={t} puedeAprobar={datos.puedeAprobar} onAccion={(cuerpo) => accion(f.clave, cuerpo)} /></td></tr>
+                  <tr className="bg-gray-900/70"><td colSpan={10} className="px-4 py-4"><Detalle f={f} t={t} puedeAprobar={datos.puedeAprobar} onAccion={(cuerpo) => accion(f.clave, cuerpo)} irACuenta={irACuenta === f.clave} /></td></tr>
                 )}
               </Fragment>
             ))}
@@ -268,16 +270,27 @@ function Resultado({ f, t }) {
 }
 
 /** El coordinador avisa que está listo para devolver o para publicar en DICOM. */
-function Listo({ f, t, onAccion }) {
+function Listo({ f, t, onAccion, onIngresarCuenta }) {
   const [ocupado, setOcupado] = useState(false);
   const tipo = tipoDe(f);
   const g = f.gestion;
   if (!tipo && !g.listo) return <span className="text-gray-700">—</span>;
   const sinCuenta = tipo === 'devuelto' && !g.cuenta && !g.listo;
+  // Sin cuenta no se puede marcar: en vez de una casilla gris que no explica
+  // nada, un botón que lo dice y abre el conductor en el formulario de la cuenta.
+  if (sinCuenta) {
+    return (
+      <button type="button" onClick={onIngresarCuenta} title={t('dp_listo_sin_cuenta')}
+        className="inline-flex flex-col items-center gap-0.5 text-[10px] text-amber-400 hover:text-amber-300">
+        <span className="rounded border border-amber-500/60 px-1.5 py-0.5 font-semibold whitespace-nowrap">🏦 {t('dp_ingresar_cuenta')}</span>
+        {t('dp_falta_cuenta')}
+      </button>
+    );
+  }
   return (
     <label className="inline-flex flex-col items-center gap-0.5 text-[10px] text-gray-400 cursor-pointer"
-      title={g.listo ? t('dp_marcado_por')(quien(g.listoPor), fechaCorta(g.listoEn)) : sinCuenta ? t('dp_listo_sin_cuenta') : ''}>
-      <input type="checkbox" checked={g.listo} disabled={ocupado || g.cerrado || sinCuenta}
+      title={g.listo ? t('dp_marcado_por')(quien(g.listoPor), fechaCorta(g.listoEn)) : ''}>
+      <input type="checkbox" checked={g.listo} disabled={ocupado || g.cerrado}
         onChange={async (e) => { setOcupado(true); await onAccion({ accion: 'listo', valor: e.target.checked }); setOcupado(false); }}
         className="w-4 h-4 accent-amber-400" />
       {t(tipo === 'dicom' ? 'dp_listo_dicom' : 'dp_listo_devolver')}
@@ -303,7 +316,7 @@ function Cerrado({ f, t, puede, onAccion }) {
   );
 }
 
-function Detalle({ f, t, puedeAprobar, onAccion }) {
+function Detalle({ f, t, puedeAprobar, onAccion, irACuenta }) {
   const l = f.liquidacion;
   const g = f.gestion;
   const [nota, setNota] = useState(g.nota || '');
@@ -348,7 +361,7 @@ function Detalle({ f, t, puedeAprobar, onAccion }) {
       </div>
 
       <div className="space-y-5">
-        {(l.devolver > 0 || g.cuenta || g.cerradoTipo === 'devuelto') && <Cuenta f={f} t={t} puedeAprobar={puedeAprobar} onAccion={onAccion} />}
+        {(l.devolver > 0 || g.cuenta || g.cerradoTipo === 'devuelto') && <Cuenta f={f} t={t} puedeAprobar={puedeAprobar} onAccion={onAccion} enfocar={irACuenta} />}
         <div>
           <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">{t('dp_nota_titulo')}</p>
           <div className="flex gap-2">
@@ -380,7 +393,7 @@ function Detalle({ f, t, puedeAprobar, onAccion }) {
  * Cuenta bancaria para devolverle la garantía. La ingresa el coordinador; la
  * cuenta completa solo la ve gerencia (al resto la API la manda enmascarada).
  */
-function Cuenta({ f, t, puedeAprobar, onAccion }) {
+function Cuenta({ f, t, puedeAprobar, onAccion, enfocar }) {
   const g = f.gestion;
   const vacia = { titular: '', rut: '', banco: '', tipo: '', numero: '', email: '' };
   const [editando, setEditando] = useState(!g.cuenta);
@@ -421,7 +434,8 @@ function Cuenta({ f, t, puedeAprobar, onAccion }) {
         </div>
       ) : (
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <input placeholder={t('dp_cuenta_titular')} value={c.titular} onChange={cambiar('titular')} className={`${campo} col-span-2`} />
+          <input placeholder={t('dp_cuenta_titular')} value={c.titular} onChange={cambiar('titular')} className={`${campo} col-span-2`}
+            ref={(el) => { if (el && enfocar && !el.dataset.enfocado) { el.dataset.enfocado = '1'; el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus({ preventScroll: true }); } }} />
           <input placeholder={t('dp_cuenta_rut')} value={c.rut} onChange={cambiar('rut')} className={campo} />
           <select value={c.banco} onChange={cambiar('banco')} className={campo}>
             <option value="">{t('dp_cuenta_banco')}</option>
