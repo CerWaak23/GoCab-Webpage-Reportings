@@ -8,6 +8,7 @@ import { parseAmount, isHtmlFile, parseHtmlRows } from '@/lib/bills/archivo';
 import { reporteDesdeVersiones, consolidarPorDia } from '@/lib/bills/desdeVersiones';
 import { reporteDesdeSupabase } from '@/lib/bills/supabase';
 import { supabaseServidor } from '@/lib/supabase/server';
+import { traducirFilas } from '@/lib/fleet/idioma';
 
 const BILLS_FOLDER_ID = '1Fd3sia5XyN1tXuk2pvQfbrIbmV_o-sKh';
 
@@ -170,6 +171,8 @@ async function desdeDrive(request) {
 
       // Detect HTML-in-cells format and re-parse if needed
       if (isHtmlFile(rows)) rows = parseHtmlRows(rows);
+      // Un export bajado de Fleet en español se lee como si viniera en inglés
+      rows = traducirFilas(rows);
 
       if (rows.length < 2) continue;
       const header = rows[0].map((h) => String(h).toLowerCase().trim());

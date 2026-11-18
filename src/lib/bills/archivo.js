@@ -5,6 +5,7 @@
  * cambia en los dos lados a la vez.
  */
 import * as XLSX from 'xlsx';
+import { traducirFilas } from '@/lib/fleet/idioma';
 
 export function parseAmount(val) {
   if (val === null || val === undefined || val === '') return 0;
@@ -69,7 +70,8 @@ export function leerFilas(buffer, nombre, { html = true } = {}) {
   }
   // El export de multas nunca viene como HTML en celdas; el reporte de multas no lo revisa.
   if (html && isHtmlFile(rows)) rows = parseHtmlRows(rows);
-  return rows;
+  // Un export bajado de Fleet en español se lee como si viniera en inglés
+  return traducirFilas(rows);
 }
 
 /**
