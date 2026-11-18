@@ -6,6 +6,7 @@ import { supabaseServidor } from '@/lib/supabase/server';
 import { estadoGarantia } from '@/lib/fleet/garantia';
 import { rentaDeAuto, leerBalance } from '@/lib/fleet/renta';
 import * as XLSX from 'xlsx';
+import { traducirObjetos } from '@/lib/fleet/idioma';
 
 const soloRut = (s) => String(s || '').toUpperCase().replace(/[^0-9K]/g, '');
 const claveNombre = (s) =>
@@ -56,7 +57,7 @@ async function rentasFleet() {
       const { data: blob, error: e2 } = await sb.storage.from('cargas').download(carga.ruta_storage);
       if (e2) throw e2;
       const wb = XLSX.read(Buffer.from(await blob.arrayBuffer()), { type: 'buffer' });
-      const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false });
+      const filas = traducirObjetos(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false }));
       for (const f of filas) {
         const balance = leerBalance(f['Balance']);
         if (balance == null) continue;

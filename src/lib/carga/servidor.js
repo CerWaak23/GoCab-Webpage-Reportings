@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import * as XLSX from 'xlsx';
 import { supabaseServidor } from '@/lib/supabase/server';
+import { traducirObjetos } from '@/lib/fleet/idioma';
 
 export const BUCKET = 'cargas';
 
@@ -12,7 +13,8 @@ export async function leerArchivo(ruta) {
   const buf = Buffer.from(await data.arrayBuffer());
   const wb = XLSX.read(buf, { type: 'buffer' });
   return {
-    filas: XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false }),
+    // Un export bajado de Fleet en español se lee como si viniera en inglés
+    filas: traducirObjetos(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false })),
     sha256: createHash('sha256').update(buf).digest('hex'),
     buffer: buf,
   };
