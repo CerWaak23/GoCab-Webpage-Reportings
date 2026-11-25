@@ -13,6 +13,14 @@ const semanasDesde = (iso) => {
   if (Number.isNaN(d.getTime())) return null;
   return Math.max(0, Math.floor((Date.now() - d.getTime()) / (7 * 86400000)));
 };
+// Semanas que se muestran una por una; desde ULTIMA_SEMANA en adelante van juntas ("8+").
+const ULTIMA_SEMANA = 8;
+const cubeta = (f) => { const n = semanasDesde(f.despido); return n == null ? null : Math.min(n, ULTIMA_SEMANA); };
+// Rango de días de la semana n (n=0: los últimos 7 días hasta hoy).
+const rangoSemana = (n) => {
+  const dia = (k) => new Date(Date.now() - k * 86400000).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+  return `${dia(7 * n + 6)}–${dia(7 * n)}`;
+};
 const quien = (email) => String(email || '').split('@')[0];
 const CASILLAS = ['renta', 'tags', 'multas', 'otros', 'ajustes', 'garantia'];
 
@@ -38,6 +46,7 @@ export default function Despedidos() {
   const [datos, setDatos] = useState(null);
   const [filtro, setFiltro] = useState('todos');
   const [buscar, setBuscar] = useState('');
+  const [semana, setSemana] = useState(null); // null = todas; 0..ULTIMA_SEMANA = hace n semanas
   const [abierto, setAbierto] = useState(null);
   const [irACuenta, setIrACuenta] = useState(null); // conductor abierto desde "Ingresar cuenta"
 
@@ -48,6 +57,7 @@ export default function Despedidos() {
     const q = buscar.trim().toLowerCase();
     return (datos?.filas || []).filter((f) => {
       if (q && !`${f.nombre} ${f.nombreFleet}`.toLowerCase().includes(q)) return false;
+      if (semana != null && cubeta(f) !== semana) return false;
       if (filtro === 'deben') return f.liquidacion.nosDebe > 0 && !f.gestion.cerrado;
       if (filtro === 'devolver') return f.liquidacion.devolver > 0;
       if (filtro === 'por_revisar') return porRevisar(f);
@@ -58,7 +68,7 @@ export default function Despedidos() {
       // que tienen cambios por aprobar; el resto, en el orden de la API (despido más nuevo primero).
       .sort((a, b) => peso(b.f) - peso(a.f) || a.i - b.i)
       .map(({ f }) => f);
-  }, [datos, filtro, buscar]);
+  }, [datos, filtro, buscar, semana]);
 
   if (!datos) return <p className="text-sm text-gray-400">{t('dp_cargando')}</p>;
   if (datos.error === 'sin_migracion') return <p className="text-sm text-amber-400">{t('dp_sin_migracion')}</p>;
@@ -116,6 +126,8 @@ export default function Despedidos() {
           color={revisar.length ? 'text-amber-300' : 'text-gray-400'} />
       </div>
 
+      <PorSemana filas={todas} semana={semana} onSemana={setSemana} t={t} />
+
       <div className="flex flex-wrap items-center gap-2">
         {['todos', 'por_revisar', 'deben', 'devolver', 'cerrados'].map((f) => (
           <button key={f} type="button" onClick={() => setFiltro(f)}
@@ -123,6 +135,11 @@ export default function Despedidos() {
             {t(`dp_f_${f}`)}
           </button>
         ))}
+        <select value={semana ?? ''} onChange={(e) => setSemana(e.target.value === '' ? null : Number(e.target.value))}
+          className={`rounded-full border bg-gray-900 px-3 py-1 text-xs outline-none ${semana != null ? 'border-sky-400 text-sky-200' : 'border-gray-700 text-gray-400'}`}>
+          <option value="">{t('dp_sem_todas')}</option>
+          {Array.from({ length: ULTIMA_SEMANA + 1 }, (_, n) => <option key={n} value={n}>{t('dp_sem_opcion')(n)}</option>)}
+        </select>
         <input value={buscar} onChange={(e) => setBuscar(e.target.value)} placeholder={t('dp_buscar')}
           className="ml-auto w-full sm:w-56 rounded-lg bg-gray-900 border border-gray-700 px-3 py-1.5 text-sm outline-none focus:border-sky-500" />
       </div>
@@ -164,6 +181,101 @@ export default function Despedidos() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// Tarjetas con fondo teñido, como las del reporte de Bills.
+const TONOS = {
+  gris: 'bg-[#0f1117] border-[#37415144] text-gray-300',
+  rojo: 'bg-[#150505] border-[#7f1d1d44] text-red-400',
+  verde: 'bg-[#05150d] border-[#064e3b44] text-emerald-400',
+  azul: 'bg-[#050b1a] border-[#1e3a5f44] text-blue-400',
+};
+function Kpi({ titulo, valor, pie, tono }) {
+  const [fondo, borde, color] = TONOS[tono].split(' ');
+  return (
+    <div className={`rounded-xl border ${fondo} ${borde} px-4 py-3 flex flex-col gap-1`}>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{titulo}</p>
+      <p className={`text-lg font-bold tracking-tight ${color}`}>{valor}</p>
+      {pie && <p className="text-[11px] text-gray-600">{pie}</p>}
+    </div>
+  );
+}
+
+/**
+ * Despidos por semana: cuántos hubo, cuántos nos deben y a cuántos hay que
+ * devolverles garantía, y el neto (nos deben − devolver). Un clic en una
+ * semana filtra la tabla a esa semana.
+ */
+function PorSemana({ filas, semana, onSemana, t }) {
+  const semanas = Array.from({ length: ULTIMA_SEMANA + 1 }, (_, n) => ({ n, gente: 0, deben: 0, nDeben: 0, devolver: 0, nDevolver: 0 }));
+  for (const f of filas) {
+    const n = cubeta(f);
+    if (n == null) continue;
+    const s = semanas[n];
+    s.gente += 1;
+    if (f.liquidacion.nosDebe > 0) { s.nDeben += 1; s.deben += f.liquidacion.nosDebe; }
+    if (f.liquidacion.devolver > 0) { s.nDevolver += 1; s.devolver += f.liquidacion.devolver; }
+  }
+  const tope = Math.max(1, ...semanas.flatMap((s) => [s.deben, s.devolver]));
+  const total = semanas.reduce((a, s) => ({ gente: a.gente + s.gente, deben: a.deben + s.deben, nDeben: a.nDeben + s.nDeben,
+    devolver: a.devolver + s.devolver, nDevolver: a.nDevolver + s.nDevolver }), { gente: 0, deben: 0, nDeben: 0, devolver: 0, nDevolver: 0 });
+  const vista = semana == null ? total : semanas[semana];
+  const neto = vista.deben - vista.devolver;
+  const pieVista = semana == null ? t('dp_sem_todas') : `${t('dp_sem_opcion')(semana)}${semana < ULTIMA_SEMANA ? ` · ${rangoSemana(semana)}` : ''}`;
+  const ALTO = 64; // px de cada mitad del gráfico
+
+  return (
+    <div className="rounded-2xl border border-[#1f2937] bg-[#111827] p-4 sm:p-5 space-y-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold">{t('dp_sem_titulo')}</p>
+          <p className="text-[11px] text-gray-500">{t('dp_sem_ayuda')}</p>
+        </div>
+        {semana != null && (
+          <button type="button" onClick={() => onSemana(null)} className="text-xs text-sky-300 hover:text-sky-200">{t('dp_sem_ver_todas')}</button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Kpi tono="azul" titulo={t('dp_sem_despedidos')} valor={String(vista.gente)} pie={pieVista} />
+        <Kpi tono="rojo" titulo={t('dp_nos_deben')} valor={plata(vista.deben)} pie={t('dp_personas')(vista.nDeben)} />
+        <Kpi tono="verde" titulo={t('dp_devolver')} valor={plata(vista.devolver)} pie={t('dp_personas')(vista.nDevolver)} />
+        <Kpi tono={neto > 0 ? 'rojo' : neto < 0 ? 'verde' : 'gris'} titulo={t('dp_sem_neto')} valor={plata(Math.abs(neto))}
+          pie={neto > 0 ? t('dp_sem_neto_deben') : neto < 0 ? t('dp_sem_neto_devolver') : t('dp_sem_neto_cero')} />
+      </div>
+
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[560px] gap-1" style={{ gridTemplateColumns: `repeat(${semanas.length}, minmax(0, 1fr))` }}>
+          {[...semanas].reverse().map((s) => {
+            const activa = semana === s.n;
+            const netoS = s.deben - s.devolver;
+            return (
+              <button key={s.n} type="button" onClick={() => onSemana(activa ? null : s.n)}
+                title={`${t('dp_sem_opcion')(s.n)} · ${t('dp_personas')(s.gente)}\n${t('dp_nos_deben')}: ${plata(s.deben)} (${s.nDeben})\n${t('dp_devolver')}: ${plata(s.devolver)} (${s.nDevolver})`}
+                className={`rounded-lg px-1 py-2 flex flex-col items-center transition ${activa ? 'bg-sky-500/15 ring-1 ring-sky-400' : semana != null ? 'opacity-50 hover:opacity-100' : 'hover:bg-gray-800/60'}`}>
+                <span className="text-xs font-semibold text-gray-200">{s.gente}</span>
+                <span className="text-[10px] text-gray-500 mb-1">{t('dp_sem_desp')}</span>
+                <div className="w-full flex flex-col items-center">
+                  <div className="w-3/5 flex items-end justify-center" style={{ height: ALTO }}>
+                    <div className="w-full rounded-t bg-emerald-400/80" style={{ height: `${(s.devolver / tope) * ALTO}px` }} />
+                  </div>
+                  <div className="w-full border-t border-gray-700" />
+                  <div className="w-3/5 flex items-start justify-center" style={{ height: ALTO }}>
+                    <div className="w-full rounded-b bg-red-400/80" style={{ height: `${(s.deben / tope) * ALTO}px` }} />
+                  </div>
+                </div>
+                <span className={`mt-1 text-[10px] font-semibold ${netoS > 0 ? 'text-red-400' : netoS < 0 ? 'text-emerald-400' : 'text-gray-600'}`}>
+                  {s.gente ? `${netoS > 0 ? '+' : netoS < 0 ? '−' : ''}${plata(Math.abs(netoS))}` : '—'}
+                </span>
+                <span className="mt-1 text-[11px] text-gray-300">{t('dp_sem_corto')(s.n)}</span>
+                <span className="text-[10px] text-gray-600">{s.n < ULTIMA_SEMANA ? rangoSemana(s.n) : ''}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
