@@ -65,8 +65,13 @@ export async function GET() {
   }
   if (desp.error || gest.error) return NextResponse.json({ error: 'base' }, { status: 500 });
 
-  const despedidos = desp.data.map((d) => ({ ...d, nombreFleet: d.nombre_fleet }));
-  const ultimoActivo = await ultimosBalances(sb, despedidos);
+  const todos = desp.data.map((d) => ({ ...d, nombreFleet: d.nombre_fleet }));
+  const { ultimoActivo, volvio } = await ultimosBalances(sb, todos);
+  // Si después del despido vuelve a aparecer activo con el mismo nombre o RUT,
+  // fue un cambio de auto y no un despido: no se liquida ni se cuenta.
+  const despedidos = todos.filter((d) => !volvio.has(d.clave));
+  const cambiosAuto = todos.filter((d) => volvio.has(d.clave))
+    .map((d) => ({ nombre: d.nombre, despido: d.despido, ...volvio.get(d.clave) }));
   const marcas = new Map((autos.data || []).map((a) => [a.patente, a]));
   const cambiosDe = new Map();
   for (const c of camb.data || []) {
@@ -147,6 +152,8 @@ export async function GET() {
     // número (una multa que llegó después, un tag que se pagó). La diferencia se
     // muestra, pero no queda como algo por devolver.
     if (enviado > 0) { liq.devolverCalculado = liq.devolver; liq.devolver = 0; }
+    // Cierre en bloque (sin monto): se da por devuelto lo que hubiera, sea cual sea la cuenta de hoy.
+    else if (g.cerrado && g.cerrado_tipo === 'devuelto' && g.cerrado_monto == null) { liq.devolverCalculado = liq.devolver; liq.devolver = 0; }
     return {
       clave: d.clave,
       nombre: d.nombre,
@@ -197,6 +204,7 @@ export async function GET() {
   return NextResponse.json({
     filas,
     ultimaCarga: carga.data?.[0] || null,
+    cambiosAuto,
     devolucionesSinAsignar: devSinAsignar.map((x) => ({ fila: x.fila, nombre: x.nombre, monto: x.monto, devuelta: x.devuelta })),
     avisos,
     puedeEditar: puedeVerSeccion(session.user.role, 'despedidos'),
@@ -211,24 +219,37 @@ export async function GET() {
  */
 async function ultimosBalances(sb, despedidos) {
   const ruts = despedidos.map((d) => d.rut).filter(Boolean);
-  const nombres = despedidos.filter((d) => !d.rut).flatMap((d) => [d.nombre, d.nombre_fleet]).filter(Boolean).map(normalizarNombre);
-  const filas = [];
+  // Por nombre se buscan todos (no solo los sin RUT) para ver si alguno volvió activo.
+  const nombres = [...new Set(despedidos.flatMap((d) => [d.nombre, d.nombre_fleet]).filter(Boolean).map(normalizarNombre))];
+  const vistas = new Map(); // por id: una fila puede venir por RUT y por nombre
+  // De a 100 para que la consulta no pase el largo máximo de URL.
+  const lotes = (xs) => Array.from({ length: Math.ceil(xs.length / 100) }, (_, i) => xs.slice(i * 100, i * 100 + 100));
   for (const [col, lista] of [['rut', ruts], ['clave_nombre', nombres]]) {
-    if (!lista.length) continue;
-    for (let desde = 0; ; desde += 1000) {
-      const { data, error } = await sb.from('conductores_balances').select('rut, clave_nombre, patente, balance, fecha')
-        .in(col, lista).order('fecha').order('id').range(desde, desde + 999);
-      if (error) { if (!faltaMigracion(error)) console.error('despedidos balances', error.message); return new Map(); }
-      filas.push(...data);
-      if (data.length < 1000) break;
+    for (const lote of lotes(lista)) {
+      for (let desde = 0; ; desde += 1000) {
+        const { data, error } = await sb.from('conductores_balances').select('id, rut, clave_nombre, patente, balance, fecha')
+          .in(col, lote).order('fecha').order('id').range(desde, desde + 999);
+        if (error) { if (!faltaMigracion(error)) console.error('despedidos balances', error.message); return { ultimoActivo: new Map(), volvio: new Map() }; }
+        for (const f of data) vistas.set(f.id, f);
+        if (data.length < 1000) break;
+      }
     }
   }
+  const filas = [...vistas.values()].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)) || a.id - b.id);
   const out = new Map();
+  const volvio = new Map();
   for (const d of despedidos) {
     const nombresD = new Set([d.nombre, d.nombre_fleet].filter(Boolean).map(normalizarNombre));
     const suyas = filas.filter((f) => (d.rut ? f.rut === d.rut : nombresD.has(f.clave_nombre)))
       .filter((f) => !d.despido || enChile(f.fecha).fecha <= d.despido);
     if (suyas.length) out.set(d.clave, suyas[suyas.length - 1]);
+    // Activo en un export posterior al despido, con su RUT o su mismo nombre: cambio de auto.
+    const despues = d.despido ? filas.filter((f) => (f.rut === d.rut && d.rut) || nombresD.has(f.clave_nombre))
+      .filter((f) => enChile(f.fecha).fecha > d.despido) : [];
+    if (despues.length) {
+      const u = despues[despues.length - 1];
+      volvio.set(d.clave, { desde: enChile(despues[0].fecha).fecha, patente: u.patente || null });
+    }
   }
-  return out;
+  return { ultimoActivo: out, volvio };
 }

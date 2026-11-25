@@ -126,9 +126,18 @@ export default function Despedidos() {
           color={revisar.length ? 'text-amber-300' : 'text-gray-400'} />
       </div>
 
-      <PorSemana filas={todas} semana={semana} onSemana={setSemana} t={t} />
+      {datos.cambiosAuto?.length > 0 && (
+        <p className="text-xs text-sky-300">
+          {t('dp_cambios_auto')(datos.cambiosAuto.length)}: {datos.cambiosAuto.map((x) => `${x.nombre} (${fechaCorta(x.despido)}${x.patente ? ` → ${x.patente}` : ''})`).join(', ')}
+        </p>
+      )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <PorSemana filas={todas} semana={semana} t={t} onSemana={(n) => {
+        setSemana(n);
+        if (n != null) setTimeout(() => document.getElementById('dp-filtros')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+      }} />
+
+      <div id="dp-filtros" className="flex flex-wrap items-center gap-2 scroll-mt-20">
         {['todos', 'por_revisar', 'deben', 'devolver', 'cerrados'].map((f) => (
           <button key={f} type="button" onClick={() => setFiltro(f)}
             className={`rounded-full border px-3 py-1 text-xs ${filtro === f ? 'border-sky-400 bg-sky-500/15 text-sky-200' : 'border-gray-700 text-gray-400 hover:border-gray-500'}`}>
@@ -521,6 +530,30 @@ function Cuenta({ f, t, puedeAprobar, onAccion, enfocar }) {
   const [ocupado, setOcupado] = useState(false);
   const campo = 'rounded-lg bg-gray-950 border border-gray-700 px-2 py-1.5 text-sm outline-none focus:border-sky-500';
   const cambiar = (k) => (e) => setC({ ...c, [k]: e.target.value });
+  const [copiado, setCopiado] = useState(false);
+
+  // Copia los datos de la cuenta para pegarlos en el banco, con el monto a devolver al final.
+  async function copiar() {
+    const x = g.cuenta;
+    const monto = f.liquidacion.devolver > 0 ? f.liquidacion.devolver : f.liquidacion.devolverCalculado || 0;
+    const texto = [
+      `${t('dp_cuenta_titular')}: ${x.titular}`,
+      x.rut && `RUT: ${x.rut}`,
+      `${t('dp_cuenta_banco')}: ${x.banco}`,
+      `${t('dp_cuenta_tipo')}: ${t(`dp_cuenta_tipo_${x.tipo}`)}`,
+      `${t('dp_cuenta_numero')}: ${x.numero}`,
+      x.email && `Email: ${x.email}`,
+      `${t('dp_cuenta_monto')}: ${plata(monto)}`,
+    ].filter(Boolean).join('\n');
+    try {
+      await navigator.clipboard.writeText(texto);
+    } catch {
+      window.prompt(t('dp_cuenta_copiar'), texto); // sin permiso de portapapeles: que lo copien a mano
+      return;
+    }
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  }
 
   async function guardar() {
     if (!puedeAprobar && !window.confirm(t('dp_confirmar_cuenta')(f.nombre))) return;
@@ -548,8 +581,15 @@ function Cuenta({ f, t, puedeAprobar, onAccion, enfocar }) {
           <p>{g.cuenta.banco} · {t(`dp_cuenta_tipo_${g.cuenta.tipo}`)} · <span className="font-mono">{g.cuenta.numero}</span></p>
           {g.cuenta.email && <p className="text-gray-400">{g.cuenta.email}</p>}
           <p className="text-[10px] text-gray-600">{t('dp_marcado_por')(quien(g.cuentaPor), fechaCorta(g.cuentaEn))}{g.cuenta.enmascarada && ` · ${t('dp_cuenta_solo_gerencia')}`}</p>
-          <button type="button" onClick={() => { setC(g.cuenta.enmascarada ? vacia : { ...vacia, ...g.cuenta, email: g.cuenta.email || '' }); setEditando(true); }}
-            className="text-xs text-sky-300 hover:text-sky-200">{t('dp_cuenta_editar')}</button>
+          <div className="flex gap-4">
+            <button type="button" onClick={() => { setC(g.cuenta.enmascarada ? vacia : { ...vacia, ...g.cuenta, email: g.cuenta.email || '' }); setEditando(true); }}
+              className="text-xs text-sky-300 hover:text-sky-200">{t('dp_cuenta_editar')}</button>
+            {!g.cuenta.enmascarada && (
+              <button type="button" onClick={copiar} className="text-xs text-sky-300 hover:text-sky-200">
+                {copiado ? t('dp_cuenta_copiado') : t('dp_cuenta_copiar')}
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="mt-2 grid grid-cols-2 gap-2">
