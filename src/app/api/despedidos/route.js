@@ -66,9 +66,10 @@ export async function GET() {
   if (desp.error || gest.error) return NextResponse.json({ error: 'base' }, { status: 500 });
 
   const todos = desp.data.map((d) => ({ ...d, nombreFleet: d.nombre_fleet }));
-  const { ultimoActivo, volvio } = await ultimosBalances(sb, todos);
-  // Si después del despido vuelve a aparecer activo con el mismo nombre o RUT,
-  // fue un cambio de auto y no un despido: no se liquida ni se cuenta.
+  const { ultimoActivo, volvio, patentesDe } = await ultimosBalances(sb, todos);
+  // Si después del despido vuelve a aparecer activo con el mismo RUT, fue un
+  // cambio de auto y no un despido: no se liquida ni se cuenta. Solo por RUT:
+  // el mismo nombre puede ser otra persona.
   const despedidos = todos.filter((d) => !volvio.has(d.clave));
   const cambiosAuto = todos.filter((d) => volvio.has(d.clave))
     .map((d) => ({ nombre: d.nombre, despido: d.despido, ...volvio.get(d.clave) }));
@@ -91,21 +92,43 @@ export async function GET() {
   const { porClave: devPorClave, sinAsignar: devSinAsignar } = asignarDevoluciones(devoluciones, despedidos);
   // Una boleta a nombre de alguien que sigue activo es de él, aunque un
   // despedido tenga un nombre parecido ("CARLOS GONZÁLEZ" y "CARLOS GONZÁLEZ MUÑOZ").
-  const { data: activos } = await sb.from('conductores').select('nombre, nombre_fleet').is('baja', null);
+  const { data: activos } = await sb.from('conductores').select('rut, nombre, nombre_fleet').is('baja', null);
   const nombresDespedidos = new Set(despedidos.flatMap((d) => [d.nombre, d.nombre_fleet]).filter(Boolean).map(normalizarNombre));
   const nombresActivos = new Set((activos || []).flatMap((c) => [c.nombre, c.nombre_fleet]).filter(Boolean)
     .map(normalizarNombre).filter((n) => !nombresDespedidos.has(n)));
+  // Homónimos: un activo con el mismo nombre que un despedido pero otro RUT (o sin RUT)
+  // es otra persona (hubo dos Matías Figueroa). Sus boletas no son del despedido.
+  const activosPorNombre = new Map();
+  for (const c of activos || []) {
+    for (const n of [c.nombre, c.nombre_fleet].filter(Boolean).map(normalizarNombre)) {
+      if (!activosPorNombre.has(n)) activosPorNombre.set(n, []);
+      activosPorNombre.get(n).push(c.rut || null);
+    }
+  }
+  const tieneHomonimo = (d) => [d.nombre, d.nombre_fleet].filter(Boolean).map(normalizarNombre)
+    .some((n) => (activosPorNombre.get(n) || []).some((rut) => !rut || rut !== d.rut));
+  const patenteDe = (vehiculo) => (String(vehiculo || '').match(/\(([A-Z0-9]{5,7})\)/i)?.[1] || String(vehiculo || '').trim()).toUpperCase();
   const memo = new Map();
-  const de = (nombre) => {
+  // Con homónimo activo, la boleta es del despedido solo si es de uno de sus autos.
+  // Si no sabemos sus autos (o la boleta no trae patente), por fecha: hasta 3 días
+  // después del despido, porque los peajes llegan con atraso.
+  const hasta = (iso) => new Date(new Date(iso + 'T12:00:00Z').getTime() + 3 * 86400000).toISOString().slice(0, 10);
+  const de = (nombre, vehiculo, fecha) => {
     if (!memo.has(nombre)) {
       memo.set(nombre, nombresActivos.has(normalizarNombre(nombre)) ? null : asignarPorNombre(despedidos, nombre));
     }
-    return memo.get(nombre);
+    const d = memo.get(nombre);
+    if (!d || !tieneHomonimo(d)) return d;
+    const p = patenteDe(vehiculo);
+    const autos = patentesDe.get(d.clave);
+    if (p && autos?.size) return autos.has(p) ? d : null;
+    const f = String(fecha || '').slice(0, 10);
+    return f && d.despido && f <= hasta(d.despido) ? d : null;
   };
   for (const b of bills.bills || []) {
     const s = saldo(b);
     if (s <= 0 || !b.driver) continue;
-    const d = de(b.driver);
+    const d = de(b.driver, b.vehicle, b.date);
     if (!d) continue;
     const c = cobros.get(d.clave);
     if (/toll/i.test(b.type || '')) { c.tags += s; c.nTags++; } else { c.otros += s; c.nOtros++; }
@@ -113,7 +136,7 @@ export async function GET() {
   for (const f of multas.fines || []) {
     const s = saldo(f);
     if (s <= 0 || !f.driver) continue;
-    const d = de(f.driver);
+    const d = de(f.driver, f.vehicle, f.dateContravention);
     if (!d) continue;
     const c = cobros.get(d.clave);
     c.multas += s; c.nMultas++;
@@ -219,8 +242,7 @@ export async function GET() {
  */
 async function ultimosBalances(sb, despedidos) {
   const ruts = despedidos.map((d) => d.rut).filter(Boolean);
-  // Por nombre se buscan todos (no solo los sin RUT) para ver si alguno volvió activo.
-  const nombres = [...new Set(despedidos.flatMap((d) => [d.nombre, d.nombre_fleet]).filter(Boolean).map(normalizarNombre))];
+  const nombres = [...new Set(despedidos.filter((d) => !d.rut).flatMap((d) => [d.nombre, d.nombre_fleet]).filter(Boolean).map(normalizarNombre))];
   const vistas = new Map(); // por id: una fila puede venir por RUT y por nombre
   // De a 100 para que la consulta no pase el largo máximo de URL.
   const lotes = (xs) => Array.from({ length: Math.ceil(xs.length / 100) }, (_, i) => xs.slice(i * 100, i * 100 + 100));
@@ -229,7 +251,7 @@ async function ultimosBalances(sb, despedidos) {
       for (let desde = 0; ; desde += 1000) {
         const { data, error } = await sb.from('conductores_balances').select('id, rut, clave_nombre, patente, balance, fecha')
           .in(col, lote).order('fecha').order('id').range(desde, desde + 999);
-        if (error) { if (!faltaMigracion(error)) console.error('despedidos balances', error.message); return { ultimoActivo: new Map(), volvio: new Map() }; }
+        if (error) { if (!faltaMigracion(error)) console.error('despedidos balances', error.message); return { ultimoActivo: new Map(), volvio: new Map(), patentesDe: new Map() }; }
         for (const f of data) vistas.set(f.id, f);
         if (data.length < 1000) break;
       }
@@ -238,18 +260,19 @@ async function ultimosBalances(sb, despedidos) {
   const filas = [...vistas.values()].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)) || a.id - b.id);
   const out = new Map();
   const volvio = new Map();
+  const patentesDe = new Map(); // autos que manejó hasta el despido
   for (const d of despedidos) {
     const nombresD = new Set([d.nombre, d.nombre_fleet].filter(Boolean).map(normalizarNombre));
-    const suyas = filas.filter((f) => (d.rut ? f.rut === d.rut : nombresD.has(f.clave_nombre)))
-      .filter((f) => !d.despido || enChile(f.fecha).fecha <= d.despido);
+    const todas = filas.filter((f) => (d.rut ? f.rut === d.rut : nombresD.has(f.clave_nombre)));
+    const suyas = todas.filter((f) => !d.despido || enChile(f.fecha).fecha <= d.despido);
     if (suyas.length) out.set(d.clave, suyas[suyas.length - 1]);
-    // Activo en un export posterior al despido, con su RUT o su mismo nombre: cambio de auto.
-    const despues = d.despido ? filas.filter((f) => (f.rut === d.rut && d.rut) || nombresD.has(f.clave_nombre))
-      .filter((f) => enChile(f.fecha).fecha > d.despido) : [];
+    patentesDe.set(d.clave, new Set(suyas.map((f) => String(f.patente || '').toUpperCase()).filter(Boolean)));
+    // Activo con el mismo RUT en un export posterior al despido: cambio de auto.
+    const despues = d.rut && d.despido ? todas.filter((f) => enChile(f.fecha).fecha > d.despido) : [];
     if (despues.length) {
       const u = despues[despues.length - 1];
       volvio.set(d.clave, { desde: enChile(despues[0].fecha).fecha, patente: u.patente || null });
     }
   }
-  return { ultimoActivo: out, volvio };
+  return { ultimoActivo: out, volvio, patentesDe };
 }
