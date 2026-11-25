@@ -1096,6 +1096,9 @@ function normalizeName(s){
 // → all fleet words appear in the bill name → same person.
 function namesMatch(fleetName,billName){
   if(fleetName===billName) return true; // exact match fast path
+  // "MATIAS FIGUEROA (DESPEDIDO 20-08)" lo marca /api/bills: es un despedido con
+  // el mismo nombre que un activo (otro RUT). No se une con el activo.
+  if((billName.indexOf('(DESPEDIDO ')>=0)!==(fleetName.indexOf('(DESPEDIDO ')>=0)) return false;
   var fWords=fleetName.split(' '),dWords=billName.split(' ');
   // All fleet-sheet words present in bill name (fleet name is shorter/incomplete)
   if(fWords.every(function(w){return dWords.indexOf(w)>=0;})) return true;

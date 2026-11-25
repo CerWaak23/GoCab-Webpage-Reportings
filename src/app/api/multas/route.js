@@ -7,6 +7,7 @@ import { leerFilas } from '@/lib/bills/archivo';
 import { multasDeFilas, reporteMultas } from '@/lib/multas/reporte';
 import { reporteDesdeSupabase, multasExcluidas } from '@/lib/multas/supabase';
 import { supabaseServidor } from '@/lib/supabase/server';
+import { separadorHomonimos, separarEnReporte } from '@/lib/fleet/homonimos';
 
 const FINES_FOLDER_ID = '1O5GblTXWQI_6RBn7072am1nprtZYcvJ7';
 
@@ -61,7 +62,11 @@ const SIN_CACHE = { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-a
 export async function GET(request) {
   if (new URL(request.url).searchParams.get('fuente') !== 'drive') {
     try {
-      return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase', _fetchedAt: new Date().toISOString() }, { headers: SIN_CACHE });
+      const r = await reporteDesdeSupabase();
+      // Igual que en bills: el despedido homónimo de un activo va en su propia fila
+      const separar = await separadorHomonimos(supabaseServidor()).catch((e) => { console.error('multas homónimos', e.message); return (n) => n; });
+      const { cargos, pagos } = separarEnReporte(r.fines, r.paymentEvents, separar, { fecha: (f) => f.dateContravention || f.createdAt });
+      return NextResponse.json({ ...r, fines: cargos, paymentEvents: pagos, fuente: 'supabase', _fetchedAt: new Date().toISOString() }, { headers: SIN_CACHE });
     } catch (err) {
       // Sin caer a Drive: ya no se actualiza (ver /api/bills).
       console.error('multas: Supabase falló', err.message);

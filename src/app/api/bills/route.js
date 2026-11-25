@@ -9,6 +9,7 @@ import { reporteDesdeVersiones, consolidarPorDia } from '@/lib/bills/desdeVersio
 import { reporteDesdeSupabase } from '@/lib/bills/supabase';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { traducirFilas } from '@/lib/fleet/idioma';
+import { separadorHomonimos, separarEnReporte } from '@/lib/fleet/homonimos';
 
 const BILLS_FOLDER_ID = '1Fd3sia5XyN1tXuk2pvQfbrIbmV_o-sKh';
 
@@ -81,7 +82,11 @@ export async function GET(request) {
   const params = new URL(request.url).searchParams;
   if (params.get('fuente') !== 'drive' && params.get('todosLosArchivos') !== '1') {
     try {
-      return NextResponse.json({ ...(await reporteDesdeSupabase()), fuente: 'supabase' }, { headers: { 'Cache-Control': 'no-store' } });
+      const r = await reporteDesdeSupabase();
+      // Un despedido con el mismo nombre que un activo (otro RUT) va en su propia fila
+      const separar = await separadorHomonimos(supabaseServidor()).catch((e) => { console.error('bills homónimos', e.message); return (n) => n; });
+      const { cargos, pagos } = separarEnReporte(r.bills, r.paymentEvents, separar, { fecha: (b) => b.createdAt });
+      return NextResponse.json({ ...r, bills: cargos, paymentEvents: pagos, fuente: 'supabase' }, { headers: { 'Cache-Control': 'no-store' } });
     } catch (err) {
       console.error('bills: Supabase falló', err.message);
       return NextResponse.json({ error: `No se pudo leer Supabase: ${err.message}`, fuente: 'supabase' }, { status: 500 });
