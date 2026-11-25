@@ -6,6 +6,13 @@ import { BANCOS, TIPOS_CUENTA } from '@/lib/fleet/despedidos';
 const CLP = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const plata = (n) => CLP.format(Math.round(n || 0));
 const fechaCorta = (iso) => (iso ? new Date(String(iso).length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—');
+// Semanas completas desde el despido hasta hoy (null si no hay fecha).
+const semanasDesde = (iso) => {
+  if (!iso) return null;
+  const d = new Date(String(iso).length === 10 ? iso + 'T12:00:00' : iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / (7 * 86400000)));
+};
 const quien = (email) => String(email || '').split('@')[0];
 const CASILLAS = ['renta', 'tags', 'multas', 'otros', 'ajustes', 'garantia'];
 
@@ -138,7 +145,7 @@ export default function Despedidos() {
                 <tr className={`border-t border-gray-800 align-top hover:bg-gray-900/50 ${abierto === f.clave ? 'bg-gray-900/70' : ''}`}>
                   <td className="px-3 py-2 cursor-pointer" onClick={() => setAbierto(abierto === f.clave ? null : f.clave)}>
                     <p className="font-medium">{f.nombre}</p>
-                    <p className="text-[11px] text-gray-500">{t('dp_despedido')} {fechaCorta(f.despido)}</p>
+                    <p className="text-[11px] text-gray-500">{t('dp_despedido')} {fechaCorta(f.despido)}{semanasDesde(f.despido) != null && <span className="text-gray-400"> · {t('dp_hace_semanas')(semanasDesde(f.despido))}</span>}</p>
                   </td>
                   {CASILLAS.map((c) => (
                     <td key={c} className="px-3 py-2 text-right whitespace-nowrap">
