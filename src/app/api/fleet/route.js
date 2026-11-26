@@ -38,6 +38,46 @@ async function fichasConductores() {
   }
 }
 
+/* Despedidos que siguen despedidos. Control Flota se actualiza a mano y un
+   despedido puede quedar días en la hoja (SEBASTIAN RAMOS, despedido el 26-11,
+   seguía como activo en Bills). Se sacan de la lista de conductores:
+     · por RUT, si la fila trae RUT;
+     · si no, por nombre, salvo que haya un activo con ese nombre y otro RUT
+       (hubo dos MATIAS FIGUEROA: sacar al activo sería peor).
+   Quien vuelve a aparecer con su RUT en un export de conductores posterior al
+   despido volvió (cambio de auto): sigue activo. */
+async function despedidosVigentes(fichas) {
+  try {
+    const sb = supabaseServidor();
+    const { data, error } = await sb.from('despedidos').select('rut, nombre, nombre_fleet, despido');
+    if (error) throw error;
+    const ruts = (data || []).map((d) => d.rut).filter(Boolean);
+    const volvieron = new Set();
+    for (let i = 0; i < ruts.length; i += 100) {
+      const { data: bal } = await sb.from('conductores_balances').select('rut, fecha').in('rut', ruts.slice(i, i + 100));
+      for (const b of bal || []) {
+        const d = data.find((x) => x.rut === b.rut);
+        if (d?.despido && String(b.fecha).slice(0, 10) > d.despido) volvieron.add(b.rut);
+      }
+    }
+    const porRut = new Set();
+    const porNombre = new Set();
+    for (const d of data || []) {
+      if (!d.despido || (d.rut && volvieron.has(d.rut))) continue;
+      if (d.rut) porRut.add(soloRut(d.rut));
+      for (const n of [d.nombre, d.nombre_fleet].filter(Boolean).map(claveNombre)) {
+        const otro = (fichas?.activos || []).some((c) => [c.nombre, c.nombre_fleet].filter(Boolean).map(claveNombre).includes(n)
+          && (!c.rut || soloRut(c.rut) !== soloRut(d.rut)));
+        if (!otro) porNombre.add(n);
+      }
+    }
+    return { porRut, porNombre };
+  } catch (e) {
+    console.error('[fleet] sin despedidos:', e.message);
+    return null;
+  }
+}
+
 /* Balance de cada conductor (renta: 0 = al día, negativo = lo que debe) del
    último export de conductores aplicado en Carga de datos, y la marca de cada
    auto para saber su renta semanal. Si algo falla, la flota se sirve igual sin
@@ -137,9 +177,15 @@ export async function GET(request) {
     const iCreado = header.findIndex((h) => h.includes('created') || h.includes('fecha'));
     const iNota = header.findIndex((h) => h.includes('nota'));
     const [fichas, rentas] = await Promise.all([fichasConductores(), rentasFleet()]);
+    const despedidos = await despedidosVigentes(fichas);
     const hoy = hoyChile();
+    const esDespedido = (r) => {
+      if (!despedidos) return false;
+      const rut = iRut >= 0 ? soloRut(r[iRut]) : '';
+      return rut ? despedidos.porRut.has(rut) : despedidos.porNombre.has(claveNombre(r[0]));
+    };
 
-    const drivers = body.map((r) => {
+    const drivers = body.filter((r) => !esDespedido(r)).map((r) => {
       const conductor = String(r[0] || '').trim().toUpperCase();
       const rut = iRut >= 0 ? soloRut(r[iRut]) : '';
       const fichaRut = fichas && rut ? fichas.porRut.get(rut) || null : null;
